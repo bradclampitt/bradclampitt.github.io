@@ -917,14 +917,15 @@
         <template x-if="currentSection === 'about'">
           <div class="flex gap-4 mb-6">
             <a
-              href="#"
-              class="bg-white text-[#232946] font-semibold px-5 py-2 rounded-lg shadow hover:bg-[#b8c1ec] hover:text-[#232946] transition flex items-center gap-2"
+              @click="currentSection = 'modules'"
+              class="bg-white text-[#232946] font-semibold px-5 py-2 rounded-lg shadow hover:bg-[#b8c1ec] hover:text-[#232946] transition flex items-center gap-2 cursor-pointer"
             >
               <span>View My Work</span>
               <i class="fas fa-arrow-right"></i>
             </a>
             <a
-              href="#"
+              href="docs/resume/resume.pdf"
+              target="_blank"
               class="bg-[#232946] text-white font-semibold px-5 py-2 rounded-lg border border-[#b8c1ec] hover:bg-[#b8c1ec] hover:text-[#232946] transition flex items-center gap-2"
             >
               <i class="fas fa-download"></i>
@@ -946,7 +947,7 @@
             ><i class="fab fa-linkedin text-xl"></i
           ></a>
           <a
-            href="mailto:bradclampitt@icloud.com"
+            href="mailto:bradclampitt@gmail.com"
             class="bg-[#232946] hover:bg-[#b8c1ec] text-white hover:text-[#232946] p-3 rounded-full transition"
             ><i class="fas fa-envelope text-xl"></i
           ></a>
@@ -1093,6 +1094,14 @@
                 >
                   <i class="fas fa-file-alt mr-2"></i>
                   View README
+                </a>
+                <a
+                  href="docs/resume/resume.pdf"
+                  target="_blank"
+                  class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  <i class="fas fa-file-pdf mr-2"></i>
+                  Download Resume
                 </a>
               </div>
             </div>
@@ -2608,6 +2617,15 @@
                       class="text-blue-600 hover:underline"
                       target="_blank"
                       >linkedin.com/in/bclampitt</a
+                    >
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-file-pdf text-blue-600 mr-2"></i>
+                    <a
+                      href="docs/resume/resume.pdf"
+                      class="text-blue-600 hover:underline"
+                      target="_blank"
+                      >Download Resume</a
                     >
                   </li>
                 </ul>
