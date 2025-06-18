@@ -3,13 +3,13 @@
   lang="en"
   x-data="{
     // MAIN APPLICATION STATE
-    currentSection: 'about',
+    currentSection: 'about', 
     sidebarOpen: true,
     modalOpen: false,
     modalImage: null,
     modalTitle: '',
     modalDescription: '',
-
+    
     // PAGINATION STATE - Configure items per page for each section
     modulesPage: 1,
     modulesPerPage: 4,
@@ -17,7 +17,7 @@
     photographyPerPage: 4,
     sideProjectsPage: 1,
     sideProjectsPerPage: 4,
-
+    
     // SIDE PROJECTS STATE - Lightbox functionality
     selectedProject: null,
     showProjectDetail: false,
@@ -25,7 +25,7 @@
     lightboxImage: null,
     lightboxIndex: 0,
     currentGallery: null,
-
+    
     // SIDE PROJECTS METHODS - Project and lightbox functionality
     openProjectDetail(project) {
         this.selectedProject = project;
@@ -69,74 +69,74 @@
     sysOps: [],
 
     // PHOTOGRAPHY DATA
-    photography: {
-        categories: [
-            {
-                name: 'Wine',
-                images: [
-                    {
+   photography: {
+      categories: [
+      {
+        name: 'Wine',
+        images: [
+          {
                         url: 'images/photography/wine/2000_wine_set_1.jpg',
-                        title: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case',
-                        description: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case (Haut Brion, Latour, Margaux, Petrus).',
-                        location: 'Yaphank, New York',
-                        date: '2023'
-                    },
-                    {
+            title: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case',
+            description: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case (Haut Brion, Latour, Margaux, Petrus).',
+            location: 'Yaphank, New York',
+            date: '2023'
+          },
+          {
                         url: 'images/photography/wine/2000_wine_set_2.jpg',
-                        title: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case',
-                        description: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case (Haut Brion, Latour, Margaux, Petrus) with case.',
-                        location: 'Yaphank, New York',
-                        date: '2023'
-                    },
-                    {
+            title: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case',
+            description: '2000 Duclot Carre D\'As 4-Pack Double Magnum Collector Case (Haut Brion, Latour, Margaux, Petrus) with case.',
+            location: 'Yaphank, New York',
+            date: '2023'
+          },
+          {
                         url: 'images/photography/wine/1982_mouton.png',
-                        title: '1982 Mouton Rothschild',
-                        description: '1982 Mouton Rothschild',
-                        location: 'Yaphank, New York',
-                        date: '2023'
-                    },
-                    {
+            title: '1982 Mouton Rothschild',
+            description: '1982 Mouton Rothschild',
+            location: 'Yaphank, New York',
+            date: '2023'
+          },
+          {
                         url: 'images/photography/wine/2019_lynch_bages.jpg',
-                        title: '2019 Lynch Bages',
-                        description: '2019 Lynch Bages',
-                        location: 'Yaphank, New York',
-                        date: '2023'
-                    },
-                    {
+            title: '2019 Lynch Bages',
+            description: '2019 Lynch Bages',
+            location: 'Yaphank, New York',
+            date: '2023'
+          },
+          {
                         url: 'images/photography/wine/2005_calon_segur.jpg',
-                        title: '2005 Calon Segur',
-                        description: '2005 Calon Segur',
-                        location: 'Yaphank, New York',
-                        date: '2023'
-                    }
-                ]
-            },
-            {
-                name: 'Landscape',
-                images: [
-                    {
-                        url: 'images/photography/landscape/downtown_canal_1.jpg',
-                        title: 'Downtown Canal',
-                        description: 'Beautiful evening view of the canal',
-                        location: 'Downtown, Indianapolis',
-                        date: '2010'
-                    },
-                    {
-                        url: 'images/photography/landscape/downtown_canal_2.jpg',
-                        title: 'Downtown Canal',
-                        description: 'Beautiful evening view of the canal',
-                        location: 'Downtown, Indianapolis',
-                        date: '2009'
-                    }
-                ]
-            },
+            title: '2005 Calon Segur',
+            description: '2005 Calon Segur',
+            location: 'Yaphank, New York',
+            date: '2023'
+          }
         ]
-    }
+      },
+      {
+        name: 'Landscape',
+      images: [
+        {
+                        url: 'images/photography/landscape/downtown_canal_1.jpg',
+          title: 'Downtown Canal',
+          description: 'Beautiful evening view of the canal',
+          location: 'Downtown, Indianapolis',
+          date: '2010'
+        },
+        {
+                        url: 'images/photography/landscape/downtown_canal_2.jpg',
+          title: 'Downtown Canal',
+          description: 'Beautiful evening view of the canal',
+          location: 'Downtown, Indianapolis',
+          date: '2009'
+        }
+      ]
+    },
+    ]
+  }
 }"
   @open-project-detail.window="selectedProject = $event.detail; showProjectDetail = true; document.body.style.overflow = 'hidden'"
 >
   <!-- ============================================================================= -->
-  <!-- HEAD SECTION -->
+  <!-- HEAD SECTION - Meta tags, external dependencies, and custom styles -->
   <!-- ============================================================================= -->
   <head>
     <meta charset="UTF-8" />
@@ -144,6 +144,8 @@
     <title>Bradley Clampitt - Interactive Resume & Portfolio</title>
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for advanced markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Alpine.js via CDN -->
     <script
       defer
@@ -345,6 +347,85 @@
       }
       .skill-item {
         @apply flex items-center text-base text-gray-600 bg-gray-50 rounded-lg p-3 transition-colors duration-200;
+      }
+
+      /* Custom styles for markdown content */
+      .markdown-content table {
+        border-collapse: collapse !important;
+        border: 2px solid #374151 !important;
+        width: 100% !important;
+        margin: 1.5rem 0 !important;
+      }
+
+      .markdown-content th,
+      .markdown-content td {
+        border: 1px solid #374151 !important;
+        padding: 0.75rem !important;
+        text-align: left !important;
+      }
+
+      .markdown-content th {
+        background-color: #f3f4f6 !important;
+        font-weight: 600 !important;
+        color: #374151 !important;
+      }
+
+      .markdown-content td {
+        background-color: white !important;
+        color: #374151 !important;
+      }
+
+      .markdown-content tr:hover {
+        background-color: #f9fafb !important;
+      }
+
+      .markdown-content h1 {
+        font-size: 2rem !important;
+        font-weight: bold !important;
+        margin: 2rem 0 1.5rem 0 !important;
+        color: #1f2937 !important;
+        border-bottom: 2px solid #e5e7eb !important;
+        padding-bottom: 0.5rem !important;
+      }
+
+      .markdown-content h2 {
+        font-size: 1.5rem !important;
+        font-weight: bold !important;
+        margin: 1.5rem 0 1rem 0 !important;
+        color: #374151 !important;
+      }
+
+      .markdown-content h3 {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin: 1rem 0 0.75rem 0 !important;
+        color: #4b5563 !important;
+      }
+
+      .markdown-content p {
+        margin: 1rem 0 !important;
+        line-height: 1.6 !important;
+        color: #374151 !important;
+      }
+
+      .markdown-content ul,
+      .markdown-content ol {
+        margin: 1rem 0 !important;
+        padding-left: 2rem !important;
+      }
+
+      .markdown-content li {
+        margin: 0.5rem 0 !important;
+        color: #374151 !important;
+      }
+
+      .markdown-content a {
+        color: #2563eb !important;
+        text-decoration: underline !important;
+      }
+
+      .markdown-content a:hover {
+        color: #1d4ed8 !important;
       }
       .skill-item:hover {
         @apply bg-blue-50;
@@ -794,39 +875,39 @@
     <section
       x-data
       :class="[
-        'flex flex-col md:flex-row items-center justify-between bg-gradient-to-br from-[#181c2a] to-[#232946] transition-all duration-500 hero-margin',
-        'mb-12',
-        currentSection === 'about' ? 'min-h-[420px] px-6 hero-padding py-12' : 'min-h-[180px] px-4 hero-padding py-4'
-        ]"
+      'flex flex-col md:flex-row items-center justify-between bg-gradient-to-br from-[#181c2a] to-[#232946] transition-all duration-500 hero-margin',
+      'mb-12',
+      currentSection === 'about' ? 'min-h-[420px] px-6 hero-padding py-12' : 'min-h-[180px] px-4 hero-padding py-4'
+    ]"
       style="z-index: 1"
     >
       <div
         :class="[
-        'flex-1 flex flex-col items-start justify-center',
-        currentSection === 'about' ? 'max-w-2xl' : 'max-w-xl'
-        ]"
+      'flex-1 flex flex-col items-start justify-center',
+      currentSection === 'about' ? 'max-w-2xl' : 'max-w-xl'
+    ]"
       >
         <h1
           :class="[
-                'font-extrabold text-white',
-                currentSection === 'about' ? 'text-4xl sm:text-5xl md:text-6xl mb-4' : 'text-2xl sm:text-3xl md:text-4xl mb-2'
-            ]"
+        'font-extrabold text-white',
+        currentSection === 'about' ? 'text-4xl sm:text-5xl md:text-6xl mb-4' : 'text-2xl sm:text-3xl md:text-4xl mb-2'
+      ]"
         >
           Bradley R. Clampitt
         </h1>
         <h2
           :class="[
-                'font-semibold text-[#b8c1ec]',
-                currentSection === 'about' ? 'text-2xl sm:text-3xl mb-4' : 'text-lg sm:text-xl mb-2'
-            ]"
+        'font-semibold text-[#b8c1ec]',
+        currentSection === 'about' ? 'text-2xl sm:text-3xl mb-4' : 'text-lg sm:text-xl mb-2'
+      ]"
         >
           Vice President of Digital Systems | Magento 2 Expert | AWS & DevOps
           Strategist | Scalable eCommerce Architect
         </h2>
         <p
           :class="[
-                'text-gray-300',
-                currentSection === 'about' ? 'text-lg mb-8' : 'text-base mb-4'
+        'text-gray-300',
+        currentSection === 'about' ? 'text-lg mb-8' : 'text-base mb-4'
             ]"
         >
           Ecommerce specialist with expertise in Magento 2, Hyvä Theme,
@@ -879,9 +960,9 @@
       <div class="flex-1 flex justify-center items-center mt-10 md:mt-0">
         <div
           :class="[
-                'rounded-full overflow-hidden border-4 border-[#b8c1ec] shadow-lg bg-[#b8c1ec] flex items-center justify-center transition-all duration-500',
-                currentSection === 'about' ? 'w-64 h-64' : 'w-32 h-32'
-            ]"
+        'rounded-full overflow-hidden border-4 border-[#b8c1ec] shadow-lg bg-[#b8c1ec] flex items-center justify-center transition-all duration-500',
+        currentSection === 'about' ? 'w-64 h-64' : 'w-32 h-32'
+      ]"
         >
           <img
             src="images/profile/bradley-clampitt-headshot.jpg"
@@ -929,8 +1010,8 @@
           </a>
           <!-- TIMELINE DISABLED FOR NOW -->
           <!-- <a @click="currentSection = 'timeline'" :class="{'bg-blue-50 text-blue-600': currentSection === 'timeline'}"
-                class="block p-2 rounded hover:bg-gray-50 cursor-pointer">
-                    <i class="fas fa-history mr-2"></i> Timeline
+           class="block p-2 rounded hover:bg-gray-50 cursor-pointer">
+          <i class="fas fa-history mr-2"></i> Timeline
                 </a> -->
           <a
             @click="currentSection = 'documents'"
@@ -954,10 +1035,10 @@
             <i class="fas fa-laptop-code mr-2"></i> Side Projects
           </a>
           <!-- SysOps - Disabled for now
-                <a @click="currentSection = 'sysOps'" :class="{'bg-blue-50 text-blue-600': currentSection === 'sysOps'}"
-                class="block p-2 rounded hover:bg-gray-50 cursor-pointer">
-                    <i class="fas fa-server mr-2"></i> SysOps
-                </a>
+        <a @click="currentSection = 'sysOps'" :class="{'bg-blue-50 text-blue-600': currentSection === 'sysOps'}"
+           class="block p-2 rounded hover:bg-gray-50 cursor-pointer">
+          <i class="fas fa-server mr-2"></i> SysOps
+        </a>
                 -->
           <a
             @click="currentSection = 'photography'"
@@ -1068,52 +1149,52 @@
             <div
               class="skills-section"
               x-data="{
-                    tab: 'languages',
-                    skills: {
-                        languages: [
-                            { name: 'PHP', logo: 'https://placehold.co/48x48/777bb4/fff?text=PHP' },
-                            { name: 'JavaScript', logo: 'https://placehold.co/48x48/f7df1e/222?text=JS' },
-                            { name: 'TypeScript', logo: 'https://placehold.co/48x48/3178c6/fff?text=TS' },
-                            { name: 'Python', logo: 'https://placehold.co/48x48/3776ab/fff?text=PY' },
-                            { name: 'Bash', logo: 'https://placehold.co/48x48/4eaa25/fff?text=SH' },
-                            { name: 'SQL', logo: 'https://placehold.co/48x48/003545/fff?text=SQL' }
-                        ],
-                        frameworks: [
-                            { name: 'Magento 2', logo: 'https://placehold.co/48x48/ee672f/fff?text=M2' },
-                            { name: 'Hyvä Theme', logo: 'https://placehold.co/48x48/38bdf8/232946?text=H' },
-                            { name: 'AlpineJS', logo: 'https://placehold.co/48x48/8bc0d0/232946?text=A' },
-                            { name: 'Tailwind CSS', logo: 'https://placehold.co/48x48/38bdf8/232946?text=T' },
-                            { name: 'Laravel', logo: 'https://placehold.co/48x48/f55247/fff?text=L' },
-                            { name: 'Vue.js', logo: 'https://placehold.co/48x48/42b883/fff?text=V' },
-                            { name: 'React', logo: 'https://placehold.co/48x48/61dafb/232946?text=R' },
-                            { name: 'jQuery', logo: 'https://placehold.co/48x48/0769ad/fff?text=JQ' }
-                        ],
-                        databases: [
-                            { name: 'MySQL', logo: 'https://placehold.co/48x48/4479a1/fff?text=MY' },
-                            { name: 'MariaDB', logo: 'https://placehold.co/48x48/003545/fff?text=MA' },
-                            { name: 'Redis', logo: 'https://placehold.co/48x48/d82c20/fff?text=R' },
-                            { name: 'MongoDB', logo: 'https://placehold.co/48x48/47a248/fff?text=MO' },
-                            { name: 'PostgreSQL', logo: 'https://placehold.co/48x48/336791/fff?text=PG' },
+            tab: 'languages',
+            skills: {
+              languages: [
+                { name: 'PHP', logo: 'https://placehold.co/48x48/777bb4/fff?text=PHP' },
+                { name: 'JavaScript', logo: 'https://placehold.co/48x48/f7df1e/222?text=JS' },
+                { name: 'TypeScript', logo: 'https://placehold.co/48x48/3178c6/fff?text=TS' },
+                { name: 'Python', logo: 'https://placehold.co/48x48/3776ab/fff?text=PY' },
+                { name: 'Bash', logo: 'https://placehold.co/48x48/4eaa25/fff?text=SH' },
+                { name: 'SQL', logo: 'https://placehold.co/48x48/003545/fff?text=SQL' }
+              ],
+              frameworks: [
+                { name: 'Magento 2', logo: 'https://placehold.co/48x48/ee672f/fff?text=M2' },
+                { name: 'Hyvä Theme', logo: 'https://placehold.co/48x48/38bdf8/232946?text=H' },
+                { name: 'AlpineJS', logo: 'https://placehold.co/48x48/8bc0d0/232946?text=A' },
+                { name: 'Tailwind CSS', logo: 'https://placehold.co/48x48/38bdf8/232946?text=T' },
+                { name: 'Laravel', logo: 'https://placehold.co/48x48/f55247/fff?text=L' },
+                { name: 'Vue.js', logo: 'https://placehold.co/48x48/42b883/fff?text=V' },
+                { name: 'React', logo: 'https://placehold.co/48x48/61dafb/232946?text=R' },
+                { name: 'jQuery', logo: 'https://placehold.co/48x48/0769ad/fff?text=JQ' }
+              ],
+              databases: [
+                { name: 'MySQL', logo: 'https://placehold.co/48x48/4479a1/fff?text=MY' },
+                { name: 'MariaDB', logo: 'https://placehold.co/48x48/003545/fff?text=MA' },
+                { name: 'Redis', logo: 'https://placehold.co/48x48/d82c20/fff?text=R' },
+                { name: 'MongoDB', logo: 'https://placehold.co/48x48/47a248/fff?text=MO' },
+                { name: 'PostgreSQL', logo: 'https://placehold.co/48x48/336791/fff?text=PG' },
                             { name: 'SQLite', logo: 'https://placehold.co/48x48/003b57/fff?text=SQ' }
-                        ],
-                        devops: [
-                            { name: 'AWS', logo: 'https://placehold.co/48x48/232f3e/fff?text=AWS' },
-                            { name: 'Docker', logo: 'https://placehold.co/48x48/2496ed/fff?text=D' },
-                            { name: 'Git', logo: 'https://placehold.co/48x48/f05032/fff?text=G' },
-                            { name: 'CI/CD', logo: 'https://placehold.co/48x48/6366f1/fff?text=CI' },
+              ],
+              devops: [
+                { name: 'AWS', logo: 'https://placehold.co/48x48/232f3e/fff?text=AWS' },
+                { name: 'Docker', logo: 'https://placehold.co/48x48/2496ed/fff?text=D' },
+                { name: 'Git', logo: 'https://placehold.co/48x48/f05032/fff?text=G' },
+                { name: 'CI/CD', logo: 'https://placehold.co/48x48/6366f1/fff?text=CI' },
                             { name: 'Apache', logo: 'https://placehold.co/48x48/ee0000/fff?text=AP' },
-                            { name: 'Nginx', logo: 'https://placehold.co/48x48/009639/fff?text=NX' },
-                            { name: 'Linux', logo: 'https://placehold.co/48x48/333/fff?text=LN' },
-                            { name: 'Cloudflare', logo: 'https://placehold.co/48x48/f38020/fff?text=CF' }
+                { name: 'Nginx', logo: 'https://placehold.co/48x48/009639/fff?text=NX' },
+                { name: 'Linux', logo: 'https://placehold.co/48x48/333/fff?text=LN' },
+                { name: 'Cloudflare', logo: 'https://placehold.co/48x48/f38020/fff?text=CF' }
                         ],
                         other: [
                             { name: 'HTML5', logo: 'https://placehold.co/48x48/e34f26/fff?text=H5' },
                             { name: 'CSS3', logo: 'https://placehold.co/48x48/1572b6/fff?text=C3' },
                             { name: 'Elasticsearch', logo: 'https://placehold.co/48x48/005571/fff?text=ES' },
                             { name: 'Varnish', logo: 'https://placehold.co/48x48/005571/fff?text=VC' },
-                        ]
-                    }
-                }"
+              ]
+            }
+          }"
             >
               <h3
                 class="text-4xl sm:text-5xl font-sans font-bold text-center mb-2 text-gray-900"
@@ -1180,77 +1261,77 @@
             <!-- Career Changelog -->
             <!-- DISABLED CURRENTLY -->
             <!--
-                <div class="mt-8">
-                    <h3 class="text-2xl font-bold mb-6">Career Changelog</h3>
-                    <div class="space-y-6">
-                        <div class="changelog-item">
-                            <span class="version-badge">4.0.0</span>
-                            <h4 class="text-lg font-semibold mt-2">Vice President of Digital Systems @ Sokolin LLC (Oct 2022-Present)</h4>
-                            <div class="mt-2 space-y-2">
-                                <p class="added-item">• Strategic leadership role overseeing all digital infrastructure</p>
-                                <p class="added-item">• Led digital transformation initiative reducing operational costs by 35%</p>
-                                <p class="added-item">• Implemented enterprise-wide automation reducing manual processes by 60%</p>
-                                <p class="added-item">• Concurrent Lead Developer role: Magento 2 / AWS / Automation</p>
-                            </div>
-                        </div>
-
-                        <div class="changelog-item">
-                            <span class="version-badge">3.5.0</span>
-                            <h4 class="text-lg font-semibold mt-2">Senior Web Developer @ Sokolin LLC (Oct 2020-Oct 2022)</h4>
-                            <div class="mt-2 space-y-2">
-                            <p class="added-item">• Migrated legacy systems to modern Magento 2 platform</p>
-                            <p class="added-item">• Improved website performance by 50% through optimization</p>
-                            <p class="added-item">• Developed custom integrations with inventory management systems</p>
-                            <p class="changed-item">• Transitioned from contract work to leadership development</p>
-                            </div>
-                        </div>
-
-                        <div class="changelog-item">
-                            <span class="version-badge">3.0.0</span>
-                            <h4 class="text-lg font-semibold mt-2">Multi-Company Development Phase (2019-2020)</h4>
-                            <div class="mt-2 space-y-2">
-                            <p class="added-item">• Senior Web Developer @ US Water Systems (Jan-Aug 2020)</p>
-                            <p class="added-item">• B2B Ecommerce Manager @ Fineline Printing (Jul-Oct 2019)</p>
-                            <p class="added-item">• Specialized in e-commerce platform optimization and B2B solutions</p>
-                            <p class="changed-item">• Pivoted from long-term management to specialized development roles</p>
-                            </div>
-                        </div>
-
-                        <div class="changelog-item">
-                            <span class="version-badge">2.0.0</span>
-                            <h4 class="text-lg font-semibold mt-2">General Manager / Web Developer @ UltraSun USA (Nov 2007-Mar 2019)</h4>
-                            <div class="mt-2 space-y-2">
-                            <p class="added-item">• Grew online sales from $50K to $2M+ annually through e-commerce development</p>
-                            <p class="added-item">• Managed team of 15+ employees across multiple departments</p>
-                            <p class="added-item">• Developed custom inventory management and ERP systems</p>
-                            <p class="changed-item">• Evolved from operations focus to dual management/development role</p>
-                            </div>
-                        </div>
-
-                        <div class="changelog-item">
-                            <span class="version-badge">1.5.0</span>
-                            <h4 class="text-lg font-semibold mt-2">Operations Evolution @ UltraSun USA (2002-2007)</h4>
-                            <div class="mt-2 space-y-2">
-                            <p class="added-item">• Operations/Logistics Manager (Feb 2003-Nov 2007)</p>
-                            <p class="added-item">• Parts / IT Manager (May 2002-Feb 2003)</p>
-                            <p class="added-item">• Reduced shipping costs by 30% and improved efficiency by 40%</p>
-                            <p class="changed-item">• Transitioned from IT support to business operations management</p>
-                            </div>
-                        </div>
-
-                        <div class="changelog-item">
-                            <span class="version-badge">1.0.0</span>
-                            <h4 class="text-lg font-semibold mt-2">IT Foundation Era (2000-2002)</h4>
-                            <div class="mt-2 space-y-2">
-                            <p class="added-item">• IT Architect @ InputOutput Unlimited (2001-2002)</p>
-                            <p class="added-item">• Lead IT Technician @ MetLife Insurance (Mar 2000-Oct 2001)</p>
-                            <p class="added-item">• Architected scalable network solutions for enterprise clients</p>
-                            <p class="added-item">• Led IT support teams and established core technical expertise</p>
-                            <p class="deprecated-item">• Legacy support-only roles without development focus</p>
-                            </div>
-                        </div>
-                    </div>
+          <div class="mt-8">
+            <h3 class="text-2xl font-bold mb-6">Career Changelog</h3>
+            <div class="space-y-6">
+              <div class="changelog-item">
+                <span class="version-badge">4.0.0</span>
+                <h4 class="text-lg font-semibold mt-2">Vice President of Digital Systems @ Sokolin LLC (Oct 2022-Present)</h4>
+                <div class="mt-2 space-y-2">
+                  <p class="added-item">• Strategic leadership role overseeing all digital infrastructure</p>
+                  <p class="added-item">• Led digital transformation initiative reducing operational costs by 35%</p>
+                  <p class="added-item">• Implemented enterprise-wide automation reducing manual processes by 60%</p>
+                  <p class="added-item">• Concurrent Lead Developer role: Magento 2 / AWS / Automation</p>
                 </div>
+              </div>
+
+              <div class="changelog-item">
+                <span class="version-badge">3.5.0</span>
+                <h4 class="text-lg font-semibold mt-2">Senior Web Developer @ Sokolin LLC (Oct 2020-Oct 2022)</h4>
+                <div class="mt-2 space-y-2">
+                  <p class="added-item">• Migrated legacy systems to modern Magento 2 platform</p>
+                  <p class="added-item">• Improved website performance by 50% through optimization</p>
+                  <p class="added-item">• Developed custom integrations with inventory management systems</p>
+                  <p class="changed-item">• Transitioned from contract work to leadership development</p>
+                </div>
+              </div>
+
+              <div class="changelog-item">
+                <span class="version-badge">3.0.0</span>
+                <h4 class="text-lg font-semibold mt-2">Multi-Company Development Phase (2019-2020)</h4>
+                <div class="mt-2 space-y-2">
+                  <p class="added-item">• Senior Web Developer @ US Water Systems (Jan-Aug 2020)</p>
+                  <p class="added-item">• B2B Ecommerce Manager @ Fineline Printing (Jul-Oct 2019)</p>
+                  <p class="added-item">• Specialized in e-commerce platform optimization and B2B solutions</p>
+                  <p class="changed-item">• Pivoted from long-term management to specialized development roles</p>
+                </div>
+              </div>
+
+              <div class="changelog-item">
+                <span class="version-badge">2.0.0</span>
+                <h4 class="text-lg font-semibold mt-2">General Manager / Web Developer @ UltraSun USA (Nov 2007-Mar 2019)</h4>
+                <div class="mt-2 space-y-2">
+                  <p class="added-item">• Grew online sales from $50K to $2M+ annually through e-commerce development</p>
+                  <p class="added-item">• Managed team of 15+ employees across multiple departments</p>
+                  <p class="added-item">• Developed custom inventory management and ERP systems</p>
+                  <p class="changed-item">• Evolved from operations focus to dual management/development role</p>
+                </div>
+              </div>
+
+              <div class="changelog-item">
+                <span class="version-badge">1.5.0</span>
+                <h4 class="text-lg font-semibold mt-2">Operations Evolution @ UltraSun USA (2002-2007)</h4>
+                <div class="mt-2 space-y-2">
+                  <p class="added-item">• Operations/Logistics Manager (Feb 2003-Nov 2007)</p>
+                  <p class="added-item">• Parts / IT Manager (May 2002-Feb 2003)</p>
+                  <p class="added-item">• Reduced shipping costs by 30% and improved efficiency by 40%</p>
+                  <p class="changed-item">• Transitioned from IT support to business operations management</p>
+                </div>
+              </div>
+
+              <div class="changelog-item">
+                <span class="version-badge">1.0.0</span>
+                <h4 class="text-lg font-semibold mt-2">IT Foundation Era (2000-2002)</h4>
+                <div class="mt-2 space-y-2">
+                  <p class="added-item">• IT Architect @ InputOutput Unlimited (2001-2002)</p>
+                  <p class="added-item">• Lead IT Technician @ MetLife Insurance (Mar 2000-Oct 2001)</p>
+                  <p class="added-item">• Architected scalable network solutions for enterprise clients</p>
+                  <p class="added-item">• Led IT support teams and established core technical expertise</p>
+                  <p class="deprecated-item">• Legacy support-only roles without development focus</p>
+                </div>
+              </div>
+            </div>
+          </div>
                 -->
           </div>
         </section>
@@ -1435,37 +1516,37 @@
         </section>
 
         <!-- TIMELINE SECTION - DISABLED FOR NOW
-        <section x-show="currentSection === 'timeline'" class="space-y-6">
-            <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-2xl font-bold mb-6">Career Timeline</h2>
-            <div class="relative pl-8 space-y-8">
-                <template x-for="(item, idx) in $data.timeline" :key="idx">
-                <div class="timeline-item relative">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="font-semibold text-blue-600" x-text="item.date"></div>
-                    <h3 class="text-lg font-bold mt-1" x-text="item.title"></h3>
-                    <p class="mt-2 text-gray-600" x-text="item.description"></p>
-                    <template x-if="item.media">
-                        <div class="timeline-media mt-4">
-                        <template x-if="item.media.type === 'image'">
-                            <img :src="item.media.url" :alt="item.media.alt" class="rounded-lg shadow">
-                        </template>
-                        <template x-if="item.media.type === 'video'">
-                            <div class="relative pb-[56.25%] h-0">
-                            <iframe :src="item.media.url" class="absolute top-0 left-0 w-full h-full rounded-lg" 
-                                    frameborder="0" 
-                                    allow="accelerometer 'none'; autoplay 'none'; clipboard-write 'self'; encrypted-media 'none'; gyroscope 'none'; picture-in-picture 'none'" 
-                                    allowfullscreen></iframe>
-                            </div>
-                        </template>
+      <section x-show="currentSection === 'timeline'" class="space-y-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-2xl font-bold mb-6">Career Timeline</h2>
+          <div class="relative pl-8 space-y-8">
+            <template x-for="(item, idx) in $data.timeline" :key="idx">
+              <div class="timeline-item relative">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <div class="font-semibold text-blue-600" x-text="item.date"></div>
+                  <h3 class="text-lg font-bold mt-1" x-text="item.title"></h3>
+                  <p class="mt-2 text-gray-600" x-text="item.description"></p>
+                  <template x-if="item.media">
+                    <div class="timeline-media mt-4">
+                      <template x-if="item.media.type === 'image'">
+                        <img :src="item.media.url" :alt="item.media.alt" class="rounded-lg shadow">
+                      </template>
+                      <template x-if="item.media.type === 'video'">
+                        <div class="relative pb-[56.25%] h-0">
+                          <iframe :src="item.media.url" class="absolute top-0 left-0 w-full h-full rounded-lg" 
+                                  frameborder="0" 
+                                  allow="accelerometer 'none'; autoplay 'none'; clipboard-write 'self'; encrypted-media 'none'; gyroscope 'none'; picture-in-picture 'none'" 
+                                  allowfullscreen></iframe>
                         </div>
-                    </template>
+                      </template>
                     </div>
+                  </template>
                 </div>
-                </template>
-            </div>
-            </div>
-        </section>
+              </div>
+            </template>
+          </div>
+        </div>
+      </section>
         -->
 
         <!-- DOCUMENTS SECTION - PDFs, Markdown files, and other documents -->
@@ -1531,7 +1612,10 @@
 
                 <!-- Resume Files List -->
                 <div x-show="resumeFiles.length > 0" class="space-y-4">
-                  <template x-for="resume in resumeFiles" :key="resume.name">
+                  <template
+                    x-for="(resume, index) in resumeFiles"
+                    :key="'resume-' + index + '-' + resume.name"
+                  >
                     <div class="border rounded-lg p-4">
                       <div class="flex items-center justify-between mb-4">
                         <h4
@@ -1621,7 +1705,10 @@
                   <div
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6"
                   >
-                    <template x-for="file in referenceFiles" :key="file.name">
+                    <template
+                      x-for="(file, index) in referenceFiles"
+                      :key="'ref-' + index + '-' + file.name"
+                    >
                       <button
                         @click="loadMarkdown(file.path)"
                         class="p-3 bg-gray-50 border rounded-lg hover:bg-gray-100 transition text-left"
@@ -1695,11 +1782,9 @@
                   <p class="text-gray-600 mt-2">Loading document...</p>
                 </div>
 
-                <div
-                  x-show="!isLoading && markdownContent"
-                  x-html="markdownContent"
-                  class="prose prose-sm max-w-none"
-                ></div>
+                <div x-show="!isLoading && markdownContent" class="max-w-none">
+                  <div x-html="markdownHtml" class="markdown-content"></div>
+                </div>
               </div>
             </div>
 
@@ -1714,8 +1799,8 @@
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6"
                   >
                     <template
-                      x-for="folder in portfolioFolders"
-                      :key="folder.name"
+                      x-for="(folder, index) in portfolioFolders"
+                      :key="'portfolio-' + index + '-' + folder.name"
                     >
                       <button
                         @click="loadPortfolioReadme(folder)"
@@ -1880,10 +1965,10 @@
                 <div
                   class="bg-white rounded-lg shadow overflow-hidden border-l-4"
                   :class="{
-                                'border-green-500': module.status === 'Production',
-                                'border-yellow-500': module.status === 'In Development', 
-                                'border-blue-500': module.status === 'Future Development'
-                            }"
+                     'border-green-500': module.status === 'Production',
+                     'border-yellow-500': module.status === 'In Development', 
+                     'border-blue-500': module.status === 'Future Development'
+                   }"
                 >
                   <div class="p-6">
                     <!-- Module Header with Version and Status -->
@@ -1903,18 +1988,18 @@
                           <span
                             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                             :class="{
-                                                    'bg-green-100 text-green-800': module.status === 'Production',
-                                                    'bg-yellow-100 text-yellow-800': module.status === 'In Development',
-                                                    'bg-blue-100 text-blue-800': module.status === 'Future Development'
-                                                }"
+                                'bg-green-100 text-green-800': module.status === 'Production',
+                                'bg-yellow-100 text-yellow-800': module.status === 'In Development',
+                                'bg-blue-100 text-blue-800': module.status === 'Future Development'
+                              }"
                           >
                             <i
                               class="fas mr-1"
                               :class="{
-                                                'fa-check-circle': module.status === 'Production',
-                                                'fa-code': module.status === 'In Development',
-                                                'fa-lightbulb': module.status === 'Future Development'
-                                                }"
+                               'fa-check-circle': module.status === 'Production',
+                               'fa-code': module.status === 'In Development',
+                               'fa-lightbulb': module.status === 'Future Development'
+                             }"
                             ></i>
                             <span x-text="module.status"></span>
                           </span>
@@ -2144,10 +2229,10 @@
                       <div class="absolute top-4 left-4">
                         <span
                           :class="[
-                            'project-status',
-                            project.status === 'active' ? 'status-active' : 
-                            project.status === 'archived' ? 'status-archived' : 'status-work'
-                            ]"
+                      'project-status',
+                      project.status === 'active' ? 'status-active' : 
+                      project.status === 'archived' ? 'status-archived' : 'status-work'
+                    ]"
                           x-text="project.status"
                         ></span>
                       </div>
@@ -2512,9 +2597,9 @@
                   <li class="flex items-center">
                     <i class="fas fa-envelope text-blue-600 mr-2"></i>
                     <a
-                      href="mailto:bradclampitt@icloud.com"
+                      href="mailto:brad@yourdomain.com"
                       class="text-blue-600 hover:underline"
-                      >bradclampitt@icloud.com</a
+                      >brad@yourdomain.com</a
                     >
                   </li>
                   <li class="flex items-center">
@@ -2836,6 +2921,7 @@
         return {
           documentType: "resume",
           markdownContent: "",
+          markdownHtml: "",
           isLoading: false,
           resumeFiles: [],
           referenceFiles: [],
@@ -2843,53 +2929,84 @@
           selectedPortfolioFolder: null,
           portfolioReadmeContent: "",
           showPortfolioTab: false,
+          initialized: false,
 
           async init() {
-            await this.scanResumeFiles();
-            await this.scanReferenceFiles();
-            await this.scanPortfolioFolders();
+            if (this.initialized) {
+              console.log("Documents already initialized, skipping...");
+              return;
+            }
+
+            console.log("Initializing documents...");
+            this.initialized = true;
+
+            try {
+              await this.scanResumeFiles();
+              await this.scanReferenceFiles();
+              await this.scanPortfolioFolders();
+            } catch (error) {
+              console.error("Error initializing documents:", error);
+              // Initialize empty arrays as fallback
+              this.resumeFiles = this.resumeFiles || [];
+              this.referenceFiles = this.referenceFiles || [];
+              this.portfolioFolders = this.portfolioFolders || [];
+            }
           },
 
           async scanResumeFiles() {
-            // Try common PDF file names in docs/resume/
-            const commonFiles = [
-              "resume.pdf",
-              "cv.pdf",
-              "curriculum-vitae.pdf",
-            ];
-            this.resumeFiles = [];
+            try {
+              console.log("Scanning resume files...");
+              // Try common PDF file names in docs/resume/
+              const commonFiles = [
+                "resume.pdf",
+                "cv.pdf",
+                "curriculum-vitae.pdf",
+              ];
+              this.resumeFiles = [];
+              const foundFiles = new Set(); // Track found files to prevent duplicates
 
-            for (const file of commonFiles) {
-              try {
-                const response = await fetch(`docs/resume/${file}`, {
-                  method: "HEAD",
-                });
-                if (response.ok) {
-                  this.resumeFiles.push({
-                    name: file,
-                    displayName: file
-                      .replace(".pdf", "")
-                      .replace(/-/g, " ")
-                      .replace(
-                        /\w\S*/g,
-                        (txt) =>
-                          txt.charAt(0).toUpperCase() +
-                          txt.substr(1).toLowerCase()
-                      ),
-                    path: `docs/resume/${file}`,
+              for (const file of commonFiles) {
+                try {
+                  const response = await fetch(`docs/resume/${file}`, {
+                    method: "HEAD",
                   });
+                  if (response.ok && !foundFiles.has(file.toLowerCase())) {
+                    console.log("Found resume file:", file);
+                    foundFiles.add(file.toLowerCase());
+                    this.resumeFiles.push({
+                      name: file,
+                      displayName: file
+                        .replace(".pdf", "")
+                        .replace(/-/g, " ")
+                        .replace(
+                          /\w\S*/g,
+                          (txt) =>
+                            txt.charAt(0).toUpperCase() +
+                            txt.substr(1).toLowerCase()
+                        ),
+                      path: `docs/resume/${file}`,
+                    });
+                  }
+                } catch (error) {
+                  // File doesn't exist, continue
                 }
-              } catch (error) {
-                // File doesn't exist, continue
               }
+              console.log(
+                "Resume files found:",
+                this.resumeFiles.length,
+                this.resumeFiles
+              );
+            } catch (error) {
+              console.error("Error scanning resume files:", error);
+              this.resumeFiles = [];
             }
           },
 
           async scanReferenceFiles() {
+            console.log("Scanning reference files...");
             // Try common markdown file names in docs/references/
             const commonFiles = [
               "README.md",
-              "readme.md",
               "markdown.md",
               "notes.md",
               "documentation.md",
@@ -2907,13 +3024,16 @@
               "manual.md",
             ];
             this.referenceFiles = [];
+            const foundFiles = new Set(); // Track found files to prevent duplicates
 
             for (const file of commonFiles) {
               try {
                 const response = await fetch(`docs/references/${file}`, {
                   method: "HEAD",
                 });
-                if (response.ok) {
+                if (response.ok && !foundFiles.has(file.toLowerCase())) {
+                  console.log("Found reference file:", file);
+                  foundFiles.add(file.toLowerCase());
                   this.referenceFiles.push({
                     name: file,
                     displayName: file
@@ -2929,9 +3049,14 @@
                   });
                 }
               } catch (error) {
-                // File doesn't exist, continue
+                // File doesn't exist, continue (suppress console errors for expected 404s)
               }
             }
+            console.log(
+              "Reference files found:",
+              this.referenceFiles.length,
+              this.referenceFiles
+            );
           },
 
           async scanPortfolioFolders() {
@@ -3003,7 +3128,33 @@
             try {
               const response = await fetch(file);
               const markdown = await response.text();
-              this.markdownContent = this.parseMarkdown(markdown);
+              console.log(
+                "Loaded markdown:",
+                typeof markdown,
+                markdown.substring(0, 100) + "..."
+              );
+              const parsed = this.parseMarkdown(markdown);
+              console.log(
+                "Parsed markdown:",
+                typeof parsed,
+                parsed.substring(0, 100) + "..."
+              );
+
+              // Store in both variables to debug
+              this.markdownContent = parsed;
+              this.markdownHtml = parsed;
+
+              // Force Alpine.js to re-render
+              this.$nextTick(() => {
+                console.log(
+                  "After nextTick - markdownContent type:",
+                  typeof this.markdownContent
+                );
+                console.log(
+                  "After nextTick - markdownHtml type:",
+                  typeof this.markdownHtml
+                );
+              });
             } catch (error) {
               this.markdownContent = `<p class="text-red-600">Error loading document: ${error.message}</p>`;
             }
@@ -3016,6 +3167,11 @@
             try {
               const response = await fetch(`${folder.path}/README.md`);
               const markdown = await response.text();
+              console.log(
+                "Loaded portfolio markdown:",
+                typeof markdown,
+                markdown.substring(0, 100) + "..."
+              );
               this.portfolioReadmeContent = this.parseMarkdown(markdown);
             } catch (error) {
               this.portfolioReadmeContent = `<p class="text-gray-600">No README.md found in this portfolio folder.</p>`;
@@ -3024,7 +3180,283 @@
           },
 
           parseMarkdown(md) {
+            // Debug: Check if md is actually a string
+            if (typeof md !== "string") {
+              console.error(
+                "parseMarkdown received non-string input:",
+                typeof md,
+                md
+              );
+              return `<p class="text-red-600">Error: Markdown content is not a string (received ${typeof md})</p>`;
+            }
+
+            console.log("parseMarkdown input:", typeof md, md.length, "chars");
+
+            // Use marked.js for comprehensive markdown parsing
+            if (typeof marked !== "undefined") {
+              try {
+                // Configure marked with proper options for tables
+                marked.setOptions({
+                  gfm: true, // GitHub Flavored Markdown
+                  tables: true, // Enable table support
+                  breaks: true, // Convert line breaks
+                  sanitize: false, // Don't sanitize HTML
+                  smartLists: true,
+                  smartypants: true,
+                });
+
+                const basicResult = marked.parse
+                  ? marked.parse(md)
+                  : marked(md);
+                console.log(
+                  "Basic marked result:",
+                  typeof basicResult,
+                  basicResult.substring(0, 500) + "..."
+                );
+
+                // Apply Tailwind classes to the generated HTML
+                let styledResult = basicResult;
+
+                // Style tables with proper borders and structure
+                styledResult = styledResult.replace(
+                  /<table>/g,
+                  '<div class="not-prose my-6 overflow-x-auto"><table class="table-auto border-collapse border border-gray-400 w-full">'
+                );
+                styledResult = styledResult.replace(
+                  /<\/table>/g,
+                  "</table></div>"
+                );
+                styledResult = styledResult.replace(
+                  /<thead>/g,
+                  '<thead class="bg-gray-100">'
+                );
+                styledResult = styledResult.replace(
+                  /<th>/g,
+                  '<th class="border border-gray-400 px-4 py-2 text-left font-semibold text-gray-700">'
+                );
+                styledResult = styledResult.replace(
+                  /<td>/g,
+                  '<td class="border border-gray-400 px-4 py-2 text-gray-900">'
+                );
+                styledResult = styledResult.replace(
+                  /<tr>/g,
+                  '<tr class="hover:bg-gray-50">'
+                );
+
+                // Style headings
+                styledResult = styledResult.replace(
+                  /<h1>/g,
+                  '<h1 class="text-3xl font-bold mt-8 mb-6 text-gray-900 border-b border-gray-200 pb-3">'
+                );
+                styledResult = styledResult.replace(
+                  /<h2>/g,
+                  '<h2 class="text-2xl font-bold mt-6 mb-4 text-gray-800">'
+                );
+                styledResult = styledResult.replace(
+                  /<h3>/g,
+                  '<h3 class="text-xl font-semibold mt-4 mb-3 text-gray-700">'
+                );
+                styledResult = styledResult.replace(
+                  /<h4>/g,
+                  '<h4 class="text-lg font-semibold mt-3 mb-2 text-gray-700">'
+                );
+
+                // Style paragraphs
+                styledResult = styledResult.replace(
+                  /<p>/g,
+                  '<p class="mb-4 text-gray-700 leading-relaxed">'
+                );
+
+                // Style lists
+                styledResult = styledResult.replace(
+                  /<ul>/g,
+                  '<ul class="list-disc list-inside space-y-2 ml-4 mb-4">'
+                );
+                styledResult = styledResult.replace(
+                  /<ol>/g,
+                  '<ol class="list-decimal list-inside space-y-2 ml-4 mb-4">'
+                );
+                styledResult = styledResult.replace(
+                  /<li>/g,
+                  '<li class="text-gray-700">'
+                );
+
+                // Style links
+                styledResult = styledResult.replace(
+                  /<a href=/g,
+                  '<a class="text-blue-600 hover:underline" target="_blank" href='
+                );
+
+                // Style code
+                styledResult = styledResult.replace(
+                  /<code>/g,
+                  '<code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">'
+                );
+                styledResult = styledResult.replace(
+                  /<pre>/g,
+                  '<pre class="bg-gray-100 rounded-lg p-4 overflow-x-auto my-4">'
+                );
+
+                // Style blockquotes
+                styledResult = styledResult.replace(
+                  /<blockquote>/g,
+                  '<blockquote class="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 italic">'
+                );
+
+                console.log(
+                  "Styled result:",
+                  typeof styledResult,
+                  styledResult.substring(0, 500) + "..."
+                );
+                return styledResult;
+              } catch (error) {
+                console.error(
+                  "Basic marked failed, trying custom renderer:",
+                  error
+                );
+              }
+
+              // Configure marked for better styling
+              const renderer = new marked.Renderer();
+
+              // Custom heading renderer with Tailwind classes
+              renderer.heading = function (text, level) {
+                const classes = {
+                  1: "text-2xl font-bold mt-8 mb-4 text-gray-900 border-b border-gray-200 pb-2",
+                  2: "text-xl font-bold mt-6 mb-3 text-gray-800",
+                  3: "text-lg font-semibold mt-4 mb-2 text-gray-700",
+                  4: "text-base font-semibold mt-3 mb-2 text-gray-700",
+                  5: "text-sm font-semibold mt-2 mb-1 text-gray-600",
+                  6: "text-xs font-semibold mt-2 mb-1 text-gray-600",
+                };
+                return `<h${level} class="${
+                  classes[level] || classes[3]
+                }">${text}</h${level}>`;
+              };
+
+              // Custom table renderer with Tailwind classes
+              renderer.table = function (header, body) {
+                return `<div class="overflow-x-auto my-4">
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
+                  <thead class="bg-gray-50">${header}</thead>
+                  <tbody class="bg-white divide-y divide-gray-200">${body}</tbody>
+                </table>
+              </div>`;
+              };
+
+              renderer.tablerow = function (content) {
+                return `<tr class="hover:bg-gray-50">${content}</tr>`;
+              };
+
+              renderer.tablecell = function (content, flags) {
+                const tag = flags.header ? "th" : "td";
+                const classes = flags.header
+                  ? "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  : "px-6 py-4 whitespace-nowrap text-sm text-gray-900";
+                return `<${tag} class="${classes}">${content}</${tag}>`;
+              };
+
+              // Custom code block renderer
+              renderer.code = function (code, language) {
+                return `<div class="my-4">
+                <pre class="bg-gray-100 rounded-lg p-4 overflow-x-auto">
+                  <code class="text-sm font-mono text-gray-800">${code}</code>
+                </pre>
+              </div>`;
+              };
+
+              // Custom inline code renderer
+              renderer.codespan = function (code) {
+                return `<code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">${code}</code>`;
+              };
+
+              // Custom link renderer
+              renderer.link = function (href, title, text) {
+                return `<a href="${href}" class="text-blue-600 hover:underline" target="_blank" ${
+                  title ? `title="${title}"` : ""
+                }>${text}</a>`;
+              };
+
+              // Custom list renderer
+              renderer.list = function (body, ordered) {
+                const tag = ordered ? "ol" : "ul";
+                const classes = ordered
+                  ? "list-decimal list-inside space-y-1 ml-4"
+                  : "list-disc list-inside space-y-1 ml-4";
+                return `<${tag} class="${classes} my-4">${body}</${tag}>`;
+              };
+
+              renderer.listitem = function (text) {
+                return `<li class="text-gray-700">${text}</li>`;
+              };
+
+              // Custom paragraph renderer
+              renderer.paragraph = function (text) {
+                return `<p class="mb-4 text-gray-700 leading-relaxed">${text}</p>`;
+              };
+
+              // Custom blockquote renderer
+              renderer.blockquote = function (quote) {
+                return `<blockquote class="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 italic text-gray-700">${quote}</blockquote>`;
+              };
+
+              // Configure marked options
+              const options = {
+                renderer: renderer,
+                breaks: true,
+                gfm: true, // GitHub Flavored Markdown
+                tables: true,
+                sanitize: false,
+                smartLists: true,
+                smartypants: true,
+              };
+
+              try {
+                let result;
+                // Try the newer API first
+                if (typeof marked.parse === "function") {
+                  result = marked.parse(md, options);
+                } else if (typeof marked === "function") {
+                  // Fallback to older API
+                  marked.setOptions(options);
+                  result = marked(md);
+                } else {
+                  throw new Error("Marked.js API not recognized");
+                }
+                console.log(
+                  "Marked.js result:",
+                  typeof result,
+                  result ? result.substring(0, 100) + "..." : "null/undefined"
+                );
+                return result;
+              } catch (error) {
+                console.error("Marked.js parsing error:", error);
+                return `<p class="text-red-600">Error parsing markdown: ${error.message}</p>`;
+              }
+            } else {
+              console.log("Marked.js not available, using fallback parser");
+            }
+
+            // Enhanced fallback parser
+            console.log("Using enhanced fallback parser");
             let html = md;
+
+            // Convert tables
+            html = html.replace(/\|(.+)\|/g, (match, content) => {
+              const cells = content.split("|").map((cell) => cell.trim());
+              const cellHtml = cells
+                .map((cell) => `<td class="px-4 py-2 border">${cell}</td>`)
+                .join("");
+              return `<tr>${cellHtml}</tr>`;
+            });
+
+            // Wrap tables
+            html = html.replace(
+              /(<tr>.*<\/tr>)/gs,
+              '<table class="table-auto border-collapse border border-gray-300 my-4">$1</table>'
+            );
+
+            // Convert headings
             html = html.replace(
               /^### (.*)$/gim,
               '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>'
@@ -3037,13 +3469,26 @@
               /^# (.*)$/gim,
               '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>'
             );
+
+            // Convert formatting
             html = html.replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>");
             html = html.replace(/\*(.*?)\*/gim, "<em>$1</em>");
+            html = html.replace(
+              /`([^`]+)`/gim,
+              '<code class="bg-gray-100 px-2 py-1 rounded text-sm">$1</code>'
+            );
+
+            // Convert links
             html = html.replace(
               /\[([^\]]*)\]\(([^)]*)\)/gim,
               '<a href="$2" class="text-blue-600 hover:underline" target="_blank">$1</a>'
             );
+
+            // Convert line breaks
+            html = html.replace(/\n\n/gim, '</p><p class="mb-4">');
             html = html.replace(/\n/gim, "<br>");
+            html = `<p class="mb-4">${html}</p>`;
+
             return html;
           },
         };
@@ -4267,38 +4712,38 @@
                   },
                 ],
                 /*
-                gallery: [
-                    {
+            gallery: [
+              {
                         url: 'https://,
-                        alt: 'Productivity Dashboard',
-                        title: 'Main Dashboard',
-                        description: 'Overview of tasks, goals, and productivity metrics across all platforms'
-                    },
-                    {
+                alt: 'Productivity Dashboard',
+                title: 'Main Dashboard',
+                description: 'Overview of tasks, goals, and productivity metrics across all platforms'
+              },
+              {
                         url: 'https://',
-                        alt: 'Task Management',
-                        title: 'Advanced Task Management',
-                        description: 'Comprehensive task tracking with project organization and team assignment'
-                    },
-                    {
+                alt: 'Task Management',
+                title: 'Advanced Task Management',
+                description: 'Comprehensive task tracking with project organization and team assignment'
+              },
+              {
                         url: 'https://',
-                        alt: 'Time Tracking',
-                        title: 'Time Tracking Interface',
-                        description: 'Built-in time tracking with detailed reporting and analytics'
-                    },
-                    {
+                alt: 'Time Tracking',
+                title: 'Time Tracking Interface',
+                description: 'Built-in time tracking with detailed reporting and analytics'
+              },
+              {
                         url: 'https://',
-                        alt: 'Mobile App',
-                        title: 'Mobile Application',
-                        description: 'Flutter-based mobile app with full feature parity and offline support'
-                    },
-                    {
+                alt: 'Mobile App',
+                title: 'Mobile Application',
+                description: 'Flutter-based mobile app with full feature parity and offline support'
+              },
+              {
                         url: 'https://,
-                        alt: 'Desktop App',
-                        title: 'Desktop Application',
-                        description: 'Electron-based desktop app for Windows, macOS, and Linux'
-                    }
-                ]
+                alt: 'Desktop App',
+                title: 'Desktop Application',
+                description: 'Electron-based desktop app for Windows, macOS, and Linux'
+              }
+            ]
                 */
               },
               {
@@ -4377,32 +4822,32 @@
                   },
                 ],
                 /*
-                gallery: [
-                    {
+            gallery: [
+              {
                         url: 'https://',
-                        alt: 'Script Dashboard',
-                        title: 'Deployment Script Interface',
-                        description: 'Command-line interface for selecting and running deployment scripts'
-                    },
-                    {
+                alt: 'Script Dashboard',
+                title: 'Deployment Script Interface',
+                description: 'Command-line interface for selecting and running deployment scripts'
+              },
+              {
                         url: 'https://',
-                        alt: 'Magento Setup',
-                        title: 'Magento 2 Deployment',
-                        description: 'Automated Magento 2 installation with optimized server configuration'
-                    },
-                    {
+                alt: 'Magento Setup',
+                title: 'Magento 2 Deployment',
+                description: 'Automated Magento 2 installation with optimized server configuration'
+              },
+              {
                         url: 'https://',
-                        alt: 'Server Monitoring',
-                        title: 'Server Monitoring Setup',
-                        description: 'Automated monitoring and alerting system configuration'
-                    },
-                    {
+                alt: 'Server Monitoring',
+                title: 'Server Monitoring Setup',
+                description: 'Automated monitoring and alerting system configuration'
+              },
+              {
                         url: 'https://',
-                        alt: 'Docker Setup',
-                        title: 'Docker Environment',
-                        description: 'Complete Docker and Docker Compose environment setup'
-                    }
-                ]
+                alt: 'Docker Setup',
+                title: 'Docker Environment',
+                description: 'Complete Docker and Docker Compose environment setup'
+              }
+            ]
                 */
               },
               {
@@ -4412,7 +4857,7 @@
                 category: "Hobbies",
                 status: "active",
                 metrics: "Enterprise-grade",
-                technologies: "OpnSense, UniFi, Docker, Kubernetes, Grafana",
+                technologies: "pfSense, UniFi, Docker, Kubernetes, Grafana",
                 //github: 'https://github.com/bradclampitt/home-automations',
                 stats: {
                   devices: { value: "50+", label: "Connected Devices" },
@@ -4458,7 +4903,7 @@
                 ],
                 technicalDetails: [
                   {
-                    title: "OpnSense Firewall",
+                    title: "pfSense Firewall",
                     description:
                       "Enterprise firewall with advanced routing and security features",
                   },
@@ -4478,38 +4923,38 @@
                   },
                 ],
                 /*
-                gallery: [
-                    {
+            gallery: [
+              {
                         url: '',
-                        alt: 'Network Diagram',
-                        title: 'Network Architecture',
-                        description: 'Complete network topology showing VLANs, subnets, and device placement'
-                    },
-                    {
+                alt: 'Network Diagram',
+                title: 'Network Architecture',
+                description: 'Complete network topology showing VLANs, subnets, and device placement'
+              },
+              {
                         url: 'https://',
-                        alt: 'Server Rack',
-                        title: 'Home Server Rack',
-                        description: 'Enterprise equipment including switches, firewalls, and servers'
-                    },
-                    {
+                alt: 'Server Rack',
+                title: 'Home Server Rack',
+                description: 'Enterprise equipment including switches, firewalls, and servers'
+              },
+              {
                         url: 'https://',
-                        alt: 'Monitoring Dashboard',
-                        title: 'Network Monitoring',
-                        description: 'Grafana dashboard showing network performance and device status'
-                    },
-                    {
+                alt: 'Monitoring Dashboard',
+                title: 'Network Monitoring',
+                description: 'Grafana dashboard showing network performance and device status'
+              },
+              {
                         url: 'https://',
-                        alt: 'Home Automation',
-                        title: 'Smart Home Integration',
-                        description: 'Home automation interface integrated with network infrastructure'
-                    },
-                    {
+                alt: 'Home Automation',
+                title: 'Smart Home Integration',
+                description: 'Home automation interface integrated with network infrastructure'
+              },
+              {
                         url: 'https://',
-                        alt: 'UniFi Dashboard',
-                        title: 'UniFi Network Management',
-                        description: 'UniFi controller dashboard managing all network equipment'
-                    }
-                ]
+                alt: 'UniFi Dashboard',
+                title: 'UniFi Network Management',
+                description: 'UniFi controller dashboard managing all network equipment'
+              }
+            ]
                 */
               },
               {
@@ -4586,38 +5031,38 @@
                   },
                 ],
                 /*
-                gallery: [
-                    {
+            gallery: [
+              {
                         url: 'https://',
-                        alt: 'Home Assistant Dashboard',
-                        title: 'Home Assistant Control Panel',
-                        description: 'Central dashboard for managing all smart home devices and automation'
-                    },
-                    {
+                alt: 'Home Assistant Dashboard',
+                title: 'Home Assistant Control Panel',
+                description: 'Central dashboard for managing all smart home devices and automation'
+              },
+              {
                         url: 'https://',
-                        alt: 'Smart Lighting',
-                        title: 'Automated Lighting System',
-                        description: 'Smart switches and bulbs with automated scheduling and control'
-                    },
-                    {
+                alt: 'Smart Lighting',
+                title: 'Automated Lighting System',
+                description: 'Smart switches and bulbs with automated scheduling and control'
+              },
+              {
                         url: 'https://',
-                        alt: 'Climate Control',
-                        title: 'Smart Climate Control',
-                        description: 'Automated HVAC and temperature control system'
-                    },
-                    {
+                alt: 'Climate Control',
+                title: 'Smart Climate Control',
+                description: 'Automated HVAC and temperature control system'
+              },
+              {
                         url: 'https://',
-                        alt: 'Security System',
-                        title: 'Home Security Integration',
-                        description: 'Motion sensors, cameras, and automated security responses'
-                    },
-                    {
+                alt: 'Security System',
+                title: 'Home Security Integration',
+                description: 'Motion sensors, cameras, and automated security responses'
+              },
+              {
                         url: 'https://',
-                        alt: 'Energy Monitoring',
-                        title: 'Energy Usage Dashboard',
-                        description: 'Real-time energy monitoring and usage optimization'
-                    }
-                ]
+                alt: 'Energy Monitoring',
+                title: 'Energy Usage Dashboard',
+                description: 'Real-time energy monitoring and usage optimization'
+              }
+            ]
                 */
               },
               {
@@ -4695,44 +5140,39 @@
                   },
                 ],
                 /*
-                gallery: [
-                  {
-                    url: "https://",
-                    alt: "Custom Desk",
-                    title: "Handcrafted Office Desk",
-                    description:
-                      "Custom-built hardwood desk with integrated cable management and storage",
-                  },
-                  {
-                    url: "https://",
-                    alt: "Built-in Storage",
-                    title: "Custom Storage Solutions",
-                    description:
-                      "Built-in shelving and storage optimized for office workflow",
-                  },
-                  {
-                    url: "https://",
-                    alt: "PC Builds",
-                    title: "Custom PC Builds",
-                    description:
-                      "Multiple custom-built computers for different purposes and workflows",
-                  },
-                  {
-                    url: "https://",
-                    alt: "Cable Management",
-                    title: "Professional Cable Management",
-                    description:
-                      "Clean cable routing and power distribution throughout the workspace",
-                  },
-                  {
-                    url: "https://",
-                    alt: "Complete Office",
-                    title: "Finished Home Office",
-                    description:
-                      "Complete custom office space with all handcrafted elements integrated",
-                  },
-                ]
-                */
+            gallery: [
+              {
+                        url: 'https://',
+                alt: 'Custom Desk',
+                title: 'Handcrafted Office Desk',
+                description: 'Custom-built hardwood desk with integrated cable management and storage'
+              },
+              {
+                        url: 'https://',
+                alt: 'Built-in Storage',
+                title: 'Custom Storage Solutions',
+                description: 'Built-in shelving and storage optimized for office workflow'
+              },
+              {
+                        url: 'https://',
+                alt: 'PC Builds',
+                title: 'Custom PC Builds',
+                description: 'Multiple custom-built computers for different purposes and workflows'
+              },
+              {
+                        url: 'https://',
+                alt: 'Cable Management',
+                title: 'Professional Cable Management',
+                description: 'Clean cable routing and power distribution throughout the workspace'
+              },
+              {
+                        url: 'https://',
+                alt: 'Complete Office',
+                title: 'Finished Home Office',
+                description: 'Complete custom office space with all handcrafted elements integrated'
+              }
+            ]
+                    */
               },
             ],
           };
