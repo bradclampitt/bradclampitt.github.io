@@ -1,0 +1,121 @@
+{
+  "posts": [
+    {
+      "id": "magento-aws-docker-infrastructure",
+      "title": "Building Scalable Magento 2 Infrastructure with AWS and Docker",
+      "slug": "magento-aws-docker-infrastructure",
+      "excerpt": "A comprehensive guide to setting up a production-ready Magento 2 environment using AWS services, Docker containers, and CI/CD pipelines. Learn how to achieve 99.9% uptime and handle traffic spikes effectively.",
+      "content": "blog/posts/magento-aws-docker-infrastructure.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-15",
+      "category": "magento",
+      "tags": ["Magento 2", "AWS", "Docker", "DevOps"],
+      "featured": true,
+      "readTime": "12 min read"
+    },
+    {
+      "id": "custom-magento-modules",
+      "title": "Custom Magento 2 Module Development Best Practices",
+      "slug": "custom-magento-modules",
+      "excerpt": "Essential guidelines for creating maintainable and scalable custom modules in Magento 2, including dependency injection, plugin usage, and testing strategies.",
+      "content": "blog/posts/custom-magento-modules.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-10",
+      "category": "magento",
+      "tags": ["Magento 2", "PHP", "Development"],
+      "featured": false,
+      "readTime": "8 min read"
+    },
+    {
+      "id": "server-monitoring-prometheus-grafana",
+      "title": "Automating Server Monitoring with Prometheus and Grafana",
+      "slug": "server-monitoring-prometheus-grafana",
+      "excerpt": "Step-by-step guide to setting up comprehensive server monitoring using Prometheus for metrics collection and Grafana for visualization and alerting.",
+      "content": "blog/posts/server-monitoring-prometheus-grafana.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-05",
+      "category": "devops",
+      "tags": ["Prometheus", "Grafana", "Monitoring", "DevOps"],
+      "featured": false,
+      "readTime": "10 min read"
+    },
+    {
+      "id": "magento-performance-optimization",
+      "title": "Optimizing Magento 2 Performance: A Complete Guide",
+      "slug": "magento-performance-optimization",
+      "excerpt": "Comprehensive performance optimization techniques for Magento 2, covering caching strategies, database optimization, and frontend improvements.",
+      "content": "blog/posts/magento-performance-optimization.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-11-28",
+      "category": "tutorials",
+      "tags": ["Magento 2", "Performance", "Optimization"],
+      "featured": false,
+      "readTime": "15 min read"
+    },
+    {
+      "id": "cicd-ecommerce-aws",
+      "title": "Setting Up CI/CD Pipelines for E-commerce Applications",
+      "slug": "cicd-ecommerce-aws",
+      "excerpt": "Learn how to implement robust CI/CD pipelines for e-commerce applications using AWS CodePipeline, ensuring zero-downtime deployments and automated testing.",
+      "content": "blog/posts/cicd-ecommerce-aws.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-11-20",
+      "category": "devops",
+      "tags": ["AWS", "CI/CD", "DevOps", "Automation"],
+      "featured": false,
+      "readTime": "12 min read"
+    },
+    {
+      "id": "magento-api-integration",
+      "title": "Integrating Third-Party APIs in Magento 2",
+      "slug": "magento-api-integration",
+      "excerpt": "Best practices for API integration and error handling in Magento 2, including authentication, rate limiting, and data synchronization strategies.",
+      "content": "blog/posts/magento-api-integration.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-11-15",
+      "category": "magento",
+      "tags": ["Magento 2", "API", "Integration"],
+      "featured": false,
+      "readTime": "9 min read"
+    },
+    {
+      "id": "docker-development-best-practices",
+      "title": "Docker Best Practices for Development Environments",
+      "slug": "docker-development-best-practices",
+      "excerpt": "Creating efficient and consistent development workflows using Docker, including multi-stage builds, volume optimization, and development vs production configurations.",
+      "content": "blog/posts/docker-development-best-practices.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-11-08",
+      "category": "devops",
+      "tags": ["Docker", "Development", "DevOps"],
+      "featured": false,
+      "readTime": "11 min read"
+    },
+    {
+      "id": "hyva-responsive-themes",
+      "title": "Building Responsive E-commerce Themes with Hyvä",
+      "slug": "hyva-responsive-themes",
+      "excerpt": "Modern frontend development for Magento 2 using Hyvä theme, covering AlpineJS integration, Tailwind CSS optimization, and performance improvements.",
+      "content": "blog/posts/hyva-responsive-themes.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-10-25",
+      "category": "tutorials",
+      "tags": ["Hyvä", "Magento 2", "Frontend", "AlpineJS"],
+      "featured": false,
+      "readTime": "13 min read"
+    },
+    {
+      "id": "server-security-hardening",
+      "title": "Security Hardening for Production Servers",
+      "slug": "server-security-hardening",
+      "excerpt": "Essential security measures for web servers, including firewall configuration, SSL setup, intrusion detection, and automated security monitoring.",
+      "content": "blog/posts/server-security-hardening.html",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-10-18",
+      "category": "devops",
+      "tags": ["Security", "Linux", "DevOps"],
+      "featured": false,
+      "readTime": "14 min read"
+    }
+  ]
+} 

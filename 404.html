@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page Not Found - Bradley R. Clampitt</title>
+    <!-- Tailwind CSS -->
+    <link href="/assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- Alpine.js -->
+    <script src="/assets/js/alpine.js" defer></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <h2 class="text-xl font-semibold text-gray-800">Bradley R. Clampitt</h2>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/index.html" class="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
+                    <a href="/experience.html" class="text-gray-600 hover:text-gray-900 transition-colors">Experience</a>
+                    <a href="/portfolio.html" class="text-gray-600 hover:text-gray-900 transition-colors">Portfolio</a>
+                    <a href="/blog.html" class="text-gray-600 hover:text-gray-900 transition-colors">Blog</a>
+                    <a href="/contact.html" class="text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center px-4 py-16" x-data="notFoundApp()">
+        <div class="max-w-2xl mx-auto text-center">
+            <!-- 404 Illustration -->
+            <div class="mb-8">
+                <div class="inline-flex items-center justify-center w-32 h-32 bg-red-100 rounded-full mb-6">
+                    <svg class="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.732 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-6xl font-bold text-gray-900 mb-4">404</h1>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-6">Page Not Found</h2>
+            </div>
+
+            <!-- Dynamic Message -->
+            <div class="mb-8">
+                <p class="text-lg text-gray-600 mb-4" x-text="getMessage()"></p>
+                <p class="text-gray-500" x-show="isBlogPost()">
+                    The blog post you're looking for might have been moved, deleted, or the URL might be incorrect.
+                </p>
+                <p class="text-gray-500" x-show="!isBlogPost()">
+                The page you're looking for might have been moved, deleted, or you might have typed the URL incorrectly.
+                </p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="space-y-4 mb-8">
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/index.html" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Go Home
+                </a>
+                <a href="/blog.html" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center" x-show="isBlogPost()">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    Browse Blog
+                </a>
+                <button @click="goBack()" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Go Back
+                </button>
+                </div>
+            </div>
+
+            <!-- Search Section for Blog Posts -->
+            <div x-show="isBlogPost()" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4">Looking for a specific blog post?</h3>
+                <div class="mb-4">
+                    <input 
+                        type="text" 
+                        x-model="searchQuery"
+                        @input="searchPosts()"
+                        placeholder="Search blog posts..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div x-show="searchResults.length > 0" class="space-y-3">
+                    <h4 class="font-medium text-gray-700">Found these posts:</h4>
+                    <template x-for="post in searchResults.slice(0, 5)" :key="post.id">
+                        <div class="text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <a :href="'/blog/posts/' + post.slug + '.html'" class="block">
+                                <h5 class="font-medium text-blue-600 hover:text-blue-800" x-text="post.title"></h5>
+                                <p class="text-sm text-gray-600 mt-1" x-text="post.excerpt.substring(0, 100) + '...'"></p>
+                                <div class="flex space-x-2 mt-2">
+                                    <template x-for="tag in post.tags.slice(0, 3)" :key="tag">
+                                        <span class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs" x-text="tag"></span>
+                                    </template>
+                                </div>
+                            </a>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="searchQuery && searchResults.length === 0" class="text-gray-500 text-sm">
+                    No posts found matching your search.
+                </div>
+            </div>
+
+            <!-- Popular Content -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold mb-4">Popular Content</h3>
+                <div class="grid md:grid-cols-2 gap-4 text-left">
+                    <div>
+                        <h4 class="font-medium text-gray-700 mb-2">Recent Blog Posts</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="/blog.html" class="text-blue-600 hover:underline">Latest Technical Articles</a></li>
+                            <li><a href="/blog.html?category=magento" class="text-blue-600 hover:underline">Magento 2 Development</a></li>
+                            <li><a href="/blog.html?category=devops" class="text-blue-600 hover:underline">DevOps & Infrastructure</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-700 mb-2">Key Pages</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="/experience.html" class="text-blue-600 hover:underline">Professional Experience</a></li>
+                            <li><a href="/portfolio.html" class="text-blue-600 hover:underline">Portfolio & Projects</a></li>
+                            <li><a href="/contact.html" class="text-blue-600 hover:underline">Get In Touch</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Text -->
+            <div class="mt-8 text-sm text-gray-500">
+                <p>If you believe this is an error, please <a href="/contact.html" class="text-blue-600 hover:underline">contact me</a> and let me know about the broken link.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p>&copy; 2024 Bradley R. Clampitt. All rights reserved.</p>
+            <p class="text-gray-400 text-sm mt-1">Magento 2 Expert | AWS & DevOps Strategist | Scalable eCommerce Architect</p>
+        </div>
+    </footer>
+
+    <script>
+        function notFoundApp() {
+        return {
+            searchQuery: '',
+            searchResults: [],
+            blogPosts: [],
+
+            async init() {
+            // Try to load blog posts for search functionality
+            try {
+                const response = await fetch('/blog/posts.json');
+                const data = await response.json();
+                this.blogPosts = data.posts || [];
+            } catch (error) {
+                console.log('Blog posts not available for search');
+            }
+            },
+
+            getMessage() {
+            const currentPath = window.location.pathname;
+            if (this.isBlogPost()) {
+                return "Sorry, we couldn't find that blog post.";
+            } else if (currentPath.includes('portfolio')) {
+                return "Sorry, we couldn't find that portfolio item.";
+            } else if (currentPath.includes('documents')) {
+                return "Sorry, we couldn't find that document.";
+            }
+            return "Sorry, we couldn't find the page you're looking for.";
+            },
+
+            isBlogPost() {
+            const currentPath = window.location.pathname;
+            return currentPath.includes('blog') || currentPath.includes('posts');
+            },
+
+            goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/index.html';
+            }
+            },
+
+            searchPosts() {
+            if (!this.searchQuery.trim()) {
+                this.searchResults = [];
+                return;
+            }
+
+            const query = this.searchQuery.toLowerCase();
+            this.searchResults = this.blogPosts.filter(post => 
+                post.title.toLowerCase().includes(query) ||
+                post.excerpt.toLowerCase().includes(query) ||
+                post.tags.some(tag => tag.toLowerCase().includes(query))
+            );
+            }
+        }
+        }
+
+        // Handle URL parameters for category filtering
+        document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const category = urlParams.get('category');
+        if (category) {
+            // Update blog links to include category filter
+            const blogLinks = document.querySelectorAll('a[href="/blog.html"]');
+            blogLinks.forEach(link => {
+            link.href = `/blog.html?category=${category}`;
+            });
+        }
+        });
+    </script>
+</body>
+</html> 

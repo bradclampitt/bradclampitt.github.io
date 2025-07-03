@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>[POST_TITLE] - Bradley R. Clampitt</title>
+    <!-- Tailwind CSS -->
+    <link href="../assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- Alpine.js -->
+    <script src="../assets/js/alpine.js" defer></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="../blog.html" class="flex items-center text-gray-600 hover:text-gray-900">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back to Blog
+                </a>
+                <div class="flex space-x-4">
+                    <a href="../index.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                    <a href="../experience.html" class="text-gray-600 hover:text-gray-900">Experience</a>
+                    <a href="../portfolio.html" class="text-gray-600 hover:text-gray-900">Portfolio</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <article class="bg-white rounded-lg shadow-lg p-8">
+            <!-- This is where the blog post content will be loaded -->
+            <div id="blog-content">
+                <!-- Content will be dynamically loaded here -->
+            </div>
+        </article>
+
+        <!-- Comments Section (placeholder) -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h3 class="text-xl font-bold mb-4">Comments</h3>
+            <div class="text-gray-600 text-center py-8">
+                <p>Comments system will be implemented here.</p>
+                <p class="text-sm mt-2">Consider using Disqus, GitHub Issues, or a custom solution.</p>
+            </div>
+        </div>
+
+        <!-- Related Posts -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h3 class="text-xl font-bold mb-4">Related Posts</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <!-- Related posts will be dynamically loaded -->
+                <div class="text-gray-600 text-center py-8 md:col-span-2">
+                    <p>Related posts will be loaded dynamically based on tags and categories.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <p>&copy; 2024 Bradley R. Clampitt. All rights reserved.</p>
+            <p class="text-gray-400 text-sm mt-2">Magento 2 Expert | AWS & DevOps Strategist | Scalable eCommerce Architect</p>
+        </div>
+    </footer>
+</body>
+</html> 

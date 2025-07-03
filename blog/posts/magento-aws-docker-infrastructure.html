@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Building Scalable Magento 2 Infrastructure with AWS and Docker - Bradley R. Clampitt</title>
+    <!-- Tailwind CSS -->
+    <link href="../../assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- Alpine.js -->
+    <script src="../../assets/js/alpine.js" defer></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="../../blog.html" class="flex items-center text-gray-600 hover:text-gray-900">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back to Blog
+                </a>
+                <div class="flex space-x-4">
+                    <a href="../../index.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                    <a href="../../experience.html" class="text-gray-600 hover:text-gray-900">Experience</a>
+                    <a href="../../portfolio.html" class="text-gray-600 hover:text-gray-900">Portfolio</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <article class="bg-white rounded-lg shadow-lg p-8">
+            <header class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex space-x-2">
+                        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Magento 2</span>
+                        <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">AWS</span>
+                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Docker</span>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">DevOps</span>
+                    </div>
+                    <span class="text-gray-500 text-sm">12 min read</span>
+                </div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-4">Building Scalable Magento 2 Infrastructure with AWS and Docker</h1>
+                    <div class="flex items-center text-gray-600 mb-6">
+                        <span>By Bradley R. Clampitt</span>
+                        <span class="mx-2">•</span>
+                        <time>December 15, 2024</time>
+                    </div>
+            </header>
+
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <p class="text-xl text-gray-600 mb-8">
+                    Setting up a production-ready Magento 2 environment that can handle high traffic and scale efficiently requires careful planning and the right infrastructure choices. In this comprehensive guide, we'll walk through building a robust, scalable infrastructure using AWS services and Docker containers.
+                </p>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Overview of the Architecture</h2>
+                <p class="mb-6">
+                    Our target architecture will include:
+                </p>
+                <ul class="list-disc pl-6 mb-6 space-y-2">
+                    <li>AWS EC2 instances for application hosting</li>
+                    <li>Amazon RDS for MySQL database management</li>
+                    <li>ElastiCache for Redis caching</li>
+                    <li>Application Load Balancer for traffic distribution</li>
+                    <li>Docker containers for consistent deployments</li>
+                    <li>AWS CodePipeline for CI/CD automation</li>
+                </ul>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Setting Up the Foundation</h2>
+                <p class="mb-4">
+                    First, let's establish our VPC and networking infrastructure. This provides the secure foundation for our Magento 2 deployment.
+                </p>
+
+                <div class="bg-gray-100 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Key Infrastructure Components:</h3>
+                    <div class="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <strong>Compute:</strong>
+                            <ul class="list-disc pl-4 mt-1">
+                                <li>EC2 instances (t3.medium or larger)</li>
+                                <li>Auto Scaling Groups</li>
+                                <li>Application Load Balancer</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <strong>Storage & Database:</strong>
+                            <ul class="list-disc pl-4 mt-1">
+                                <li>Amazon RDS (MySQL 8.0)</li>
+                                <li>ElastiCache (Redis)</li>
+                                <li>S3 for media storage</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Docker Configuration</h2>
+                <p class="mb-4">
+                    Using Docker ensures consistent deployments across development, staging, and production environments. Here's our approach to containerizing Magento 2:
+                </p>
+
+        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg mb-6 overflow-x-auto"><code># Sample Dockerfile for Magento 2
+FROM php:8.1-fpm
+
+# Install required PHP extensions
+RUN docker-php-ext-install pdo_mysql zip
+
+# Configure PHP-FPM
+COPY php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Copy Magento application
+COPY . /var/www/html
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html</code></pre>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Performance Optimization</h2>
+                <p class="mb-4">
+                    To achieve 99.9% uptime and handle traffic spikes, we implement several optimization strategies:
+                </p>
+
+                <div class="grid md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-blue-900 mb-2">Caching Strategy</h4>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                        <li>• Redis for session storage</li>
+                        <li>• Varnish for full-page cache</li>
+                        <li>• CloudFront CDN</li>
+                        </ul>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-green-900 mb-2">Database Optimization</h4>
+                        <ul class="text-sm text-green-800 space-y-1">
+                        <li>• Read replicas for scaling</li>
+                        <li>• Optimized MySQL configuration</li>
+                        <li>• Regular index maintenance</li>
+                        </ul>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-purple-900 mb-2">Monitoring</h4>
+                        <ul class="text-sm text-purple-800 space-y-1">
+                        <li>• CloudWatch metrics</li>
+                        <li>• Application performance monitoring</li>
+                        <li>• Automated alerting</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">CI/CD Pipeline Setup</h2>
+                <p class="mb-4">
+                    Automated deployments are crucial for maintaining consistency and reducing downtime. Our pipeline includes:
+                </p>
+                <ol class="list-decimal pl-6 mb-6 space-y-2">
+                    <li>Code commit triggers the pipeline</li>
+                    <li>Automated testing and code quality checks</li>
+                    <li>Docker image building and pushing to ECR</li>
+                    <li>Blue-green deployment to production</li>
+                    <li>Automated rollback on failure</li>
+                </ol>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                <strong>Pro Tip:</strong> Always test your deployment pipeline in a staging environment that mirrors production as closely as possible.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Conclusion</h2>
+                <p class="mb-4">
+                    Building a scalable Magento 2 infrastructure requires careful planning and the right combination of technologies. By leveraging AWS services, Docker containers, and automated CI/CD pipelines, you can create a robust platform that handles traffic spikes while maintaining high availability.
+                </p>
+                <p class="mb-6">
+                    The key to success is starting with a solid foundation and iteratively improving performance based on real-world usage patterns and monitoring data.
+                </p>
+
+                <div class="bg-gray-50 p-6 rounded-lg mt-8">
+                    <h3 class="text-lg font-semibold mb-3">Related Resources:</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-blue-600 hover:underline">→ Magento 2 Performance Optimization Guide</a></li>
+                        <li><a href="#" class="text-blue-600 hover:underline">→ AWS Best Practices for E-commerce</a></li>
+                        <li><a href="#" class="text-blue-600 hover:underline">→ Docker Security for Production Environments</a></li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- Comments Section (placeholder) -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h3 class="text-xl font-bold mb-4">Comments</h3>
+            <div class="text-gray-600 text-center py-8">
+                <p>Comments system will be implemented here.</p>
+                <p class="text-sm mt-2">Consider using Disqus, GitHub Issues, or a custom solution.</p>
+            </div>
+        </div>
+
+        <!-- Related Posts -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h3 class="text-xl font-bold mb-4">Related Posts</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="text-gray-600 text-center py-8 md:col-span-2">
+                <p>Related posts will be loaded dynamically based on tags and categories.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <p>&copy; 2024 Bradley R. Clampitt. All rights reserved.</p>
+            <p class="text-gray-400 text-sm mt-2">Magento 2 Expert | AWS & DevOps Strategist | Scalable eCommerce Architect</p>
+        </div>
+    </footer>
+</body>
+</html> 

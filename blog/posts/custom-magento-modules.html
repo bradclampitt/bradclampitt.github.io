@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Magento 2 Module Development Best Practices - Bradley R. Clampitt</title>
+    <!-- Tailwind CSS -->
+    <link href="../../assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- Alpine.js -->
+    <script src="../../assets/js/alpine.js" defer></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <a href="../../blog.html" class="flex items-center text-gray-600 hover:text-gray-900">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Blog
+            </a>
+            <div class="flex space-x-4">
+            <a href="../../index.html" class="text-gray-600 hover:text-gray-900">Home</a>
+            <a href="../../experience.html" class="text-gray-600 hover:text-gray-900">Experience</a>
+            <a href="../../portfolio.html" class="text-gray-600 hover:text-gray-900">Portfolio</a>
+            </div>
+        </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <article class="bg-white rounded-lg shadow-lg p-8">
+            <header class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex space-x-2">
+                        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Magento 2</span>
+                        <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">PHP</span>
+                        <span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium">Development</span>
+                    </div>
+                    <span class="text-gray-500 text-sm">8 min read</span>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Custom Magento 2 Module Development Best Practices</h1>
+                <div class="flex items-center text-gray-600 mb-6">
+                    <span>By Bradley R. Clampitt</span>
+                    <span class="mx-2">•</span>
+                    <time>December 10, 2024</time>
+                </div>
+            </header>
+
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <p class="text-xl text-gray-600 mb-8">
+                    Creating custom modules in Magento 2 requires understanding the framework's architecture and following established patterns. This guide covers essential best practices for building maintainable, scalable modules that integrate seamlessly with Magento's ecosystem.
+                </p>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Module Structure and Organization</h2>
+                <p class="mb-4">
+                    A well-organized module follows Magento's conventions and makes code easier to maintain. Here's the recommended structure:
+                </p>
+
+        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg mb-6 overflow-x-auto"><code>app/code/Vendor/ModuleName/
+├── Api/
+│   ├── Data/
+│   └── RepositoryInterface.php
+├── Block/
+├── Controller/
+│   └── Adminhtml/
+├── etc/
+│   ├── adminhtml/
+│   ├── frontend/
+│   ├── di.xml
+│   ├── module.xml
+│   └── schema.xml
+├── Model/
+│   ├── ResourceModel/
+│   └── Repository.php
+├── Setup/
+├── Ui/
+├── view/
+│   ├── adminhtml/
+│   └── frontend/
+└── registration.php</code>
+        </pre>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Dependency Injection Best Practices</h2>
+                <p class="mb-4">
+                    Magento 2's dependency injection system is powerful but requires careful configuration. Here are key principles:
+                </p>
+
+                <div class="bg-blue-50 p-6 rounded-lg mb-6">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3">Key DI Principles:</h3>
+                    <ul class="text-blue-800 space-y-2">
+                        <li>• Always inject interfaces, not concrete classes</li>
+                        <li>• Use constructor injection for required dependencies</li>
+                        <li>• Prefer virtual types for configuration</li>
+                        <li>• Avoid using ObjectManager directly</li>
+                    </ul>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Plugin Development</h2>
+                <p class="mb-4">
+                    Plugins (interceptors) are Magento's preferred way to extend functionality without modifying core code:
+                </p>
+
+        <pre class="bg-gray-900 text-green-400 p-4 rounded-lg mb-6 overflow-x-auto"><code>&lt;?php
+namespace Vendor\Module\Plugin;
+
+class ProductPlugin
+{
+    public function beforeSave(
+        \Magento\Catalog\Model\Product $subject
+    ) {
+        // Execute before the original method
+        return [$subject];
+    }
+
+    public function afterSave(
+        \Magento\Catalog\Model\Product $subject,
+        $result
+    ) {
+        // Execute after the original method
+        return $result;
+    }
+}</code></pre>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-green-900 mb-2">✅ Plugin Best Practices</h4>
+                        <ul class="text-sm text-green-800 space-y-1">
+                            <li>• Use specific method interception</li>
+                            <li>• Keep plugin logic lightweight</li>
+                            <li>• Handle exceptions gracefully</li>
+                            <li>• Document plugin behavior</li>
+                        </ul>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-red-900 mb-2">❌ Common Pitfalls</h4>
+                        <ul class="text-sm text-red-800 space-y-1">
+                            <li>• Modifying method signatures</li>
+                            <li>• Heavy processing in plugins</li>
+                            <li>• Circular dependencies</li>
+                            <li>• Overusing around plugins</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Testing Strategy</h2>
+                <p class="mb-4">
+                    Comprehensive testing ensures your module works correctly and doesn't break existing functionality:
+                </p>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                <strong>Testing Tip:</strong> Always test your modules in a clean Magento installation before deploying to production.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Performance Considerations</h2>
+                <p class="mb-4">
+                    Module performance impacts the entire Magento installation. Key optimization strategies include:
+                </p>
+
+                <ol class="list-decimal pl-6 mb-6 space-y-2">
+                    <li>Minimize database queries and use collections efficiently</li>
+                    <li>Implement proper caching strategies</li>
+                    <li>Use lazy loading for expensive operations</li>
+                    <li>Optimize frontend assets and reduce HTTP requests</li>
+                    <li>Profile and monitor module performance</li>
+                </ol>
+
+                <h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">Conclusion</h2>
+                <p class="mb-4">
+                    Following these best practices will help you create robust, maintainable Magento 2 modules that integrate well with the platform and provide excellent performance. Remember to always test thoroughly and document your code for future maintenance.
+                </p>
+
+                <div class="bg-gray-50 p-6 rounded-lg mt-8">
+                <h3 class="text-lg font-semibold mb-3">Related Resources:</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-blue-600 hover:underline">→ Magento 2 Developer Documentation</a></li>
+                        <li><a href="#" class="text-blue-600 hover:underline">→ PHP Standards and Best Practices</a></li>
+                        <li><a href="#" class="text-blue-600 hover:underline">→ Magento 2 Testing Framework</a></li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <!-- Comments Section (placeholder) -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+            <h3 class="text-xl font-bold mb-4">Comments</h3>
+            <div class="text-gray-600 text-center py-8">
+                <p>Comments system will be implemented here.</p>
+                <p class="text-sm mt-2">Consider using Disqus, GitHub Issues, or a custom solution.</p>
+            </div>
+        </div>
+
+        <!-- Related Posts -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
+        <h3 class="text-xl font-bold mb-4">Related Posts</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="text-gray-600 text-center py-8 md:col-span-2">
+                    <p>Related posts will be loaded dynamically based on tags and categories.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <p>&copy; 2024 Bradley R. Clampitt. All rights reserved.</p>
+            <p class="text-gray-400 text-sm mt-2">Magento 2 Expert | AWS & DevOps Strategist | Scalable eCommerce Architect</p>
+        </div>
+    </footer>
+</body>
+</html> 

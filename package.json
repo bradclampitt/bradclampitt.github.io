@@ -1,0 +1,10 @@
+{
+    "name": "github-profile",
+    "version": "1.0.0",
+    "scripts": {
+      "build": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind-built.css --minify"
+    },
+    "dependencies": {
+      "tailwindcss": "^3.4.1"
+    }
+  }

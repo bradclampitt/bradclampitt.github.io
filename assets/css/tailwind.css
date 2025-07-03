@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.feature-tag {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #e5e7eb !important;
+    padding: .35rem .90rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.875rem !important;
+    margin: 0.25rem !important;
+  }
+  .feature-tag i {
+    margin-right: 0.5rem !important;
+    color: #3b82f6 !important;
+    flex-shrink: 0 !important;
+}
