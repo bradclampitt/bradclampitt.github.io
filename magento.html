@@ -31,7 +31,7 @@
         <div class="hidden lg:flex w-64 bg-gray-700 text-white flex-col h-full flex-shrink-0 desktop-sidebar">
             <!-- Profile Header -->
             <div class="p-6 border-b border-gray-700">
-                <h2 class="text-2xl font-semibold">B.R.C.</h2>
+                <h2 class="text-2xl font-semibold">Bradley C.</h2>
             </div>
 			<!-- Navigation Menu -->
       		<nav class="flex-1 px-4 py-6 space-y-2">
@@ -98,7 +98,7 @@
         <div x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-x-full" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-full" class="lg:hidden w-64 bg-gray-700 text-white flex flex-col h-full fixed inset-y-0 left-0 z-50">
             <!-- Profile Header -->
             <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-semibold pl-10">B.R.C.</h2>
+                <h2 class="text-2xl font-semibold pl-10">Bradley C.</h2>
                 <button @click="sidebarOpen = false" class="text-gray-300 hover:text-white">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1334,7 +1334,7 @@
                         <h1 class="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Magento 2 Modules</h1>
                         <p class="text-sm lg:text-base text-gray-600">Custom extensions and integrations for Magento 2 e-commerce platforms. Many of these items were created for Sokolin and will have limited documentation.</p>
                     </div>
-                    
+
                     <!-- Tab Navigation -->
                     <div class="flex justify-center mb-6 lg:mb-8">
                         <div class="flex flex-wrap justify-center gap-1 max-w-full">
@@ -1584,7 +1584,7 @@
                                 <div class="w-full max-w-3xl mx-auto mt-6 bg-white rounded-lg p-4 lg:p-6 shadow-sm border">
                                 <!-- Description -->
                                     <div class="text-gray-600 mb-4 text-left text-sm lg:text-base" x-text="selectedModule?.description"></div>
-                                    
+
                                     <!-- Technology Tags -->
                                     <div class="flex flex-wrap justify-center gap-1 lg:gap-2 mb-4">
                                         <template x-for="tech in selectedModule?.technologies || []" :key="tech.name">
@@ -1596,7 +1596,7 @@
                                     </div>
                                         </div>
                                     </div>
-                            
+
                             <!-- Features/Components Section -->
                             <div class="mb-6 lg:mb-8">
                                 <h3 class="font-semibold text-base lg:text-lg mb-3 lg:mb-4 text-left">Key Features</h3>
@@ -1658,18 +1658,18 @@
         body {
             overflow-x: hidden;
         }
-        
+
         /* Prevent horizontal scrolling */
         .main-content {
             max-width: 100vw;
             overflow-x: hidden;
         }
-        
+
         /* Ensure tab navigation doesn't cause overflow */
         .tab-navigation {
             max-width: 100%;
         }
-        
+
         /* Mobile-specific styles */
         @media (max-width: 1023px) {
             /* Mobile hamburger positioning */
@@ -1677,7 +1677,7 @@
                 z-index: 60;
                 display: block;
             }
-            
+
             /* Ensure main content is scrollable on mobile */
             .main-content {
                 overflow-y: auto;
@@ -1685,21 +1685,21 @@
                 height: 100vh;
                 max-width: 100vw;
             }
-            
+
             /* Prevent tag overflow on mobile */
             .feature-tag,
             .tech-tag {
                 font-size: 0.6rem;
                 padding: 0.25rem 0.5rem;
             }
-            
+
             /* Ensure grid doesn't overflow */
             .module-grid {
                 width: 100%;
                 max-width: 100%;
             }
         }
-        
+
         /* Desktop styles */
         @media (min-width: 1024px) {
             .main-content {
@@ -1707,12 +1707,12 @@
                 overflow-x: hidden;
                 height: 100vh;
             }
-            
+
             /* Hide hamburger menu on desktop */
             .hamburger-menu {
                 display: none !important;
             }
-            
+
             /* Ensure desktop sidebar is visible */
             .desktop-sidebar {
                 display: flex !important;

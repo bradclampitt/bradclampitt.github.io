@@ -32,7 +32,7 @@
         <div class="hidden lg:flex w-64 bg-gray-700 text-white flex-col h-full flex-shrink-0 desktop-sidebar">
             <!-- Profile Header -->
             <div class="p-6 border-b border-gray-700">
-                <h2 class="text-2xl font-semibold">B.R.C.</h2>
+                <h2 class="text-2xl font-semibold">Bradley C.</h2>
             </div>
             <!-- Navigation Menu -->
             <nav class="flex-1 px-4 py-6 space-y-2">
@@ -99,7 +99,7 @@
         <div x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-x-full" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-full" class="lg:hidden w-64 bg-gray-700 text-white flex flex-col h-full fixed inset-y-0 left-0 z-50">
             <!-- Profile Header -->
             <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-semibold pl-10">B.R.C.</h2>
+                <h2 class="text-2xl font-semibold pl-10">Bradley C.</h2>
                 <button @click="sidebarOpen = false" class="text-gray-300 hover:text-white">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -330,7 +330,7 @@
                                         <li>20+ Udemy courses in Magento, DevOps & web technologies</li>
                                     </ul>
                                 </div>
-                            
+
                                 <!-- Core Competencies -->
                                 <div>
                                     <h3 class="text-xl font-semibold mb-3">Core Competencies</h3>
@@ -362,7 +362,7 @@
                             const colors = {
                                 'Expert': '#ef4444',    // red-500
                                 'Advanced': '#f97316',  // orange-500
-                                'Medium': '#eab308',    // yellow-500  
+                                'Medium': '#eab308',    // yellow-500
                                 'Learning': '#06b6d4',  // cyan-500
                                 'Beginner': '#6b7280'   // gray-500
                             };
@@ -712,7 +712,7 @@
                                         avatar: 'https://placehold.co/60x60/6366f1/fff?text=JM'
                                     },
                                     {
-                                        name: 'Marc Lebryk', 
+                                        name: 'Marc Lebryk',
                                         title: 'Freelance Commercial, Editorial, Event and Sports Photographer and Videographer',
                                         company: 'Marc Lebryk Photography',
                                         relationship: 'Professional and Personal Relationship',
@@ -720,13 +720,13 @@
                                         avatar: 'https://placehold.co/60x60/10b981/fff?text=ML'
                                     },
                                     {
-                    name: 'Mohan Natarajan',
-                    title: 'Practice Director',
-                    company: 'Klizer',
-                    relationship: 'Professional relationship context',
-                    quote: 'I\'ve had the privilege of working with Bradley across two companies over the past decade-first at UltraSun USA (2011–2014) and now at Sokolin since 2022. Every interaction has reaffirmed what a thoughtful, collaborative, and forward-thinking client he is. \n\nAt Sokolin, we’ve partnered closely with Bradley on mobile app development using Flutter, as well as Magento 2 website upgrades and ongoing maintenance. His support and trust in our team have been instrumental in delivering high-quality solutions. He understands technical challenges deeply and values the creative process—always open to our recommendations and encouraging us to explore new approaches.\n\nBack at UltraSun USA, we worked together on Magento website development and maintenance, where he demonstrated the same strategic mindset and collaborative spirit.\n\nBradley is a rare client who not only values innovation but also empowers his partners to do their best work. It\'s always a pleasure working with him, and I highly recommend him to anyone seeking a trusted leader in digital initiatives.',
-                    avatar: 'https://placehold.co/60x60/6366f1/fff?text=MN'
-                }
+                                        name: 'Mohan Natarajan',
+                                        title: 'Practice Director',
+                                        company: 'Klizer',
+                                        relationship: 'Professional relationship context',
+                                        quote: 'I\'ve had the privilege of working with Bradley across two companies over the past decade-first at UltraSun USA (2011–2014) and now at Sokolin since 2022. Every interaction has reaffirmed what a thoughtful, collaborative, and forward-thinking client he is. \n\nAt Sokolin, we’ve partnered closely with Bradley on mobile app development using Flutter, as well as Magento 2 website upgrades and ongoing maintenance. His support and trust in our team have been instrumental in delivering high-quality solutions. He understands technical challenges deeply and values the creative process—always open to our recommendations and encouraging us to explore new approaches.\n\nBack at UltraSun USA, we worked together on Magento website development and maintenance, where he demonstrated the same strategic mindset and collaborative spirit.\n\nBradley is a rare client who not only values innovation but also empowers his partners to do their best work. It\'s always a pleasure working with him, and I highly recommend him to anyone seeking a trusted leader in digital initiatives.',
+                                        avatar: 'https://placehold.co/60x60/6366f1/fff?text=MN'
+                                    }
                                 ]
                             }">
                                 <template x-for="reference in references" :key="reference.name">
@@ -776,11 +776,11 @@
             // Load the hits.sh tracking pixel invisibly
             const trackingImg = new Image();
             trackingImg.src = 'https://hits.sh/github.com/bradclampitt/bradclampitt.github.io.svg?view=today-total';
-            
+
             // Log to console for developer inspection
             console.log('🔍 Visitor tracking active');
             console.log('📊 View stats at: https://hits.sh/github.com/bradclampitt/bradclampitt.github.io/');
-            
+
             // Optional: Add hidden tracking pixel to DOM (invisible)
             trackingImg.style.display = 'none';
             trackingImg.alt = 'Visitor Counter';
@@ -793,7 +793,7 @@
         body {
             overflow-x: hidden;
         }
-        
+
         /* Mobile-specific styles */
         @media (max-width: 1023px) {
             .skills-grid {
@@ -802,46 +802,46 @@
                 gap: 1rem !important;
                 overflow-x: unset !important;
             }
-            
+
             /* Adjust skill tabs for mobile */
             .skills-tabs {
                 padding: 0.5rem;
                 max-height: 200px;
                 overflow-y: auto;
             }
-            
+
             /* Mobile hamburger positioning */
             .hamburger-menu {
                 z-index: 60;
                 display: block;
             }
-            
+
             /* Ensure main content is scrollable on mobile */
             .main-content {
                 overflow-y: auto;
                 height: 100vh;
             }
         }
-        
+
         /* Tablet styles */
         @media (min-width: 641px) and (max-width: 1023px) {
             .skills-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
         }
-        
+
         /* Desktop styles */
         @media (min-width: 1024px) {
             .main-content {
                 overflow-y: auto;
                 height: 100vh;
             }
-            
+
             /* Hide hamburger menu on desktop */
             .hamburger-menu {
                 display: none !important;
             }
-            
+
             /* Ensure desktop sidebar is visible */
             .desktop-sidebar {
                 display: flex !important;
