@@ -1,0 +1,166 @@
+{% extends "_base.html" %}
+
+{% block title %}Project Types · Portfolio Admin{% endblock %}
+{% block header_title %}Project Types{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data='projectTypeTable({ types: {{ types_payload | tojson | safe }} })' x-init="init()">
+    <section class="glass-panel p-6 space-y-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="text-sm uppercase tracking-widest text-slate-500">Taxonomy</p>
+                <h2 class="text-3xl font-semibold text-slate-900">Project Types</h2>
+                <p class="text-sm text-slate-500 mt-1">Organize your portfolio by high-level categories.</p>
+            </div>
+            <div class="flex flex-col gap-8 sm:flex-row sm:items-center">
+                <label class="flex w-full items-center rounded-2xl border border-slate-200 bg-white px-4">
+                    <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                    </svg>
+                    <input type="search" placeholder="Filter by code or label" class="w-full border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:ring-0" x-model="query">
+                </label>
+                <div class="flex items-center gap-4 text-sm text-slate-500">
+                    <span>Per page</span>
+                    <select class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" x-model.number="perPage" style="padding-left: 20px; padding-right: 30px;">
+                        <template x-for="size in perPageOptions" :key="'type-size-' + size">
+                            <option :value="size" x-text="size"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Code</th>
+                        <th class="px-6 py-3 text-left">Label</th>
+                        <th class="px-6 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedTypes().length">
+                    <template x-for="type in paginatedTypes()" :key="type.id">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4">
+                                <input name="code" :form="'type-form-' + type.id" x-model="type.code" class="w-32 rounded-xl border-slate-200 text-sm">
+                            </td>
+                            <td class="px-6 py-4">
+                                <input name="label" :form="'type-form-' + type.id" x-model="type.label" class="w-full rounded-xl border-slate-200 text-sm">
+                            </td>
+                            <td class="px-6 py-4 text-right space-x-2">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2 justify-end">
+                                <form :id="'type-form-' + type.id" method="post" action="{{ url_for('update_project_type') }}" class="inline">
+                                    <input type="hidden" name="type_id" :value="type.id">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Save</button>
+                                </form>
+                                <form method="post" action="{{ url_for('delete_project_type') }}" class="inline" onsubmit="return confirm('Delete this project type? Projects using it must be reassigned first.');">
+                                    <input type="hidden" name="type_id" :value="type.id">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tbody x-show="!paginatedTypes().length">
+                    <tr>
+                        <td colspan="3" class="px-6 py-6 text-center text-slate-500">No project types yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-slate-500" x-text="rangeSummary()"></p>
+            <div class="flex items-center gap-2">
+                <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <template x-for="page in pageWindow()" :key="'type-page-' + page">
+                    <button type="button" class="rounded-2xl border px-3 py-1 text-xs font-semibold" :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" @click="goToPage(page)" x-text="page"></button>
+                </template>
+                <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Type Add Form -->
+    <section class="glass-panel p-6" style="max-width: 70%;">
+        <h3 class="text-lg font-semibold text-slate-900">Add new type</h3>
+        <p class="text-sm text-slate-500 mb-4">Codes should be lowercase and URL-friendly.</p>
+        <form method="post" action="{{ url_for('create_project_type') }}" class="grid gap-4 md:grid-cols-2">
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Code</span>
+                <input name="code" placeholder="ecommerce" required class="w-full rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </label>
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Label</span>
+                <input name="label" placeholder="eCommerce" required class="w-full rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </label>
+            <div class="md:col-span-2">
+                <button type="submit" class="inline-flex items-center justify-center w-full rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition font-semibold">Add type</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+function projectTypeTable(initial) {
+    return {
+        query: '',
+        perPageOptions: [10, 20, 50],
+        perPage: 10,
+        currentPage: 1,
+        types: initial.types || [],
+        init() {
+            this.$watch('query', () => { this.currentPage = 1; });
+            this.$watch('perPage', () => { this.currentPage = 1; });
+        },
+        filteredTypes() {
+            const term = this.query.trim().toLowerCase();
+            if (!term) {
+                return this.types;
+            }
+            return this.types.filter((type) =>
+                type.code.toLowerCase().includes(term) ||
+                type.label.toLowerCase().includes(term)
+            );
+        },
+        totalPages() {
+            const total = this.filteredTypes().length;
+            return Math.max(1, Math.ceil(total / this.perPage));
+        },
+        paginatedTypes() {
+            const filtered = this.filteredTypes();
+            const start = (this.currentPage - 1) * this.perPage;
+            return filtered.slice(start, start + this.perPage);
+        },
+        goToPage(page) {
+            const total = this.totalPages();
+            this.currentPage = Math.min(Math.max(page, 1), total);
+        },
+        prevPage() {
+            this.goToPage(this.currentPage - 1);
+        },
+        nextPage() {
+            this.goToPage(this.currentPage + 1);
+        },
+        pageWindow() {
+            const total = this.totalPages();
+            if (total <= 2) {
+                return Array.from({ length: total }, (_, idx) => idx + 1);
+            }
+            const start = Math.max(1, Math.min(this.currentPage - 1, total - 1));
+            return [start, start + 1];
+        },
+        rangeSummary() {
+            const filtered = this.filteredTypes();
+            if (!filtered.length) {
+                return 'Showing 0 items';
+            }
+            const start = (this.currentPage - 1) * this.perPage + 1;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
+        },
+    };
+}
+</script>
+{% endblock %}

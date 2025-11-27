@@ -1,0 +1,273 @@
+{% extends "_base.html" %}
+
+{% block title %}References - Admin Console{% endblock %}
+{% block header_title %}References{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data='referencesTable({ references: {{ references | tojson | safe }} })' x-init="init()">
+    <section class="glass-panel p-6 space-y-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <h2 class="text-3xl font-semibold text-slate-900">References</h2>
+                <p class="text-sm text-slate-500 mt-1">Manage your references</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto -mx-6 px-6">
+            <table class="w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
+                    <tr>
+                        <th class="px-3 py-3 text-left hidden sm:table-cell sm:px-4 sm:py-3">ID</th>
+                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Person Name</th>
+                        <th class="px-3 py-3 text-left hidden md:table-cell sm:px-4 sm:py-3">Company</th>
+                        <th class="px-3 py-3 text-left hidden lg:table-cell sm:px-4 sm:py-3">Connect Type</th>
+                        <th class="px-3 py-3 text-left hidden xl:table-cell sm:px-4 sm:py-3">Date</th>
+                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedReferences().length">
+                    <template x-for="ref in paginatedReferences()" :key="ref.id">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-slate-900 hidden sm:table-cell sm:px-4">
+                                <span x-text="ref.id"></span>
+                            </td>
+                            <td class="px-3 py-4 sm:px-4 max-w-xs">
+                                <div class="text-sm font-medium text-slate-900 break-words" x-text="ref.person_name"></div>
+                                <template x-if="ref.title">
+                                    <div class="text-xs text-slate-500 mt-1 break-words" x-text="ref.title"></div>
+                                </template>
+                                <template x-if="ref.company">
+                                    <div class="text-xs text-slate-500 mt-1 md:hidden break-words" x-text="ref.company"></div>
+                                </template>
+                            </td>
+                            <td class="px-3 py-4 text-sm text-slate-500 hidden md:table-cell sm:px-4 max-w-xs">
+                                <span class="break-words" x-text="ref.company || '-'"></span>
+                            </td>
+                            <td class="px-3 py-4 whitespace-nowrap hidden lg:table-cell sm:px-4">
+                                <template x-if="ref.connection_types && ref.connection_types.length">
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="ct in ref.connection_types" :key="ct">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="ct"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="!ref.connection_types || !ref.connection_types.length">
+                                    <span class="text-sm text-slate-400">-</span>
+                                </template>
+                            </td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-500 hidden xl:table-cell sm:px-4">
+                                <span x-text="ref.created_at ? ref.created_at.substring(0, 10) : '-'"></span>
+                            </td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
+                                    <button type="button" @click="editReference(ref)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</button>
+                                    <form method="POST" action="/admin/references/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this reference?');">
+                                        <input type="hidden" name="ref_id" :value="ref.id">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tbody x-show="!paginatedReferences().length">
+                    <tr>
+                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No references yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <!-- Left: Per Page Dropdown -->
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span>Per page</span>
+                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
+                    <template x-for="size in perPageOptions" :key="'ref-size-' + size">
+                        <option :value="size" x-text="size"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <!-- Middle: Showing count -->
+            <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
+            
+            <!-- Right: Page navigation -->
+            <div class="flex items-center gap-2">
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <template x-for="page in pageNumbers()" :key="'ref-page-' + page">
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
+                            @click="goToPage(page)" 
+                            x-text="page"></button>
+                </template>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Edit/Add Form -->
+    <section id="edit-form" class="glass-panel p-6">
+        <h3 class="text-2xl font-semibold text-slate-900 mb-2" x-text="editingReference ? 'Edit Reference' : 'Add New Reference'"></h3>
+        <p class="text-sm text-slate-500 mb-6">Fill in the reference details below</p>
+        <form method="post" action="/admin/references/save" class="space-y-6">
+            <input type="hidden" name="ref_id" :value="editingReference ? editingReference.id : ''" x-show="editingReference">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="text-sm font-semibold text-slate-600 space-y-2">
+                    <span>Name of Person *</span>
+                    <input type="text" name="person_name" required placeholder="John Doe"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           x-model="formData.person_name">
+                </label>
+                <label class="text-sm font-semibold text-slate-600 space-y-2">
+                    <span>Company</span>
+                    <input type="text" name="company" placeholder="Acme Corp"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           x-model="formData.company">
+                </label>
+                <label class="text-sm font-semibold text-slate-600 space-y-2">
+                    <span>Title / Position</span>
+                    <input type="text" name="title" placeholder="Partner, Practice Director"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           x-model="formData.title">
+                </label>
+                <label class="text-sm font-semibold text-slate-600 space-y-2">
+                    <span>Connection Type</span>
+                    <div class="space-y-2 mt-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="connection_types" value="Professional"
+                                   class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                   x-model="formData.connection_types"
+                                   :value="'Professional'">
+                            <span class="ml-2 text-sm text-slate-700">Professional</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="connection_types" value="Personal"
+                                   class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                   x-model="formData.connection_types"
+                                   :value="'Personal'">
+                            <span class="ml-2 text-sm text-slate-700">Personal</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="connection_types" value="Other"
+                                   class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                   x-model="formData.connection_types"
+                                   :value="'Other'">
+                            <span class="ml-2 text-sm text-slate-700">Other</span>
+                        </label>
+                    </div>
+                </label>
+            </div>
+            
+            <label class="text-sm font-semibold text-slate-600 space-y-2 block">
+                <span>Reference Text *</span>
+                <p class="text-xs text-slate-500">The actual reference message. Formatting and paragraphs will be preserved.</p>
+                <textarea name="reference_text" required rows="12" placeholder="Enter the reference text here. Multiple paragraphs are preserved as-is."
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                          x-model="formData.reference_text"></textarea>
+            </label>
+            
+            <div class="flex gap-3" style="width: 70%;">
+                <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-semibold" x-text="editingReference ? 'Update Reference' : 'Add Reference'"></button>
+                <button type="button" @click="resetForm()" class="px-4 py-3 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold" x-show="editingReference">Cancel</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+function referencesTable(initial) {
+    return {
+        perPageOptions: [10, 20, 30, 50, 100],
+        perPage: 10,
+        currentPage: 1,
+        references: initial.references || [],
+        editingReference: null,
+        formData: {
+            person_name: '',
+            company: '',
+            title: '',
+            connection_types: [],
+            reference_text: ''
+        },
+        init() {
+            this.$watch('perPage', () => { this.currentPage = 1; });
+        },
+        totalPages() {
+            const total = this.references.length;
+            return Math.max(1, Math.ceil(total / this.perPage));
+        },
+        paginatedReferences() {
+            const start = (this.currentPage - 1) * this.perPage;
+            return this.references.slice(start, start + this.perPage);
+        },
+        goToPage(page) {
+            const total = this.totalPages();
+            this.currentPage = Math.min(Math.max(page, 1), total);
+        },
+        prevPage() {
+            this.goToPage(this.currentPage - 1);
+        },
+        nextPage() {
+            this.goToPage(this.currentPage + 1);
+        },
+        pageNumbers() {
+            const total = this.totalPages();
+            if (total === 0) return [];
+            if (total === 1) return [1];
+            
+            const current = this.currentPage;
+            const pages = [];
+            
+            // Show current page and 1 page on each side
+            const start = Math.max(1, current - 1);
+            const end = Math.min(total, current + 1);
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            return pages;
+        },
+        rangeSummary() {
+            if (!this.references.length) {
+                return 'Showing 0 items';
+            }
+            const start = (this.currentPage - 1) * this.perPage + 1;
+            const end = Math.min(start + this.perPage - 1, this.references.length);
+            return `Showing ${start}-${end} of ${this.references.length} items`;
+        },
+        editReference(ref) {
+            this.editingReference = { ...ref };
+            this.formData = {
+                person_name: ref.person_name || '',
+                company: ref.company || '',
+                title: ref.title || '',
+                connection_types: Array.isArray(ref.connection_types) ? [...ref.connection_types] : [],
+                reference_text: ref.reference_text || ''
+            };
+            // Scroll to edit form
+            const formElement = document.getElementById('edit-form');
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(() => {
+                    window.scrollBy(0, -100);
+                }, 100);
+            }
+        },
+        resetForm() {
+            this.editingReference = null;
+            this.formData = {
+                person_name: '',
+                company: '',
+                title: '',
+                connection_types: [],
+                reference_text: ''
+            };
+        },
+    };
+}
+</script>
+{% endblock %}

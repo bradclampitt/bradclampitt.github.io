@@ -1,0 +1,276 @@
+{% extends "_base.html" %}
+
+{% block title %}Document Types - Admin Console{% endblock %}
+{% block header_title %}Document Types{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data='docTypesTable({ types: {{ types | tojson | safe }} })' x-init="init()">
+    <!-- Table Listing Section -->
+    <section class="glass-panel p-6 space-y-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h2 class="text-3xl font-semibold text-slate-900">Document Types</h2>
+                <p class="text-sm text-slate-500 mt-1">Manage document types with Font Awesome icons</p>
+            </div>
+            <div class="flex flex-col gap-8 sm:flex-row sm:items-center">
+                <label class="flex w-full items-center rounded-2xl border border-slate-200 bg-white px-4 sm:w-72">
+                    <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                    </svg>
+                    <input type="search" placeholder="Filter by code or label" class="w-full border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:ring-0" x-model="query" @input="currentPage = 1">
+                </label>
+            </div>
+        </div>
+
+        <!-- Types Table -->
+        <div class="overflow-x-auto -mx-6 px-6">
+            <table class="w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
+                    <tr>
+                        <th class="px-3 py-3 text-left hidden sm:table-cell sm:px-4 sm:py-3">Icon</th>
+                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Label</th>
+                        <th class="px-3 py-3 text-left hidden lg:table-cell sm:px-4 sm:py-3">Sort</th>
+                        <th class="px-3 py-3 text-right sm:px-4 sm:py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedTypes().length">
+                    <template x-for="type in paginatedTypes()" :key="type.id">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-3 py-4 hidden sm:table-cell sm:px-4">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg text-blue-600" x-show="type.icon">
+                                    <i :class="type.icon" aria-hidden="true"></i>
+                                </div>
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs text-slate-400" x-show="!type.icon">
+                                    —
+                                </div>
+                            </td>
+                            <td class="px-3 py-4 sm:px-4">
+                                <span class="font-semibold text-slate-900" x-text="type.label"></span>
+                            </td>
+                            <td class="px-3 py-4 hidden lg:table-cell sm:px-4">
+                                <span class="text-slate-500" x-text="type.sort || 0"></span>
+                            </td>
+                            <td class="px-3 py-4 text-right space-x-2 sm:px-4">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2 justify-end">
+                                    <button type="button" @click="editType(type)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">
+                                    Edit
+                                </button>
+                                <form method="post" action="/admin/documents/types/delete" class="inline" onsubmit="return confirm('Delete this document type? Documents using it must be reassigned first.');">
+                                    <input type="hidden" name="type_id" :value="type.id">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tbody x-show="!paginatedTypes().length">
+                    <tr>
+                        <td colspan="4" class="px-6 py-6 text-center text-slate-500">No document types match your filters.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <!-- Left: Per Page Dropdown -->
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span>Per page</span>
+                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
+                    <template x-for="size in perPageOptions" :key="'doc-type-size-' + size">
+                        <option :value="size" x-text="size"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <!-- Middle: Showing count -->
+            <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
+            
+            <!-- Right: Page navigation -->
+            <div class="flex items-center gap-2">
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <template x-for="page in pageNumbers()" :key="'doc-type-page-' + page">
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
+                            @click="goToPage(page)" 
+                            x-text="page"></button>
+                </template>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Edit/Add Form -->
+    <section id="edit-form" class="glass-panel p-6">
+        <h3 class="text-2xl font-semibold text-slate-900 mb-2" x-text="editingType ? 'Edit Document Type' : 'Add New Document Type'"></h3>
+        <p class="text-sm text-slate-500 mb-6">Icons use Font Awesome 6 classes (optional).</p>
+        <form method="post" :action="editingType ? '/admin/documents/types/update' : '/admin/documents/types/new'" class="grid gap-4 md:grid-cols-2" @submit="syncIconToForm()">
+            <input type="hidden" name="type_id" :value="editingType ? editingType.id : ''" x-show="editingType">
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Code</span>
+                <input type="text" name="code" required placeholder="technical"
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       x-model="formData.code">
+                <p class="text-xs text-slate-500">Unique identifier (lowercase, URL-friendly)</p>
+            </label>
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Label</span>
+                <input type="text" name="label" required placeholder="Technical"
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       x-model="formData.label">
+            </label>
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Description</span>
+                <textarea name="description" rows="2" placeholder="Technical documentation"
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          x-model="formData.description"></textarea>
+            </label>
+            <div class="grid gap-4 md:col-span-1 md:grid-cols-2">
+                <label class="text-sm font-semibold text-slate-600 space-y-2">
+                    <span>Icon class</span>
+                    <input type="text" name="icon" placeholder="fas fa-code"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           x-model="formIcon">
+                    <p class="text-xs text-slate-500">Font Awesome 6 class (optional)</p>
+                </label>
+                <div class="flex items-center justify-center">
+                    <div class="flex h-20 w-20 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-50 text-2xl text-blue-600">
+                        <i :class="formIcon || 'fas fa-question'" aria-hidden="true"></i>
+                    </div>
+                </div>
+            </div>
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Sort Order</span>
+                <input type="number" name="sort"
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       x-model.number="formData.sort">
+            </label>
+            <div class="md:col-span-2 flex gap-3">
+                <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-semibold" x-text="editingType ? 'Update Type' : 'Add Type'"></button>
+                <button type="button" @click="resetForm()" class="px-4 py-3 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold" x-show="editingType">Cancel</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+function docTypesTable(initial) {
+    return {
+        query: '',
+        perPageOptions: [10, 20, 30, 50, 100],
+        perPage: 10,
+        currentPage: 1,
+        types: initial.types || [],
+        editingType: null,
+        formData: {
+            code: '',
+            label: '',
+            description: '',
+            icon: '',
+            sort: 0
+        },
+        formIcon: '',
+        init() {
+            this.$watch('query', () => { this.currentPage = 1; });
+            this.$watch('perPage', () => { this.currentPage = 1; });
+        },
+        filteredTypes() {
+            const term = this.query.trim().toLowerCase();
+            if (!term) {
+                return this.types;
+            }
+            return this.types.filter((type) =>
+                (type.label && type.label.toLowerCase().includes(term)) ||
+                (type.code && type.code.toLowerCase().includes(term)) ||
+                (type.description && type.description.toLowerCase().includes(term))
+            );
+        },
+        totalPages() {
+            const total = this.filteredTypes().length;
+            return Math.max(1, Math.ceil(total / this.perPage));
+        },
+        paginatedTypes() {
+            const filtered = this.filteredTypes();
+            const start = (this.currentPage - 1) * this.perPage;
+            return filtered.slice(start, start + this.perPage);
+        },
+        goToPage(page) {
+            const total = this.totalPages();
+            this.currentPage = Math.min(Math.max(page, 1), total);
+        },
+        prevPage() {
+            this.goToPage(this.currentPage - 1);
+        },
+        nextPage() {
+            this.goToPage(this.currentPage + 1);
+        },
+        pageNumbers() {
+            const total = this.totalPages();
+            if (total === 0) return [];
+            if (total === 1) return [1];
+            
+            const current = this.currentPage;
+            const pages = [];
+            
+            // Show current page and 1 page on each side
+            const start = Math.max(1, current - 1);
+            const end = Math.min(total, current + 1);
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            return pages;
+        },
+        rangeSummary() {
+            const filtered = this.filteredTypes();
+            if (!filtered.length) {
+                return 'Showing 0 items';
+            }
+            const start = (this.currentPage - 1) * this.perPage + 1;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
+        },
+        editType(type) {
+            this.editingType = { ...type };
+            this.formData = {
+                code: type.code || '',
+                label: type.label || '',
+                description: type.description || '',
+                icon: type.icon || '',
+                sort: type.sort || 0
+            };
+            this.formIcon = type.icon || '';
+            // Scroll to edit form
+            const formElement = document.getElementById('edit-form');
+            if (formElement) {
+                formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Add offset for header
+                setTimeout(() => {
+                    window.scrollBy(0, -100);
+                }, 100);
+            }
+        },
+        resetForm() {
+            this.editingType = null;
+            this.formData = {
+                code: '',
+                label: '',
+                description: '',
+                icon: '',
+                sort: 0
+            };
+            this.formIcon = '';
+        },
+        syncIconToForm() {
+            // Ensure icon input gets the formIcon value before form submission
+            const iconInput = document.querySelector('input[name="icon"]');
+            if (iconInput) {
+                iconInput.value = this.formIcon || '';
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

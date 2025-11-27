@@ -1,0 +1,78 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Skill' if skill else 'New Skill' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit Skill' if skill else 'New Skill' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <form method="POST" action="/admin/experience/skills/save" class="space-y-6">
+        {% if skill %}
+        <input type="hidden" name="skill_id" value="{{ skill.id }}">
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">{{ skill.name if skill else 'New Skill' }}</h1>
+                    <p class="mt-2 text-slate-600">Fill in the skill details below</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/admin/experience/skills" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save mr-2"></i>Save Skill
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <label class="md:col-span-2">
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Name *</span>
+                    <input type="text" name="name" value="{{ skill.name if skill else '' }}" required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Icon (Font Awesome class)</span>
+                    <input type="text" name="icon" value="{{ skill.icon if skill else '' }}"
+                           placeholder="fab fa-js"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Category</span>
+                    <select name="category" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Select category</option>
+                        <option value="language" {% if skill and skill.category == 'language' %}selected{% endif %}>Language</option>
+                        <option value="frontend" {% if skill and skill.category == 'frontend' %}selected{% endif %}>Frontend</option>
+                        <option value="backend" {% if skill and skill.category == 'backend' %}selected{% endif %}>Backend</option>
+                        <option value="database" {% if skill and skill.category == 'database' %}selected{% endif %}>Database</option>
+                        <option value="devops" {% if skill and skill.category == 'devops' %}selected{% endif %}>DevOps</option>
+                        <option value="other" {% if skill and skill.category == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Color</span>
+                    <select name="color" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Select color</option>
+                        <option value="red" {% if skill and skill.color == 'red' %}selected{% endif %}>Red</option>
+                        <option value="blue" {% if skill and skill.color == 'blue' %}selected{% endif %}>Blue</option>
+                        <option value="green" {% if skill and skill.color == 'green' %}selected{% endif %}>Green</option>
+                        <option value="yellow" {% if skill and skill.color == 'yellow' %}selected{% endif %}>Yellow</option>
+                        <option value="purple" {% if skill and skill.color == 'purple' %}selected{% endif %}>Purple</option>
+                    </select>
+                </label>
+
+                <label class="md:col-span-2">
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Description</span>
+                    <textarea name="description" rows="3"
+                              class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">{{ skill.description if skill else '' }}</textarea>
+                </label>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,15 @@
+# Netlify Redirects Configuration
+# This file handles redirects and 404 errors for Netlify hosting
+
+# Handle 404 errors
+/* /404.html 404
+
+# Optional: Redirect old URLs to new structure
+# /old-blog/* /blog/:splat 301
+# /blog/:slug /blog/posts/:slug.html 301
+
+# Optional: Force HTTPS
+# http://bradleyclampitt.com/* https://bradleyclampitt.com/:splat 301
+
+# Optional: Redirect www to non-www
+# https://www.bradleyclampitt.com/* https://bradleyclampitt.com/:splat 301 

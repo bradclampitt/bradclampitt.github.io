@@ -1,0 +1,177 @@
+{% extends "_base.html" %}
+
+{% block title %}Photography - Admin Console{% endblock %}
+{% block header_title %}Photography{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data='photographyTable({ photos: {{ photos | tojson | safe }} })' x-init="init()">
+    <section class="glass-panel p-6 space-y-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <h2 class="text-3xl font-semibold text-slate-900">Photography</h2>
+                <p class="text-sm text-slate-500 mt-1">Manage your photography entries</p>
+            </div>
+            <a href="/admin/photography/new" class="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-plus mr-2"></i>New Photo
+            </a>
+        </div>
+
+        <!-- Responsive Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            <template x-for="photo in paginatedPhotos()" :key="photo.id">
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <!-- Image -->
+                    <div class="aspect-video bg-slate-100 overflow-hidden">
+                        <template x-if="photo.image_url">
+                            <img :src="photo.image_url" :alt="photo.photo_name" class="w-full h-full object-cover">
+                        </template>
+                        <template x-if="!photo.image_url">
+                            <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                <i class="fas fa-image text-4xl"></i>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="p-4">
+                        <h3 class="font-semibold text-slate-900 text-sm mb-1 line-clamp-2" x-text="photo.photo_name"></h3>
+                        <template x-if="photo.category_label">
+                            <div class="mb-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" 
+                                      :class="{
+                                          'bg-blue-100 text-blue-800': photo.category_color === 'blue',
+                                          'bg-red-100 text-red-800': photo.category_color === 'red',
+                                          'bg-green-100 text-green-800': photo.category_color === 'green',
+                                          'bg-yellow-100 text-yellow-800': photo.category_color === 'yellow',
+                                          'bg-purple-100 text-purple-800': photo.category_color === 'purple',
+                                          'bg-gray-100 text-gray-800': !['blue', 'red', 'green', 'yellow', 'purple'].includes(photo.category_color)
+                                      }"
+                                      x-text="photo.category_label"></span>
+                            </div>
+                        </template>
+                        
+                        <!-- Details (hidden on smallest screens) -->
+                        <div class="space-y-1 text-xs text-slate-500 hidden sm:block">
+                            <template x-if="photo.location">
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-marker-alt mr-1 w-3"></i>
+                                    <span class="truncate" x-text="photo.location"></span>
+                                </div>
+                            </template>
+                            <template x-if="photo.year">
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar mr-1 w-3"></i>
+                                    <span x-text="photo.year"></span>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex gap-2">
+                            <a :href="'/admin/photography/' + photo.id" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">
+                                Edit
+                            </a>
+                            <form method="POST" action="/admin/photography/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this photo?');">
+                                <input type="hidden" name="photo_id" :value="photo.id">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="!paginatedPhotos().length" class="text-center py-12">
+            <i class="fas fa-images text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">No photos yet.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <!-- Left: Per Page Dropdown -->
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span>Per page</span>
+                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
+                    <template x-for="size in perPageOptions" :key="'photo-size-' + size">
+                        <option :value="size" x-text="size"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <!-- Middle: Showing count -->
+            <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
+            
+            <!-- Right: Page navigation -->
+            <div class="flex items-center gap-2">
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <template x-for="page in pageNumbers()" :key="'photo-page-' + page">
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
+                            @click="goToPage(page)" 
+                            x-text="page"></button>
+                </template>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function photographyTable(initial) {
+    return {
+        perPageOptions: [12, 24, 36, 48, 60],
+        perPage: 24,
+        currentPage: 1,
+        photos: initial.photos || [],
+        init() {
+            this.$watch('perPage', () => { this.currentPage = 1; });
+        },
+        totalPages() {
+            const total = this.photos.length;
+            return Math.max(1, Math.ceil(total / this.perPage));
+        },
+        paginatedPhotos() {
+            const start = (this.currentPage - 1) * this.perPage;
+            return this.photos.slice(start, start + this.perPage);
+        },
+        goToPage(page) {
+            const total = this.totalPages();
+            this.currentPage = Math.min(Math.max(page, 1), total);
+        },
+        prevPage() {
+            this.goToPage(this.currentPage - 1);
+        },
+        nextPage() {
+            this.goToPage(this.currentPage + 1);
+        },
+        pageNumbers() {
+            const total = this.totalPages();
+            if (total === 0) return [];
+            if (total === 1) return [1];
+            
+            const current = this.currentPage;
+            const pages = [];
+            
+            const start = Math.max(1, current - 1);
+            const end = Math.min(total, current + 1);
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            return pages;
+        },
+        rangeSummary() {
+            if (!this.photos.length) {
+                return 'Showing 0 items';
+            }
+            const start = (this.currentPage - 1) * this.perPage + 1;
+            const end = Math.min(start + this.perPage - 1, this.photos.length);
+            return `Showing ${start}-${end} of ${this.photos.length} items`;
+        },
+    };
+}
+</script>
+{% endblock %}
+

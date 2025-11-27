@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Details</title>
+    <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <script src="assets/js/alpine.js" defer></script>
+    <style>[x-cloak]{display:none!important;}</style>
+</head>
+<body class="min-h-screen bg-gray-50" x-data="projectPage()" x-init="init()">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <div class="flex items-center justify-between">
+            <a href="portfolio.html" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Back to Portfolio
+            </a>
+        </div>
+
+        <template x-if="loading">
+            <div class="text-center text-gray-500">Loading project…</div>
+        </template>
+
+        <template x-if="error">
+            <div class="text-center text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3" x-text="error"></div>
+        </template>
+
+        <template x-if="!loading && !error && project" x-cloak>
+            <div class="space-y-8">
+                <div class="space-y-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <template x-for="code in project.tabCodes" :key="code">
+                            <span class="px-4 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold" x-text="tabLabel(code)"></span>
+                        </template>
+                        <template x-for="badge in project.badges" :key="'badge-' + badge">
+                            <span class="px-4 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold" x-text="badge"></span>
+                        </template>
+                    </div>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900" x-text="project.title"></h1>
+                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                        <span class="flex items-center gap-2" x-show="project.client_name">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v4a1 1 0 001 1h3m10 0h3a1 1 0 001-1V7a1 1 0 00-1-1h-3m-6-4h-4a1 1 0 00-1 1v3a1 1 0 001 1h4m2 18h4a1 1 0 001-1v-3a1 1 0 00-1-1h-4m-6 0H7a1 1 0 00-1 1v3a1 1 0 001 1h3"></path>
+                            </svg>
+                            <span x-text="project.client_name"></span>
+                        </span>
+                        <span class="flex items-center gap-2" x-show="project.launched_date">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Launched <span x-text="formatDate(project.launched_date)"></span></span>
+                        </span>
+                        <span class="flex items-center gap-2" x-show="project.updated_at">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Last updated <span x-text="formatDate(project.updated_at)"></span></span>
+                        </span>
+                        <span class="flex items-center gap-2" x-show="project.in_use_start || project.in_use_end">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span x-text="inUseRange(project)"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
+                    <div class="relative bg-gray-100">
+                        <template x-if="images.length">
+                            <div>
+                                <img :src="images[activeImageIndex].url" :alt="images[activeImageIndex].alt || project.title" class="w-full h-72 sm:h-96 object-cover">
+                            </div>
+                        </template>
+                        <template x-if="!images.length">
+                            <div class="h-72 sm:h-96 flex items-center justify-center text-gray-400">
+                                <span>No images available yet.</span>
+                            </div>
+                        </template>
+                    </div>
+                    <template x-if="images.length > 1">
+                        <div class="flex gap-2 px-4 py-3 overflow-x-auto bg-gray-50">
+                            <template x-for="(image, index) in images" :key="image.url">
+                                <button type="button" class="relative border rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500" :class="activeImageIndex === index ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-200'" @click="activeImageIndex = index">
+                                    <img :src="image.url" :alt="image.alt || 'Preview image'" class="w-20 h-14 object-cover">
+                                </button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="grid gap-8 lg:grid-cols-3">
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-6">
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Project Overview</h2>
+                            <div class="prose max-w-none text-gray-700 text-sm sm:text-base leading-relaxed" x-html="project.description_html || project.summary || '<p>Details coming soon.</p>'"></div>
+                        </div>
+
+                        <template x-if="features.length">
+                            <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-6 space-y-4">
+                                <h2 class="text-xl font-semibold text-gray-900">Features &amp; Components</h2>
+                                <div class="grid gap-4 sm:grid-cols-2">
+                                    <template x-for="feature in features" :key="feature.id || feature.label">
+                                        <div class="border border-gray-200 rounded-2xl px-4 py-3 bg-gray-50">
+                                            <div class="flex items-start gap-3">
+                                                <template x-if="feature.icon">
+                                                    <i :class="feature.icon + ' text-blue-600 text-lg mt-1'" aria-hidden="true"></i>
+                                                </template>
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900" x-text="feature.label"></h3>
+                                                    <p class="text-sm text-gray-600 mt-1" x-text="feature.description"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <aside class="space-y-6">
+                        <template x-if="techTags.length">
+                            <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-6 space-y-3">
+                                <h2 class="text-xl font-semibold text-gray-900">Tech Stack</h2>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="tag in techTags" :key="tag.id">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                                            <template x-if="tag.icon">
+                                                <i :class="tag.icon + ' mr-1'" aria-hidden="true"></i>
+                                            </template>
+                                            <span x-text="tag.label"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="links.length">
+                            <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-6 space-y-3">
+                                <h2 class="text-xl font-semibold text-gray-900">Links</h2>
+                                <div class="space-y-2">
+                                    <template x-for="link in links" :key="link.url">
+                                        <a :href="link.url" target="_blank" rel="noopener" class="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-2xl text-sm font-semibold text-blue-600 hover:bg-blue-50">
+                                            <span x-text="link.label || link.url"></span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h7v7m0-7L10 14m4-11H5a2 2 0 00-2 2v13a2 2 0 002 2h13a2 2 0 002-2v-9"></path>
+                                            </svg>
+                                        </a>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="bg-white border border-gray-200 rounded-3xl shadow-sm p-6 space-y-3">
+                            <h2 class="text-xl font-semibold text-gray-900">Metadata</h2>
+                            <dl class="space-y-2 text-sm text-gray-600">
+                                <div>
+                                    <dt class="font-semibold text-gray-700">Posted</dt>
+                                    <dd x-text="formatDate(project.posted_at) || '—'"></dd>
+                                </div>
+                                <div>
+                                    <dt class="font-semibold text-gray-700">Tags</dt>
+                                    <dd>
+                                        <template x-if="project.tagsList.length">
+                                            <div class="flex flex-wrap gap-2 mt-1">
+                                                <template x-for="tag in project.tagsList" :key="'tag-' + tag">
+                                                    <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold" x-text="tag"></span>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <span x-show="!project.tagsList.length">—</span>
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <script src="assets/js/sql-wasm.js"></script>
+    <script>
+    function projectPage() {
+        return {
+            loading: true,
+            error: '',
+            project: null,
+            features: [],
+            techTags: [],
+            images: [],
+            links: [],
+            activeImageIndex: 0,
+            async init() {
+                const slug = new URLSearchParams(window.location.search).get('slug');
+                if (!slug) {
+                    this.error = 'Missing project slug in the URL.';
+                    this.loading = false;
+                    return;
+                }
+                try {
+                    const SQL = await initSqlJs({ locateFile: (file) => `/assets/js/${file}` });
+                    const response = await fetch('/admin/database/unified.sqlite', { cache: 'no-cache' });
+                    if (!response.ok) {
+                        throw new Error('Unable to load portfolio database.');
+                    }
+                    const buffer = await response.arrayBuffer();
+                    const db = new SQL.Database(new Uint8Array(buffer));
+
+                    const projectRow = this.selectOne(db, `
+                        SELECT p.*, c.name AS client_name,
+                               GROUP_CONCAT(DISTINCT t.code) AS tab_codes,
+                               GROUP_CONCAT(DISTINCT t.label) AS tab_labels
+                        FROM portfolio_projects p
+                        LEFT JOIN clients c ON c.id = p.client_id
+                        LEFT JOIN portfolio_project_tabs pt ON pt.project_id = p.id
+                        LEFT JOIN portfolio_tabs t ON t.id = pt.tab_id
+                        WHERE p.slug = ?
+                        GROUP BY p.id
+                    `, [slug]);
+
+                    if (!projectRow) {
+                        this.error = 'Project not found.';
+                        db.close();
+                        this.loading = false;
+                        return;
+                    }
+
+                    this.features = this.selectAll(db, `
+                        SELECT id, label, icon, description, sort
+                        FROM portfolio_project_features
+                        WHERE project_id = ?
+                        ORDER BY sort, id
+                    `, [projectRow.id]);
+
+                    this.techTags = this.selectAll(db, `
+                        SELECT tt.id, tt.label, tt.icon, tt.category
+                        FROM portfolio_tech_tags tt
+                        JOIN portfolio_project_tech_tags pt ON pt.tag_id = tt.id
+                        WHERE pt.project_id = ?
+                        ORDER BY tt.category, tt.label
+                    `, [projectRow.id]);
+
+                    this.images = this.selectAll(db, `
+                        SELECT url, alt, is_cover, sort
+                        FROM portfolio_project_images
+                        WHERE project_id = ?
+                        ORDER BY is_cover DESC, sort, id
+                    `, [projectRow.id]);
+
+                    this.links = this.selectAll(db, `
+                        SELECT label, url, sort
+                        FROM portfolio_project_links
+                        WHERE project_id = ?
+                        ORDER BY sort, id
+                    `, [projectRow.id]);
+
+                    db.close();
+
+                    let parsedExtra = {};
+                    if (projectRow.extra) {
+                        try {
+                            parsedExtra = JSON.parse(projectRow.extra);
+                        } catch (error) {
+                            console.warn('Invalid JSON in project.extra', error);
+                        }
+                    }
+
+                    this.project = {
+                        ...projectRow,
+                        tabCodes: projectRow.tab_codes ? projectRow.tab_codes.split(',').map((code) => code.trim()).filter(Boolean) : [],
+                        tabLabels: projectRow.tab_labels ? projectRow.tab_labels.split(',').map((label) => label.trim()).filter(Boolean) : [],
+                        tagsList: projectRow.tags ? projectRow.tags.split(',').map((tag) => tag.trim()).filter(Boolean) : [],
+                        badges: Array.isArray(parsedExtra.badges) ? parsedExtra.badges : [],
+                        extra: parsedExtra,
+                    };
+
+                    if (this.images.length) {
+                        const coverIndex = this.images.findIndex((image) => Number(image.is_cover) === 1);
+                        this.activeImageIndex = coverIndex >= 0 ? coverIndex : 0;
+                    }
+                } catch (error) {
+                    console.error(error);
+                    this.error = error && error.message ? error.message : 'Unexpected error loading project.';
+                } finally {
+                    this.loading = false;
+                }
+            },
+            selectAll(db, query, params = []) {
+                const stmt = db.prepare(query);
+                stmt.bind(params);
+                const rows = [];
+                while (stmt.step()) {
+                    rows.push(stmt.getAsObject());
+                }
+                stmt.free();
+                return rows;
+            },
+            selectOne(db, query, params = []) {
+                const stmt = db.prepare(query);
+                stmt.bind(params);
+                const row = stmt.step() ? stmt.getAsObject() : null;
+                stmt.free();
+                return row;
+            },
+            tabLabel(code) {
+                if (!this.project || !this.project.tabLabels) {
+                    return code;
+                }
+                const idx = this.project.tabCodes.indexOf(code);
+                return idx >= 0 ? this.project.tabLabels[idx] : code;
+            },
+            formatDate(value) {
+                if (!value) {
+                    return '';
+                }
+                const date = new Date(value);
+                if (!Number.isNaN(date.getTime())) {
+                    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+                }
+                return value;
+            },
+            inUseRange(project) {
+                if (!project.in_use_start && !project.in_use_end) {
+                    return '';
+                }
+                const start = this.formatDate(project.in_use_start) || '—';
+                const end = this.formatDate(project.in_use_end) || 'Present';
+                return `In use ${start} → ${end}`;
+            }
+        };
+    }
+    </script>
+</body>
+</html>

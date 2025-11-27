@@ -1,0 +1,297 @@
+{% extends "_base.html" %}
+
+{% block title %}Site Settings - Admin Console{% endblock %}
+{% block header_title %}Site Settings{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data='settingsTable({ settings: {{ settings | tojson | safe }}, frontendUsage: {{ frontend_usage | tojson | safe }} })' x-init="init()">
+    <section class="glass-panel p-6 space-y-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <h2 class="text-3xl font-semibold text-slate-900">Site Settings</h2>
+                <p class="text-sm text-slate-500 mt-1">Manage global site configuration</p>
+            </div>
+            <button @click="showAddForm = !showAddForm" class="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-plus mr-2"></i>New Setting
+            </button>
+        </div>
+
+        <!-- Add New Setting Form -->
+        <div x-show="showAddForm" x-transition class="bg-blue-50 rounded-lg p-6 border border-blue-200 mb-6">
+            <h3 class="text-lg font-semibold text-slate-900 mb-4">Add New Setting</h3>
+            <form method="POST" action="/admin/cms/settings/save" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="new_setting_key" class="block text-sm font-medium text-slate-700 mb-1">Setting Key *</label>
+                    <input type="text" id="new_setting_key" name="setting_key" required
+                           placeholder="e.g., site_name"
+                           pattern="[a-z0-9_]+"
+                           title="Lowercase letters, numbers, and underscores only"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="new_setting_type" class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                    <select id="new_setting_type" name="setting_type" 
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="text">Text</option>
+                        <option value="html">HTML</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="new_setting_value" class="block text-sm font-medium text-slate-700 mb-1">Value *</label>
+                    <textarea id="new_setting_value" name="setting_value" required rows="3"
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="new_description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                    <input type="text" id="new_description" name="description"
+                           placeholder="What this setting controls"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="md:col-span-2 flex gap-3">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Add Setting</button>
+                    <button type="button" @click="showAddForm = false" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto -mx-6 px-6">
+            <table class="w-full divide-y divide-slate-200 text-sm">
+                <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
+                    <tr>
+                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Setting Key</th>
+                        <th class="px-3 py-3 text-left hidden md:table-cell sm:px-4 sm:py-3">Value</th>
+                        <th class="px-3 py-3 text-left hidden lg:table-cell sm:px-4 sm:py-3">Type</th>
+                        <th class="px-3 py-3 text-left hidden xl:table-cell sm:px-4 sm:py-3">Updated</th>
+                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedSettings().length">
+                    <template x-for="setting in paginatedSettings()" :key="setting.id">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-3 py-4 sm:px-4">
+                                <div class="text-sm font-medium text-slate-900" x-text="setting.setting_key"></div>
+                                <template x-if="setting.description">
+                                    <div class="text-xs text-slate-500 mt-1" x-text="setting.description"></div>
+                                </template>
+                            </td>
+                            <td class="px-3 py-4 text-sm text-slate-500 hidden md:table-cell sm:px-4">
+                                <div class="max-w-md truncate" x-text="setting.setting_value"></div>
+                            </td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-500 hidden lg:table-cell sm:px-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                      x-text="setting.setting_type || 'text'"></span>
+                            </td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-500 hidden xl:table-cell sm:px-4">
+                                <span x-text="setting.updated_at || '-'"></span>
+                            </td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
+                                    <button @click="editSetting(setting)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</button>
+                                    <form method="POST" action="/admin/cms/settings/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this setting?');">
+                                        <input type="hidden" name="setting_id" :value="setting.id">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tbody x-show="!paginatedSettings().length">
+                    <tr>
+                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No settings yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span>Per page</span>
+                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
+                    <template x-for="size in perPageOptions" :key="'setting-size-' + size">
+                        <option :value="size" x-text="size"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
+            
+            <div class="flex items-center gap-2">
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <template x-for="page in pageNumbers()" :key="'setting-page-' + page">
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
+                            @click="goToPage(page)" 
+                            x-text="page"></button>
+                </template>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Frontend Block References Section -->
+    <section class="glass-panel p-6 space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900 flex items-center gap-2">
+                    <i class="fas fa-globe text-blue-600"></i>
+                    <span>Frontend Block References</span>
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">Block IDs referenced in your frontend HTML pages</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="(files, blockId) in frontendUsage" :key="blockId">
+                <div class="bg-white rounded-lg border border-blue-200 p-4">
+                    <div class="flex items-start justify-between mb-2">
+                        <code class="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded" x-text="blockId"></code>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span>Referenced</span>
+                        </span>
+                    </div>
+                    <div class="mt-2">
+                        <p class="text-xs font-semibold text-slate-600 mb-1">Used in:</p>
+                        <ul class="text-xs text-slate-500 space-y-1">
+                            <template x-for="file in files" :key="file">
+                                <li class="flex items-center gap-1">
+                                    <i class="fas fa-file-code text-blue-400"></i>
+                                    <span x-text="file"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </template>
+            <template x-if="Object.keys(frontendUsage).length === 0">
+                <div class="col-span-full text-center text-slate-500 py-4">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span>No CMS blocks found in frontend pages</span>
+                </div>
+            </template>
+        </div>
+    </section>
+
+    <!-- Edit Modal -->
+    <div x-show="editingSetting" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+         style="display: none;"
+         @click.self="editingSetting = null">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-semibold text-slate-900 mb-4">Edit Setting</h3>
+            <form method="POST" action="/admin/cms/settings/save" class="space-y-4">
+                <input type="hidden" name="setting_id" :value="editingSetting?.id">
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Setting Key</label>
+                    <input type="text" name="setting_key" required
+                           :value="editingSetting?.setting_key"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                    <select name="setting_type" 
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="text" :selected="editingSetting?.setting_type === 'text'">Text</option>
+                        <option value="html" :selected="editingSetting?.setting_type === 'html'">HTML</option>
+                        <option value="json" :selected="editingSetting?.setting_type === 'json'">JSON</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Value</label>
+                    <textarea name="setting_value" required rows="5"
+                              :value="editingSetting?.setting_value"
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                    <input type="text" name="description"
+                           :value="editingSetting?.description || ''"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Save</button>
+                    <button type="button" @click="editingSetting = null" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function settingsTable(initial) {
+    return {
+        perPageOptions: [10, 20, 30, 50, 100],
+        perPage: 10,
+        currentPage: 1,
+        settings: initial.settings || [],
+        frontendUsage: initial.frontendUsage || {},
+        showAddForm: false,
+        editingSetting: null,
+        init() {
+            this.$watch('perPage', () => { this.currentPage = 1; });
+        },
+        totalPages() {
+            const total = this.settings.length;
+            return Math.max(1, Math.ceil(total / this.perPage));
+        },
+        paginatedSettings() {
+            const start = (this.currentPage - 1) * this.perPage;
+            return this.settings.slice(start, start + this.perPage);
+        },
+        goToPage(page) {
+            const total = this.totalPages();
+            this.currentPage = Math.min(Math.max(page, 1), total);
+        },
+        prevPage() {
+            this.goToPage(this.currentPage - 1);
+        },
+        nextPage() {
+            this.goToPage(this.currentPage + 1);
+        },
+        pageNumbers() {
+            const total = this.totalPages();
+            if (total === 0) return [];
+            if (total === 1) return [1];
+            
+            const current = this.currentPage;
+            const pages = [];
+            
+            const start = Math.max(1, current - 1);
+            const end = Math.min(total, current + 1);
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            return pages;
+        },
+        rangeSummary() {
+            if (!this.settings.length) {
+                return 'Showing 0 items';
+            }
+            const start = (this.currentPage - 1) * this.perPage + 1;
+            const end = Math.min(start + this.perPage - 1, this.settings.length);
+            return `Showing ${start}-${end} of ${this.settings.length} items`;
+        },
+        editSetting(setting) {
+            this.editingSetting = { ...setting };
+        },
+    };
+}
+</script>
+{% endblock %}
+

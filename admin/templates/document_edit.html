@@ -1,0 +1,1742 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Document' if document else 'New Document' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit Document' if document else 'New Document' }}{% endblock %}
+
+{% block extra_head %}
+<!-- Toast UI Editor -->
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<!-- Confluence Markdown CSS for Modal Preview (matches frontend styling) -->
+<link rel="stylesheet" href="/assets/css/confluence-markdown.css">
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <form method="POST" action="/admin/documents/save" class="space-y-8">
+        {% if document %}
+        <input type="hidden" name="doc_id" value="{{ document.id }}">
+        {% endif %}
+
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">{{ document.title if document else 'New Document' }}</h1>
+                <p class="mt-2 text-slate-600">Fill in the document details below</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="/admin/documents" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </a>
+                <button type="button" onclick="openPreviewModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-eye mr-2"></i>Preview
+                </button>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition font-semibold" onclick="return syncEditorContent();">
+                    <i class="fas fa-save mr-2"></i>Save Document
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <section class="bg-blue-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-blue-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Basic Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+                        <input type="text" id="title" name="title" required
+                               value="{{ document.title if document else '' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="slug" class="block text-sm font-medium text-slate-700 mb-1">Slug</label>
+                        <input type="text" id="slug" name="slug"
+                               value="{{ document.slug if document else '' }}"
+                               placeholder="Auto-generated from title"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                        <select id="status" name="status" 
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Published" {% if not document or (document and document.status == 'Published') %}selected{% endif %}>Published</option>
+                            <option value="Draft" {% if document and document.status == 'Draft' %}selected{% endif %}>Draft</option>
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Draft documents are not shown on the frontend</p>
+                    </div>
+                    <div>
+                        <label for="category_id" class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                        <div x-data="searchableDropdown({
+                            options: [
+                                {id: '', label: '— None —', icon: ''},
+                                {% for cat in categories %}
+                                {id: {{ cat.id }}, label: '{{ cat.label|replace("'", "\\'") }}', icon: '{{ cat.icon or "" }}'},
+                                {% endfor %}
+                            ],
+                            selectedId: {{ document.category_id if document and document.category_id else 'null' }},
+                            name: 'category_id'
+                        })" 
+                        x-init="init()"
+                        @click.away="if (open && !isOpening) closeDropdown()"
+                        class="relative">
+                            <!-- Hidden input for form submission -->
+                            <input type="hidden" name="category_id" :value="selectedId || ''">
+                            
+                            <!-- Button / Search Input (switches based on open state) -->
+                            <template x-if="!open">
+                                <button type="button" @click="openDropdown()" x-ref="button"
+                                        class="w-full px-3 py-2 text-left bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between">
+                                    <span class="flex items-center gap-2">
+                                        <template x-if="selectedOption && selectedOption.icon">
+                                            <i :class="selectedOption.icon" class="text-slate-500"></i>
+                                        </template>
+                                        <span x-text="selectedOption ? selectedOption.label : '— None —'" class="text-slate-700"></span>
+                                    </span>
+                                    <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                            </template>
+                            <template x-if="open">
+                                <div class="relative" x-ref="searchContainer">
+                                    <input type="text" x-model="search" @keydown.escape="closeDropdown()" 
+                                           x-ref="searchInput"
+                                           placeholder="Search..." 
+                                           autofocus
+                                           class="w-full px-3 py-2 text-left bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <i class="fas fa-chevron-up text-slate-400 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                </div>
+                            </template>
+                            
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" 
+                                 x-ref="dropdownMenu"
+                                 @click.stop
+                                 @mousedown.stop
+                                 x-transition:enter="transition ease-out duration-100" 
+                                 x-transition:enter-start="opacity-0 scale-95" 
+                                 x-transition:enter-end="opacity-100 scale-100" 
+                                 x-transition:leave="transition ease-in duration-75" 
+                                 x-transition:leave-start="opacity-100 scale-100" 
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="fixed bg-white border border-slate-300 rounded-lg shadow-xl overflow-hidden"
+                                 style="z-index: 9999; max-height: 250px;"
+                                 :style="menuStyle">
+                                <!-- Options List -->
+                                <div class="overflow-y-auto" style="max-height: 250px;">
+                                    <template x-for="option in filteredOptions" :key="option.id">
+                                        <div @click="selectOption(option)" 
+                                             class="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 last:border-b-0"
+                                             :class="{'bg-blue-50': selectedId === option.id}">
+                                            <template x-if="option.icon">
+                                                <i :class="option.icon" class="text-slate-500 w-5 text-center"></i>
+                                            </template>
+                                            <template x-if="!option.icon">
+                                                <div class="w-5"></div>
+                                            </template>
+                                            <span x-text="option.label" class="text-slate-700 flex-1"></span>
+                                            <template x-if="selectedId === option.id">
+                                                <i class="fas fa-check text-blue-600"></i>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="filteredOptions.length === 0">
+                                        <div class="px-3 py-2 text-sm text-slate-500 text-center">No results found</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="type_id" class="block text-sm font-medium text-slate-700 mb-1">Document Type</label>
+                        <div x-data="searchableDropdown({
+                            options: [
+                                {id: '', label: '— None —', icon: ''},
+                                {% for type in types %}
+                                {id: {{ type.id }}, label: '{{ type.label|replace("'", "\\'") }}', icon: '{{ type.icon or "" }}'},
+                                {% endfor %}
+                            ],
+                            selectedId: {{ document.type_id if document and document.type_id else 'null' }},
+                            name: 'type_id'
+                        })" 
+                        x-init="init()"
+                        @click.away="if (open && !isOpening) closeDropdown()"
+                        class="relative">
+                            <!-- Hidden input for form submission -->
+                            <input type="hidden" name="type_id" :value="selectedId || ''">
+                            
+                            <!-- Button / Search Input (switches based on open state) -->
+                            <template x-if="!open">
+                                <button type="button" @click="openDropdown()" x-ref="button"
+                                        class="w-full px-3 py-2 text-left bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center justify-between">
+                                    <span class="flex items-center gap-2">
+                                        <template x-if="selectedOption && selectedOption.icon">
+                                            <i :class="selectedOption.icon" class="text-slate-500"></i>
+                                        </template>
+                                        <span x-text="selectedOption ? selectedOption.label : '— None —'" class="text-slate-700"></span>
+                                    </span>
+                                    <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                            </template>
+                            <template x-if="open">
+                                <div class="relative" x-ref="searchContainer">
+                                    <input type="text" x-model="search" @keydown.escape="closeDropdown()" 
+                                           x-ref="searchInput"
+                                           placeholder="Search..." 
+                                           autofocus
+                                           class="w-full px-3 py-2 text-left bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <i class="fas fa-chevron-up text-slate-400 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                </div>
+                            </template>
+                            
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" 
+                                 x-ref="dropdownMenu"
+                                 @click.stop
+                                 @mousedown.stop
+                                 x-transition:enter="transition ease-out duration-100" 
+                                 x-transition:enter-start="opacity-0 scale-95" 
+                                 x-transition:enter-end="opacity-100 scale-100" 
+                                 x-transition:leave="transition ease-in duration-75" 
+                                 x-transition:leave-start="opacity-100 scale-100" 
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="fixed bg-white border border-slate-300 rounded-lg shadow-xl overflow-hidden"
+                                 style="z-index: 9999; max-height: 250px;"
+                                 :style="menuStyle">
+                                <!-- Options List -->
+                                <div class="overflow-y-auto" style="max-height: 250px;">
+                                    <template x-for="option in filteredOptions" :key="option.id">
+                                        <div @click="selectOption(option)" 
+                                             class="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 last:border-b-0"
+                                             :class="{'bg-blue-50': selectedId === option.id}">
+                                            <template x-if="option.icon">
+                                                <i :class="option.icon" class="text-slate-500 w-5 text-center"></i>
+                                            </template>
+                                            <template x-if="!option.icon">
+                                                <div class="w-5"></div>
+                                            </template>
+                                            <span x-text="option.label" class="text-slate-700 flex-1"></span>
+                                            <template x-if="selectedId === option.id">
+                                                <i class="fas fa-check text-blue-600"></i>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="filteredOptions.length === 0">
+                                        <div class="px-3 py-2 text-sm text-slate-500 text-center">No results found</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="summary" class="block text-sm font-medium text-slate-700 mb-1">Summary</label>
+                        <textarea id="summary" name="summary" rows="3"
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ document.summary if document else '' }}</textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-green-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-green-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Content</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="content_format" class="block text-sm font-medium text-slate-700 mb-1">Content Format</label>
+                            <select id="content_format" name="content_format"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="markdown" {% if not document or document.content_format == 'markdown' %}selected{% endif %}>Markdown</option>
+                                <option value="html" {% if document and document.content_format == 'html' %}selected{% endif %}>HTML</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="content_source" class="block text-sm font-medium text-slate-700 mb-1">Content Source</label>
+                            <select id="content_source" name="content_source"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="inline" {% if not document or document.content_source == 'inline' %}selected{% endif %}>Inline (stored in DB)</option>
+                                <option value="file" {% if document and document.content_source == 'file' %}selected{% endif %}>File Reference</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="content-path-field" style="display: none;">
+                        <label for="content_path" class="block text-sm font-medium text-slate-700 mb-1">Content Path</label>
+                        <input type="text" id="content_path" name="content_path"
+                               value="{{ document.content_path if document else '' }}"
+                               placeholder="/path/to/file.md"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <!-- Custom Components Examples -->
+                    <div class="mb-4">
+                        <button type="button" 
+                                onclick="openComponentsModal()"
+                                class="w-full flex items-center justify-between px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition">
+                            <span class="text-sm font-semibold text-blue-900">
+                                <i class="fas fa-code mr-2"></i>Custom Markdown Components Examples
+                            </span>
+                            <i class="fas fa-external-link-alt text-blue-600"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Components Modal -->
+                    <div id="components-modal" 
+                         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+                         style="display: none;"
+                         onclick="if(event.target === this) closeComponentsModal()">
+                        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                            <!-- Modal Header -->
+                            <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                                <h2 class="text-2xl font-bold text-slate-900">
+                                    <i class="fas fa-code mr-2 text-blue-600"></i>Custom Markdown Components
+                                </h2>
+                                <button type="button" 
+                                        onclick="closeComponentsModal()"
+                                        class="text-slate-400 hover:text-slate-600 transition">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Modal Content -->
+                            <div class="flex-1 overflow-y-auto p-6" id="components-modal-content">
+                                <!-- Content will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="content-markdown-field">
+                        <label for="content_markdown" class="block text-sm font-medium text-slate-700 mb-1">Markdown Content</label>
+                        <div id="markdown-editor-container" class="border border-slate-300 rounded-lg overflow-hidden bg-white">
+                            <!-- Hidden textarea for form submission - Toast UI Editor will sync to this -->
+                            <textarea id="content_markdown" name="content_markdown" rows="15"
+                                      style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;">{{ document.content_markdown if document else '' }}</textarea>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">
+                            Use the toolbar buttons or keyboard shortcuts to format your markdown. Switch between Edit, Preview, and Split view modes.
+                            <br>
+                            <strong>Note:</strong> The built-in Preview tab does not render custom markdown components (embeds, callouts, etc.). Use the "Preview" button above to see the full rendered output.
+                        </p>
+                    </div>
+                    <div id="content-html-field" style="display: none;">
+                        <label for="content_html" class="block text-sm font-medium text-slate-700 mb-1">HTML Content</label>
+                        <textarea id="content_html" name="content_html" rows="15"
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ document.content_html if document else '' }}</textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-orange-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-orange-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Dates</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label for="created_at" class="block text-sm font-medium text-slate-700 mb-1">Created At</label>
+                        <input type="date" id="created_at" name="created_at"
+                               value="{{ document.created_at if document and document.created_at else '' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="posted_at" class="block text-sm font-medium text-slate-700 mb-1">Posted At</label>
+                        <input type="date" id="posted_at" name="posted_at"
+                               value="{{ document.posted_at if document and document.posted_at else '' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="updated_at" class="block text-sm font-medium text-slate-700 mb-1">Last Updated</label>
+                        <input type="date" id="updated_at" name="updated_at"
+                               value="{{ document.updated_at if document and document.updated_at else '' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="effective_from" class="block text-sm font-medium text-slate-700 mb-1">Effective From</label>
+                        <input type="date" id="effective_from" name="effective_from"
+                               value="{{ document.effective_from if document and document.effective_from else '' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="effective_to" class="block text-sm font-medium text-slate-700 mb-1">Effective To</label>
+                        <input type="date" id="effective_to" name="effective_to"
+                               value="{{ document.effective_to if document and document.effective_to else '' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-purple-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-purple-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Tabs</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {% for tab in tabs %}
+                    <label class="flex items-center p-3 bg-white border-2 border-purple-300 rounded-lg hover:bg-purple-100 hover:border-purple-400 cursor-pointer transition-colors">
+                        <input type="checkbox" name="tab_ids" value="{{ tab.id }}"
+                               {% if tab.id in selected_tabs %}checked{% endif %}
+                               class="mr-2 rounded border-purple-400 text-purple-600 focus:ring-purple-500">
+                        <span class="text-sm font-medium text-slate-700">{{ tab.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="bg-indigo-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-indigo-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Tags & Metadata</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="tags" class="block text-sm font-medium text-slate-700 mb-1">Tags</label>
+                        <input type="text" id="tags" name="tags"
+                               value="{{ document.tags if document else '' }}"
+                               placeholder="comma-separated tags"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="extra" class="block text-sm font-medium text-slate-700 mb-1">Extra (JSON)</label>
+                        <textarea id="extra" name="extra" rows="4"
+                                  placeholder='{"key": "value"}'
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ document.extra if document else '' }}</textarea>
+                    </div>
+                </div>
+            </section>
+
+            {% if document %}
+            <section class="bg-teal-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-teal-500" x-data="{ modalOpen: false, modalImageUrl: '' }">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Images</h2>
+                {% if images %}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {% for img in images %}
+                    <div class="relative border border-slate-200 rounded-lg overflow-hidden group">
+                        <img src="{{ img.url }}" alt="{{ img.alt or '' }}" 
+                             @click="modalImageUrl = '{{ img.url }}'; modalOpen = true"
+                             class="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                        {% if img.is_cover %}
+                        <div class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">Cover</div>
+                        {% endif %}
+                        <form method="POST" action="/admin/documents/images/delete" class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <input type="hidden" name="image_id" value="{{ img.id }}">
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this image?');" 
+                                    class="bg-red-600 text-white text-xs px-2 py-1 rounded hover:bg-red-700">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Image Modal for existing images -->
+                <div x-show="modalOpen" 
+                     @click.away="modalOpen = false"
+                     @keydown.escape.window="modalOpen = false"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-75 p-4"
+                     style="display: none;">
+                    <div class="relative max-w-7xl max-h-full">
+                        <button @click="modalOpen = false" 
+                                class="absolute -top-10 right-0 text-white hover:text-slate-300 transition">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                        <img :src="modalImageUrl" alt="Full size" class="max-w-full max-h-[90vh] object-contain">
+                    </div>
+                </div>
+                {% endif %}
+                <div x-data="imageUploadPreview()">
+                    <form method="POST" action="/admin/documents/images/upload" enctype="multipart/form-data" class="flex gap-3">
+                        <input type="hidden" name="document_id" value="{{ document.id }}">
+                        <input type="file" name="file" accept="image/*" @change="handleFileSelect($event)"
+                               class="flex-1 px-3 py-2 border border-slate-300 rounded-lg">
+                        <label class="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" name="is_cover" value="1">
+                            <span class="text-sm">Cover</span>
+                        </label>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                            Upload
+                        </button>
+                    </form>
+                    
+                    <!-- Preview Area -->
+                    <div x-show="previewUrl" class="mt-4">
+                        <div class="relative inline-block border-2 border-blue-500 rounded-lg overflow-hidden shadow-lg">
+                            <img :src="previewUrl" alt="Preview" 
+                                 @click="openImageModal(previewUrl)"
+                                 class="max-w-xs max-h-64 cursor-pointer object-contain bg-slate-50">
+                            <button @click="clearPreview()" 
+                                    class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700 transition">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Image Modal -->
+                    <div x-show="modalOpen" 
+                         @click.away="modalOpen = false"
+                         @keydown.escape.window="modalOpen = false"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-75 p-4"
+                         style="display: none;">
+                        <div class="relative max-w-7xl max-h-full">
+                            <button @click="modalOpen = false" 
+                                    class="absolute -top-10 right-0 text-white hover:text-slate-300 transition">
+                                <i class="fas fa-times text-2xl"></i>
+                            </button>
+                            <img :src="modalImageUrl" alt="Full size" class="max-w-full max-h-[90vh] object-contain">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-pink-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-pink-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">External Links</h2>
+                {% if links %}
+                <div class="space-y-2 mb-4">
+                    {% for link in links %}
+                    <div class="flex items-center justify-between p-3 bg-white border border-pink-200 rounded-lg">
+                        <div>
+                            <span class="font-medium">{{ link.label }}</span>
+                            <a href="{{ link.url }}" target="_blank" class="text-blue-600 text-sm ml-2">{{ link.url }}</a>
+                        </div>
+                        <form method="POST" action="/admin/documents/links/delete" class="ml-4">
+                            <input type="hidden" name="link_id" value="{{ link.id }}">
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this link?');" 
+                                    class="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <form method="POST" action="/admin/documents/links/save" class="flex gap-3">
+                    <input type="hidden" name="document_id" value="{{ document.id }}">
+                    <input type="text" name="label" placeholder="Link label" required
+                           class="flex-1 px-3 py-2 border border-slate-300 rounded-lg">
+                    <input type="url" name="url" placeholder="https://example.com" required
+                           class="flex-1 px-3 py-2 border border-slate-300 rounded-lg">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Add Link
+                    </button>
+                </form>
+            </section>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<script>
+// Searchable Dropdown Component
+function searchableDropdown(config) {
+    return {
+        open: false,
+        search: '',
+        selectedId: config.selectedId,
+        options: config.options,
+        menuStyle: '',
+        get selectedOption() {
+            return this.options.find(opt => opt.id === this.selectedId) || null;
+        },
+        get filteredOptions() {
+            if (!this.search) {
+                return this.options;
+            }
+            const searchLower = this.search.toLowerCase();
+            return this.options.filter(opt => 
+                opt.label.toLowerCase().includes(searchLower)
+            );
+        },
+        init() {
+            // Store button position before opening
+            this.buttonRect = null;
+            this.isOpening = false;
+            
+            // Watch for open state changes
+            this.$watch('open', (value) => {
+                if (value) {
+                    this.isOpening = true;
+                    // Store button position before it's replaced by input
+                    if (this.$refs.button) {
+                        const rect = this.$refs.button.getBoundingClientRect();
+                        this.buttonRect = {
+                            bottom: rect.bottom,
+                            left: rect.left,
+                            width: rect.width
+                        };
+                    }
+                    this.$nextTick(() => {
+                        this.updatePosition();
+                        if (this.$refs.searchInput) {
+                            this.$refs.searchInput.focus();
+                        }
+                        // Allow click.away to work after a brief delay
+                        setTimeout(() => {
+                            this.isOpening = false;
+                        }, 100);
+                    });
+                } else {
+                    this.buttonRect = null;
+                    this.isOpening = false;
+                }
+            });
+            
+            // Update position on scroll
+            const scrollHandler = () => {
+                if (this.open) {
+                    // Recalculate position from current button/input position
+                    const triggerElement = this.$refs.button || this.$refs.searchContainer;
+                    if (triggerElement) {
+                        const rect = triggerElement.getBoundingClientRect();
+                        this.buttonRect = {
+                            bottom: rect.bottom,
+                            left: rect.left,
+                            width: rect.width
+                        };
+                        this.updatePosition();
+                    }
+                }
+            };
+            window.addEventListener('scroll', scrollHandler, true);
+            window.addEventListener('resize', scrollHandler);
+            
+            // Cleanup on component destroy
+            this.$el.addEventListener('alpine:destroy', () => {
+                window.removeEventListener('scroll', scrollHandler, true);
+                window.removeEventListener('resize', scrollHandler);
+            });
+        },
+        openDropdown(e) {
+            if (e) {
+                e.stopPropagation();
+            }
+            this.open = true;
+        },
+        closeDropdown() {
+            this.open = false;
+            this.search = '';
+        },
+        updatePosition() {
+            if (!this.open || !this.$refs.dropdownMenu) {
+                return;
+            }
+            
+            // Use stored button position or get from current element
+            let rect;
+            if (this.buttonRect) {
+                rect = this.buttonRect;
+            } else {
+                const triggerElement = this.$refs.button || this.$refs.searchContainer;
+                if (!triggerElement) return;
+                const elementRect = triggerElement.getBoundingClientRect();
+                rect = {
+                    bottom: elementRect.bottom,
+                    left: elementRect.left,
+                    width: elementRect.width
+                };
+            }
+            
+            // For fixed positioning, use viewport coordinates directly
+            const top = rect.bottom + 4;
+            const left = rect.left;
+            const width = rect.width;
+            
+            this.menuStyle = `top: ${top}px; left: ${left}px; width: ${width}px;`;
+        },
+        selectOption(option) {
+            this.selectedId = option.id;
+            this.closeDropdown();
+        }
+    };
+}
+
+// Image Upload Preview Component
+function imageUploadPreview() {
+    return {
+        previewUrl: null,
+        modalOpen: false,
+        modalImageUrl: null,
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.previewUrl = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                this.clearPreview();
+            }
+        },
+        clearPreview() {
+            this.previewUrl = null;
+            // Reset file input
+            const fileInput = this.$el.querySelector('input[type="file"]');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        },
+        openImageModal(imageUrl) {
+            this.modalImageUrl = imageUrl;
+            this.modalOpen = true;
+        }
+    };
+}
+
+let markdownEditor = null;
+
+// Global error handler for images - set up IMMEDIATELY before anything else loads
+(function() {
+    // Catch errors at the window level
+    const originalErrorHandler = window.onerror;
+    window.onerror = function(msg, url, line, col, error) {
+        // Suppress image loading errors
+        if (msg && (msg.includes('404') || msg.includes('422') || msg.includes('Failed to load'))) {
+            return true; // Suppress the error
+        }
+        if (originalErrorHandler) {
+            return originalErrorHandler.apply(this, arguments);
+        }
+        return false;
+    };
+    
+    // Catch image errors specifically
+    window.addEventListener('error', function(e) {
+        if (e.target && e.target.tagName === 'IMG') {
+            e.target.style.display = 'none';
+            e.target.onerror = null;
+            e.stopPropagation();
+            e.preventDefault();
+            return true;
+        }
+    }, true);
+    
+    // Also intercept image creation
+    const originalCreateElement = document.createElement;
+    document.createElement = function(tagName) {
+        const element = originalCreateElement.apply(this, arguments);
+        if (tagName.toLowerCase() === 'img') {
+            element.onerror = function() {
+                this.style.display = 'none';
+                this.onerror = null;
+            };
+        }
+        return element;
+    };
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+    const contentSource = document.getElementById('content_source');
+    const contentPathField = document.getElementById('content_path');
+    const contentMarkdownField = document.getElementById('content-markdown-field');
+    const contentHtmlField = document.getElementById('content-html-field');
+    const contentFormat = document.getElementById('content_format');
+    const markdownTextarea = document.getElementById('content_markdown');
+
+    function initializeEditor() {
+        if (markdownEditor) {
+            markdownEditor.destroy();
+            markdownEditor = null;
+        }
+        
+        if (markdownTextarea && contentMarkdownField && contentMarkdownField.style.display !== 'none') {
+            let markdownContent = markdownTextarea.value || '';
+            
+            // Pre-process markdown to handle broken image references
+            // Replace common broken image patterns with placeholder images
+            // This prevents 404/422 errors when the editor tries to load non-existent images
+            markdownContent = markdownContent.replace(
+                /!\[([^\]]*)\]\((image\.jpg|image\.png|image\.jpeg|image\.gif|placeholder_image\.png|placeholder[^)]*\.(jpg|png|jpeg|gif))\)/gi,
+                '![$1](https://placehold.co/400x300/6366f1/ffffff?text=Image+Not+Found)'
+            );
+            
+            // Also handle relative paths that might not exist
+            markdownContent = markdownContent.replace(
+                /!\[([^\]]*)\]\((media\/images\/[^)]+)\)/gi,
+                function(match, alt, path) {
+                    // Only replace if it's a relative path (not starting with http/https)
+                    if (!path.match(/^https?:\/\//)) {
+                        return '![' + alt + '](https://placehold.co/400x300/6366f1/ffffff?text=Image+Not+Found)';
+                    }
+                    return match;
+                }
+            );
+            
+            const container = document.getElementById('markdown-editor-container');
+            if (container && typeof toastui !== 'undefined' && toastui.Editor) {
+                markdownEditor = new toastui.Editor({
+                    el: container,
+                    height: '1000px',
+                    initialEditType: 'markdown',
+                    previewStyle: 'tab',
+                    initialValue: markdownContent,
+                    toolbarItems: [
+                        ['heading', 'bold', 'italic', 'strike'],
+                        ['hr', 'quote'],
+                        ['ul', 'ol', 'task', 'indent', 'outdent'],
+                        ['table', 'image', 'link'],
+                        ['code', 'codeblock'],
+                        ['scrollSync'],
+                    ],
+                    usageStatistics: false,
+                    // Configure image handling to prevent 404 errors
+                    hooks: {
+                        addImageBlobHook: function(blob, callback) {
+                            // Handle image uploads if needed
+                            callback('data:image/png;base64,');
+                        }
+                    },
+                    // Prevent automatic image loading errors
+                    linkAttributes: {
+                        target: '_blank',
+                        rel: 'noopener noreferrer'
+                    }
+                });
+                
+                // Handle image loading errors gracefully in preview
+                // Set up immediately and also after editor loads
+                function setupImageErrorHandlers() {
+                    const preview = container.querySelector('.toastui-editor-contents');
+                    if (preview) {
+                        // Set error handlers for all existing images
+                        const images = preview.querySelectorAll('img');
+                        images.forEach(img => {
+                            // Prevent loading errors
+                            img.onerror = function() {
+                                this.style.display = 'none';
+                                this.onerror = null;
+                            };
+                            // Also set onload to catch any issues
+                            if (!img.complete || img.naturalHeight === 0) {
+                                img.style.display = 'none';
+                            }
+                        });
+                        
+                        // Use MutationObserver to handle dynamically added images
+                        const observer = new MutationObserver(function(mutations) {
+                            mutations.forEach(function(mutation) {
+                                mutation.addedNodes.forEach(function(node) {
+                                    if (node.tagName === 'IMG') {
+                                        node.onerror = function() {
+                                            this.style.display = 'none';
+                                            this.onerror = null;
+                                        };
+                                    } else if (node.querySelectorAll) {
+                                        const imgs = node.querySelectorAll('img');
+                                        imgs.forEach(function(img) {
+                                            img.onerror = function() {
+                                                this.style.display = 'none';
+                                                this.onerror = null;
+                                            };
+                                        });
+                                    }
+                                });
+                            });
+                        });
+                        
+                        observer.observe(preview, {
+                            childList: true,
+                            subtree: true
+                        });
+                    }
+                }
+                
+                // Set up immediately
+                setupImageErrorHandlers();
+                
+                // Also set up after a short delay to catch any images loaded later
+                setTimeout(setupImageErrorHandlers, 100);
+                setTimeout(setupImageErrorHandlers, 500);
+                setTimeout(setupImageErrorHandlers, 1000);
+
+                // Sync editor content to textarea before form submit
+                const form = markdownTextarea.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        console.log('Form submit handler in editor init');
+                        if (markdownEditor) {
+                            const markdownContent = markdownEditor.getMarkdown();
+                            markdownTextarea.value = markdownContent;
+                            console.log('Syncing markdown content to textarea, length:', markdownContent.length);
+                            console.log('Content:', markdownContent.substring(0, 100));
+                            // Ensure the textarea is submittable
+                            markdownTextarea.style.display = 'block';
+                            markdownTextarea.style.position = 'absolute';
+                            markdownTextarea.style.left = '-9999px';
+                            markdownTextarea.style.width = '1px';
+                            markdownTextarea.style.height = '1px';
+                            markdownTextarea.style.opacity = '0';
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    function updateContentFields() {
+        const source = contentSource.value;
+        const format = contentFormat.value;
+
+        if (source === 'file') {
+            contentPathField.style.display = 'block';
+            contentMarkdownField.style.display = 'none';
+            contentHtmlField.style.display = 'none';
+            if (markdownEditor) {
+                markdownEditor.destroy();
+                markdownEditor = null;
+            }
+        } else {
+            contentPathField.style.display = 'none';
+            if (format === 'html') {
+                contentMarkdownField.style.display = 'none';
+                contentHtmlField.style.display = 'block';
+                if (markdownEditor) {
+                    markdownEditor.destroy();
+                    markdownEditor = null;
+                }
+            } else {
+                contentMarkdownField.style.display = 'block';
+                contentHtmlField.style.display = 'none';
+                // Small delay to ensure DOM is ready
+                setTimeout(initializeEditor, 100);
+            }
+        }
+    }
+
+    // Initialize on load if markdown is the active format
+    const initialSource = contentSource.value;
+    const initialFormat = contentFormat.value;
+    
+    // Set initial visibility based on form values
+    if (initialSource === 'file') {
+        contentPathField.style.display = 'block';
+        contentMarkdownField.style.display = 'none';
+        contentHtmlField.style.display = 'none';
+    } else {
+        contentPathField.style.display = 'none';
+        if (initialFormat === 'html') {
+            contentMarkdownField.style.display = 'none';
+            contentHtmlField.style.display = 'block';
+        } else {
+            contentMarkdownField.style.display = 'block';
+            contentHtmlField.style.display = 'none';
+            // Wait for Toast UI Editor script to be fully loaded
+            function tryInitialize() {
+                if (typeof toastui !== 'undefined' && toastui.Editor) {
+                    setTimeout(initializeEditor, 100);
+                } else {
+                    setTimeout(tryInitialize, 50);
+                }
+            }
+            tryInitialize();
+        }
+    }
+
+    contentSource.addEventListener('change', updateContentFields);
+    contentFormat.addEventListener('change', updateContentFields);
+});
+
+// Global function to sync editor content before form submission
+function syncEditorContent() {
+    // Try multiple ways to find the textarea
+    let markdownTextarea = document.getElementById('content_markdown');
+    if (!markdownTextarea) {
+        // Try querySelector as fallback
+        markdownTextarea = document.querySelector('textarea[name="content_markdown"]');
+    }
+    
+    if (markdownEditor && markdownTextarea) {
+        const markdownContent = markdownEditor.getMarkdown();
+        markdownTextarea.value = markdownContent;
+        console.log('Syncing markdown content before submit, length:', markdownContent.length);
+        console.log('Content preview:', markdownContent.substring(0, 100));
+        // Ensure textarea is visible/submittable (but keep it visually hidden)
+        markdownTextarea.style.display = 'block';
+        markdownTextarea.style.position = 'absolute';
+        markdownTextarea.style.left = '-9999px';
+        markdownTextarea.style.width = '1px';
+        markdownTextarea.style.height = '1px';
+        markdownTextarea.style.opacity = '0';
+        markdownTextarea.setAttribute('name', 'content_markdown'); // Ensure name attribute exists
+        return true;
+    } else {
+        console.warn('Editor or textarea not found:', {
+            hasEditor: !!markdownEditor,
+            hasTextarea: !!markdownTextarea,
+            textareaElement: markdownTextarea
+        });
+        // Try to create textarea if it doesn't exist
+        if (markdownEditor && !markdownTextarea) {
+            console.log('Creating textarea element...');
+            const form = document.querySelector('form[action="/admin/documents/save"]');
+            if (form) {
+                const newTextarea = document.createElement('textarea');
+                newTextarea.id = 'content_markdown';
+                newTextarea.name = 'content_markdown';
+                newTextarea.style.position = 'absolute';
+                newTextarea.style.left = '-9999px';
+                newTextarea.style.width = '1px';
+                newTextarea.style.height = '1px';
+                newTextarea.style.opacity = '0';
+                form.appendChild(newTextarea);
+                const markdownContent = markdownEditor.getMarkdown();
+                newTextarea.value = markdownContent;
+                console.log('Created and synced textarea, length:', markdownContent.length);
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+// Also sync on form submit as backup
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[action="/admin/documents/save"]');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submit event triggered');
+            const synced = syncEditorContent();
+            if (!synced) {
+                console.error('Failed to sync editor content!');
+                e.preventDefault();
+                return false;
+            }
+            // Small delay to ensure sync completes
+            const markdownTextarea = document.getElementById('content_markdown');
+            if (markdownTextarea) {
+                console.log('Textarea value before submit:', markdownTextarea.value.substring(0, 100));
+                console.log('Textarea value length:', markdownTextarea.value.length);
+                if (!markdownTextarea.value || markdownTextarea.value.trim() === '') {
+                    console.warn('Textarea is empty! Editor content may not have synced.');
+                }
+            }
+        });
+    }
+});
+</script>
+
+<!-- Custom Preview Modal -->
+<div id="preview-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                <h2 class="text-2xl font-bold text-slate-900">Document Preview</h2>
+                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="preview-content" class="prose max-w-none markdown-content">
+                    <!-- Preview content will be rendered here -->
+                </div>
+            </div>
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end p-6 border-t border-slate-200">
+                <button onclick="closePreviewModal()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+<link rel="stylesheet" href="/assets/css/confluence-markdown.css">
+
+<script>
+let previewModal = null;
+
+async function openPreviewModal() {
+    const modal = document.getElementById('preview-modal');
+    const previewContent = document.getElementById('preview-content');
+    
+    if (!modal || !previewContent) {
+        console.error('Preview modal elements not found');
+        return;
+    }
+    
+    // Get markdown content from editor or textarea
+    let markdownContent = '';
+    if (markdownEditor) {
+        markdownContent = markdownEditor.getMarkdown();
+    } else {
+        const textarea = document.getElementById('content_markdown');
+        if (textarea) {
+            markdownContent = textarea.value;
+        }
+    }
+    
+    if (!markdownContent || markdownContent.trim() === '') {
+        previewContent.innerHTML = '<p class="text-slate-500 italic">No content to preview.</p>';
+        modal.classList.remove('hidden');
+        return;
+    }
+    
+    // Show loading state
+    previewContent.innerHTML = '<div class="flex items-center justify-center p-8"><i class="fas fa-spinner fa-spin text-2xl text-slate-400"></i></div>';
+    modal.classList.remove('hidden');
+    
+    // Call backend API to get processed HTML (same as frontend rendering)
+    try {
+        const formData = new FormData();
+        formData.append('content_markdown', markdownContent);
+        
+        const response = await fetch('/admin/documents/preview', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            previewContent.innerHTML = '<p class="text-red-600">Error: ' + data.error + '</p>';
+            return;
+        }
+        
+        // Set the processed HTML
+        previewContent.innerHTML = data.html || '<p class="text-slate-500 italic">No content to preview.</p>';
+        
+        // Initialize PrismJS and process embeds (same as document page)
+        setTimeout(function() {
+            initializePreviewPrismJS();
+            processPreviewEmbedLinks();
+            setupPreviewDetailsPanels();
+        }, 100);
+    } catch (error) {
+        console.error('Error fetching preview:', error);
+        previewContent.innerHTML = '<p class="text-red-600">Error rendering preview: ' + error.message + '</p>';
+    }
+}
+
+function closePreviewModal() {
+    const modal = document.getElementById('preview-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePreviewModal();
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('preview-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePreviewModal();
+    }
+});
+
+// Initialize PrismJS for preview
+function initializePreviewPrismJS() {
+    try {
+        if (typeof Prism === 'undefined') {
+            console.warn('PrismJS not loaded yet');
+            return;
+        }
+        
+        const previewContent = document.getElementById('preview-content');
+        if (!previewContent) return;
+        
+        // Find all pre elements with code blocks
+        const allPreElements = previewContent.querySelectorAll('pre');
+        const codeBlocks = [];
+        
+        allPreElements.forEach(function(pre) {
+            if (pre.hasAttribute('data-prism-processed')) {
+                return;
+            }
+            
+            const code = pre.querySelector('code');
+            if (!code) {
+                return;
+            }
+            
+            if (!pre.classList.contains('line-numbers')) {
+                pre.classList.add('line-numbers');
+            }
+            codeBlocks.push(pre);
+        });
+        
+        if (codeBlocks.length > 0) {
+            // Remove existing line-numbers-rows
+            codeBlocks.forEach(function(pre) {
+                const existingRows = pre.querySelectorAll('.line-numbers-rows');
+                existingRows.forEach(function(rows) {
+                    rows.remove();
+                });
+            });
+            
+            // Highlight each code block
+            codeBlocks.forEach(function(pre) {
+                const code = pre.querySelector('code');
+                if (code) {
+                    try {
+                        Prism.highlightElement(code);
+                    } catch (e) {
+                        console.warn('Error highlighting code:', e);
+                    }
+                }
+            });
+            
+            // Mark as processed
+            codeBlocks.forEach(function(pre) {
+                pre.setAttribute('data-prism-processed', 'true');
+            });
+            
+            // Clean up duplicate line-numbers-rows
+            setTimeout(function() {
+                previewContent.querySelectorAll('pre.line-numbers').forEach(function(pre) {
+                    const allRows = pre.querySelectorAll('.line-numbers-rows');
+                    if (allRows.length > 1) {
+                        for (let i = 1; i < allRows.length; i++) {
+                            allRows[i].remove();
+                        }
+                    }
+                    const rows = pre.querySelector('.line-numbers-rows');
+                    if (rows) {
+                        rows.remove();
+                        pre.insertBefore(rows, pre.firstChild);
+                    }
+                });
+            }, 200);
+        }
+    } catch (error) {
+        console.error('PrismJS initialization error:', error);
+    }
+}
+
+// Process embed links in preview
+function processPreviewEmbedLinks() {
+    const previewContent = document.getElementById('preview-content');
+    if (!previewContent) return;
+    
+    // Find all links with @embed in title attribute
+    const links = previewContent.querySelectorAll('a:not([data-embed-processed])');
+    links.forEach(function(link) {
+        if (link.closest('.embed-block') || link.hasAttribute('data-embed-processed')) {
+            return;
+        }
+        
+        const href = link.getAttribute('href') || '';
+        const title = link.getAttribute('title') || '';
+        const linkText = link.textContent || '';
+        const isEmbed = title.includes('@embed') || title.toLowerCase().includes('embed');
+        
+        // Check for YouTube links
+        if (href.includes('youtu') || href.includes('youtube')) {
+            const videoIdMatch = href.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+            if (videoIdMatch) {
+                const videoId = videoIdMatch[1];
+                const embedTitle = linkText || title.replace(/@embed/gi, '').trim();
+                
+                const embedWrapper = document.createElement('div');
+                embedWrapper.className = 'embed embed-youtube';
+                embedWrapper.innerHTML = `
+                    <div class="embed-media">
+                        <iframe 
+                            src="https://www.youtube.com/embed/${videoId}" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    ${embedTitle ? `<p class="embed-caption">${embedTitle}</p>` : ''}
+                `;
+                
+                link.parentNode.replaceChild(embedWrapper, link);
+                link.setAttribute('data-embed-processed', 'true');
+                return;
+            }
+        }
+        
+        // Check for @embed in title (generic embed)
+        if (isEmbed && href) {
+            try {
+                const urlObj = new URL(href);
+                const domain = urlObj.hostname.replace('www.', '');
+                
+                let embedTitle = linkText || title.replace(/@embed/gi, '').trim();
+                if (!embedTitle || embedTitle === href) {
+                    embedTitle = domain;
+                }
+                
+                const embedWrapper = document.createElement('div');
+                embedWrapper.className = 'embed-block';
+                
+                const embedLink = document.createElement('a');
+                embedLink.className = 'embed embed-simple';
+                embedLink.href = href;
+                embedLink.target = '_blank';
+                embedLink.rel = 'noopener noreferrer';
+                
+                if (embedTitle) {
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'embed-simple-title';
+                    titleSpan.textContent = embedTitle;
+                    embedLink.appendChild(titleSpan);
+                }
+                
+                const domainSpan = document.createElement('span');
+                domainSpan.className = 'embed-simple-domain';
+                domainSpan.textContent = domain;
+                embedLink.appendChild(domainSpan);
+                
+                embedWrapper.appendChild(embedLink);
+                link.parentNode.replaceChild(embedWrapper, link);
+                link.setAttribute('data-embed-processed', 'true');
+            } catch (e) {
+                console.warn('Invalid embed URL:', href);
+            }
+        }
+    });
+}
+
+// Setup details panels for preview (collapsible sections)
+function setupPreviewDetailsPanels() {
+    const previewContent = document.getElementById('preview-content');
+    if (!previewContent) return;
+    
+    const detailsElements = previewContent.querySelectorAll('details, details.details-panel');
+    detailsElements.forEach(function(details) {
+        const summary = details.querySelector('summary');
+        if (summary) {
+            // Add keyboard accessibility
+            summary.setAttribute('tabindex', '0');
+            summary.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    details.open = !details.open;
+                }
+            });
+        }
+        
+        // Re-process code blocks when details are opened
+        details.addEventListener('toggle', function() {
+            if (details.open) {
+                setTimeout(function() {
+                    initializePreviewPrismJS();
+                }, 100);
+            }
+        });
+    });
+}
+
+// Copy to Clipboard Function (for Alpine.js)
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show temporary success feedback
+        const event = new CustomEvent('copied', { detail: { text: text } });
+        document.dispatchEvent(event);
+        
+        // Optional: Show a toast notification
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-[10002] transition-opacity';
+        toast.innerHTML = '<i class="fas fa-check mr-2"></i>Copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard');
+    });
+}
+
+// Copy from data attribute (handles HTML entity decoding)
+function copyFromDataAttribute(el) {
+    const text = el.getAttribute('data-copy-text');
+    if (text) {
+        // Decode HTML entities
+        const decoded = text
+            .replace(/&quot;/g, '"')
+            .replace(/&#10;/g, '\n')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&');
+        copyToClipboard(decoded);
+    }
+}
+
+// Components Modal Functions
+function openComponentsModal() {
+    const modal = document.getElementById('components-modal');
+    const content = document.getElementById('components-modal-content');
+    if (!modal || !content) return;
+    
+    // Build modal content with rendered examples
+    content.innerHTML = buildComponentsModalContent();
+    
+    // Initialize PrismJS for code blocks in the modal
+    setTimeout(() => {
+        if (typeof Prism !== 'undefined' && typeof Prism.highlightAll === 'function') {
+            // Find all code blocks in the modal and highlight them
+            const codeBlocks = content.querySelectorAll('pre[class*="language-"]');
+            codeBlocks.forEach(pre => {
+                // Remove any existing line-numbers-rows to prevent duplicates
+                pre.querySelectorAll('.line-numbers-rows').forEach(rows => rows.remove());
+                
+                // Ensure line-numbers class is present
+                if (!pre.classList.contains('line-numbers')) {
+                    pre.classList.add('line-numbers');
+                }
+                
+                // Highlight the code
+                const code = pre.querySelector('code');
+                if (code && !code.hasAttribute('data-prism-processed')) {
+                    Prism.highlightElement(code);
+                }
+            });
+        }
+    }, 100);
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeComponentsModal() {
+    const modal = document.getElementById('components-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function buildComponentsModalContent() {
+    const components = [
+        {
+            title: 'Callouts',
+            icon: 'fas fa-comment-dots',
+            iconColor: 'text-blue-500',
+            examples: [
+                {
+                    markdown: '^ info\nThis is an informational callout.',
+                    rendered: '<div class="callout info"><div class="row"><span class="icon"><i class="fa-solid fa-circle-info"></i></span><div class="body"><span class="title">Info:</span> This is an informational callout.</div></div></div>'
+                },
+                {
+                    markdown: '! warning\nThis is a warning callout.',
+                    rendered: '<div class="callout warning"><div class="row"><span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span><div class="body"><span class="title">Important:</span> This is a warning callout.</div></div></div>'
+                },
+                {
+                    markdown: '✓ success\nThis is a success callout.',
+                    rendered: '<div class="callout success"><div class="row"><span class="icon"><i class="fa-solid fa-circle-check"></i></span><div class="body"><span class="title">Success:</span> This is a success callout.</div></div></div>'
+                },
+                {
+                    markdown: '✗ error\nThis is an error callout.',
+                    rendered: '<div class="callout error"><div class="row"><span class="icon"><i class="fa-solid fa-circle-xmark"></i></span><div class="body"><span class="title">Error:</span> This is an error callout.</div></div></div>'
+                },
+                {
+                    markdown: '💡 tip\nThis is a tip callout.',
+                    rendered: '<div class="callout tip"><div class="row"><span class="icon"><i class="fa-solid fa-lightbulb"></i></span><div class="body"><span class="title">Pro tip:</span> This is a tip callout.</div></div></div>'
+                }
+            ]
+        },
+        {
+            title: 'Images with Alignment',
+            icon: 'fas fa-image',
+            iconColor: 'text-purple-500',
+            examples: [
+                {
+                    markdown: '![Alt text](https://placehold.co/600x400/6366f1/ffffff?text=Example+Image)\n{: .center}',
+                    rendered: '<figure class="figure-center my-6 mt-6 figure-max-600"><div class="fig-inner-pad"><img src="https://placehold.co/600x400/6366f1/ffffff?text=Example+Image" alt="Alt text" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Alt text</figcaption></div></figure>'
+                },
+                {
+                    markdown: '![Alt text](https://placehold.co/400x300/6366f1/ffffff?text=Example+Image)\n{: .left}',
+                    rendered: '<figure class="figure-left my-6 mt-6 figure-max-600"><div class="fig-inner-pad"><img src="https://placehold.co/400x300/6366f1/ffffff?text=Example+Image" alt="Alt text" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-left">Alt text</figcaption></div></figure>'
+                },
+                {
+                    markdown: '![Alt text](https://placehold.co/400x300/6366f1/ffffff?text=Example+Image)\n{: .right}',
+                    rendered: '<figure class="figure-right my-6 mt-6 figure-max-600"><div class="fig-inner-pad"><img src="https://placehold.co/400x300/6366f1/ffffff?text=Example+Image" alt="Alt text" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-right">Alt text</figcaption></div></figure>'
+                },
+                {
+                    markdown: '![Alt text](https://placehold.co/300x200/6366f1/ffffff?text=Example+Image)\n{: .small}',
+                    rendered: '<figure class="figure-center my-6 mt-6 figure-max-300"><div class="fig-inner-pad"><img src="https://placehold.co/300x200/6366f1/ffffff?text=Example+Image" alt="Alt text" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Alt text</figcaption></div></figure>'
+                }
+            ]
+        },
+        {
+            title: 'Code Blocks',
+            icon: 'fas fa-code',
+            iconColor: 'text-green-500',
+            examples: [
+                {
+                    markdown: '```php\n<?php\necho "Hello World";\n```',
+                    rendered: '<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers language-php"><code class="language-php">&lt;?php\necho "Hello World";</code></pre></div>'
+                }
+            ]
+        },
+        {
+            title: 'Horizontal Rule',
+            icon: 'fas fa-minus',
+            iconColor: 'text-slate-500',
+            examples: [
+                {
+                    markdown: '---',
+                    rendered: '<hr class="my-8 border-t-2 border-gray-300" />'
+                }
+            ]
+        },
+        {
+            title: 'Collapsible Sections',
+            icon: 'fas fa-chevron-down',
+            iconColor: 'text-indigo-500',
+            examples: [
+                {
+                    markdown: '<details>\n  <summary>Click to expand</summary>\n  Hidden content here.\n</details>',
+                    rendered: '<details class="my-4 p-4 border border-gray-200 rounded-lg"><summary class="cursor-pointer font-semibold text-gray-700 hover:text-gray-900">Click to expand</summary><div class="mt-2 text-gray-600">Hidden content here.</div></details>'
+                }
+            ]
+        },
+        {
+            title: 'Embeddings',
+            icon: 'fas fa-link',
+            iconColor: 'text-pink-500',
+            examples: [
+                {
+                    markdown: '!embed https://www.youtube.com/watch?v=VIDEO_ID "Video Title"',
+                    rendered: '<div class="embed embed-youtube my-4"><div class="embed-media"><iframe src="https://www.youtube.com/embed/VIDEO_ID" frameborder="0" allowfullscreen class="w-full aspect-video rounded-lg"></iframe></div><p class="embed-caption mt-2 text-sm text-gray-600">Video Title</p></div>'
+                },
+                {
+                    markdown: '!embed[simple] https://example.com "Link Title"',
+                    rendered: '<div class="embed-block my-4"><a href="https://example.com" target="_blank" rel="noopener noreferrer" class="embed embed-simple block p-4 border border-gray-200 rounded-lg hover:bg-gray-50"><span class="embed-simple-title font-semibold">Link Title</span><span class="embed-simple-domain text-sm text-gray-500 ml-2">example.com</span></a></div>'
+                }
+            ]
+        },
+        {
+            title: 'Task Lists',
+            icon: 'fas fa-tasks',
+            iconColor: 'text-orange-500',
+            examples: [
+                {
+                    markdown: '- [ ] Incomplete task\n- [x] Completed task',
+                    rendered: '<ul class="list-none space-y-2 my-4"><li class="flex items-center"><input type="checkbox" disabled class="mr-2" /><span>Incomplete task</span></li><li class="flex items-center"><input type="checkbox" checked disabled class="mr-2" /><span class="line-through text-gray-500">Completed task</span></li></ul>'
+                }
+            ]
+        },
+        {
+            title: 'Tabs',
+            icon: 'fas fa-folder-tree',
+            iconColor: 'text-cyan-500',
+            examples: [
+                {
+                    markdown: '::: tabs\n@tab Tab 1\nContent for tab 1\n\n@tab Tab 2\nContent for tab 2\n:::',
+                    rendered: '<div class="tabs-container my-4 border border-gray-200 rounded-lg"><div class="tabs-header flex border-b border-gray-200"><button class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Tab 1</button><button class="px-4 py-2 font-medium text-gray-600 hover:text-gray-900">Tab 2</button></div><div class="tabs-content p-4"><div class="tab-content">Content for tab 1</div></div></div>'
+                }
+            ]
+        },
+        {
+            title: 'Columns',
+            icon: 'fas fa-columns',
+            iconColor: 'text-teal-500',
+            examples: [
+                {
+                    markdown: '::: columns\n@column "Column 1"\nContent for column 1\n\n@column "Column 2"\nContent for column 2\n:::',
+                    rendered: '<div class="columns-container grid grid-cols-2 gap-4 my-4"><div class="column border border-gray-200 rounded-lg p-4"><h4 class="font-semibold mb-2">Column 1</h4><div>Content for column 1</div></div><div class="column border border-gray-200 rounded-lg p-4"><h4 class="font-semibold mb-2">Column 2</h4><div>Content for column 2</div></div></div>'
+                }
+            ]
+        },
+        {
+            title: 'Cards',
+            icon: 'fas fa-id-card',
+            iconColor: 'text-rose-500',
+            examples: [
+                {
+                    markdown: '::: cards\n@card[link=https://example.com icon=✨ accent=blue] Card Title\nCard content here.\n\n@card Another Card\nAnother card content.\n:::',
+                    rendered: '<div class="cards-container grid grid-cols-1 md:grid-cols-2 gap-4 my-4"><div class="card border border-blue-200 rounded-lg p-4 bg-blue-50 hover:shadow-lg transition"><div class="flex items-center mb-2"><span class="text-xl mr-2">✨</span><h4 class="font-semibold">Card Title</h4></div><p>Card content here.</p></div><div class="card border border-gray-200 rounded-lg p-4 hover:shadow-lg transition"><h4 class="font-semibold mb-2">Another Card</h4><p>Another card content.</p></div></div>'
+                }
+            ]
+        },
+        {
+            title: 'Quotes',
+            icon: 'fas fa-quote-right',
+            iconColor: 'text-amber-500',
+            examples: [
+                {
+                    markdown: '::: quote "Quote Text" - Author Name\nAdditional quote content.\n:::',
+                    rendered: '<blockquote class="border-l-4 border-amber-500 pl-4 py-2 my-4 italic text-gray-700"><p class="font-semibold">"Quote Text"</p><p class="text-sm text-gray-600 mt-1">— Author Name</p><p class="mt-2">Additional quote content.</p></blockquote>'
+                }
+            ]
+        },
+        {
+            title: 'Note Blocks',
+            icon: 'fas fa-sticky-note',
+            iconColor: 'text-yellow-500',
+            examples: [
+                {
+                    markdown: '> **[**Note**]:** This is a note.\nNote content here.',
+                    rendered: '<div class="note-block"><div class="note-header"><span class="note-badge">Note</span><span class="note-text">This is a note.</span></div><div class="note-body">Note content here.</div></div>'
+                }
+            ]
+        }
+    ];
+    
+    let html = '<div class="space-y-4">';
+    
+    components.forEach(component => {
+        html += `
+            <div x-data="{ expanded: false }" class="border border-slate-200 rounded-lg overflow-hidden">
+                <button type="button" 
+                        @click="expanded = !expanded"
+                        class="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition">
+                    <div class="flex items-center gap-3">
+                        <i class="${component.icon} ${component.iconColor} text-lg"></i>
+                        <span class="font-semibold text-slate-900">${component.title}</span>
+                    </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform" 
+                       :class="{ 'rotate-180': expanded }"></i>
+                </button>
+                <div x-show="expanded" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 max-h-0"
+                     x-transition:enter-end="opacity-100 max-h-[5000px]"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 max-h-[5000px]"
+                     x-transition:leave-end="opacity-0 max-h-0"
+                     class="overflow-hidden">
+                    <div class="p-4 space-y-4 bg-white">
+        `;
+        
+        component.examples.forEach((example, idx) => {
+            html += `
+                        <div class="border border-slate-200 rounded-lg overflow-hidden">
+                            <!-- Rendered Preview -->
+                            <div class="p-4 bg-slate-50 border-b border-slate-200">
+                                <div class="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Preview</div>
+                                <div class="prose max-w-none">
+                                    ${example.rendered}
+                                </div>
+                            </div>
+                            <!-- Markdown Code -->
+                            <div class="p-4 bg-slate-900 relative group">
+                                <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Markdown</div>
+                                <pre class="text-xs text-slate-300 whitespace-pre-wrap font-mono overflow-x-auto"><code>${escapeHtml(example.markdown)}</code></pre>
+                                <div class="flex gap-2 mt-3">
+                                    <button type="button" 
+                                            onclick="copyAndInsertComponent('${escapeJs(example.markdown)}')"
+                                            class="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition">
+                                        <i class="fas fa-copy mr-2"></i>Copy & Insert
+                                    </button>
+                                    <button type="button" 
+                                            onclick="copyToClipboard('${escapeJs(example.markdown)}')"
+                                            class="bg-slate-700 text-white px-3 py-2 rounded text-sm hover:bg-slate-600 transition">
+                                        <i class="fas fa-clipboard mr-2"></i>Copy Only
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+            `;
+        });
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeJs(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/\\/g, '\\\\')  // Escape backslashes first
+        .replace(/'/g, "\\'")   // Escape single quotes
+        .replace(/"/g, '\\"')   // Escape double quotes
+        .replace(/`/g, '\\`')   // Escape backticks
+        .replace(/\n/g, '\\n')  // Escape newlines
+        .replace(/\r/g, '\\r')  // Escape carriage returns
+        .replace(/\t/g, '\\t')  // Escape tabs
+        .replace(/\$/g, '\\$'); // Escape dollar signs (for template literals)
+}
+
+function copyAndInsertComponent(markdown) {
+    // Copy to clipboard
+    copyToClipboard(markdown);
+    
+    // Insert into editor
+    if (markdownEditor) {
+        try {
+            // Toast UI Editor API - try insertText first
+            if (typeof markdownEditor.insertText === 'function') {
+                markdownEditor.insertText(markdown);
+            } else if (typeof markdownEditor.replaceSelection === 'function') {
+                markdownEditor.replaceSelection(markdown);
+            } else if (typeof markdownEditor.getMarkdown === 'function') {
+                // Fallback: get current content, insert at cursor, set back
+                const current = markdownEditor.getMarkdown();
+                const selection = markdownEditor.getSelection();
+                let cursorPos = current.length;
+                
+                if (selection && selection.startOffset !== undefined) {
+                    cursorPos = selection.startOffset;
+                }
+                
+                const before = current.substring(0, cursorPos);
+                const after = current.substring(cursorPos);
+                const newContent = before + markdown + after;
+                markdownEditor.setMarkdown(newContent);
+                
+                // Try to restore cursor position after a short delay
+                setTimeout(() => {
+                    const newPos = cursorPos + markdown.length;
+                    if (typeof markdownEditor.setSelection === 'function') {
+                        markdownEditor.setSelection([newPos, newPos]);
+                    }
+                }, 100);
+            }
+        } catch (e) {
+            console.warn('Error inserting into editor:', e);
+            // Fallback to textarea
+            insertIntoTextarea(markdown);
+        }
+    } else {
+        // Fallback to textarea if editor not available
+        insertIntoTextarea(markdown);
+    }
+    
+    // Close modal after a short delay
+    setTimeout(() => {
+        closeComponentsModal();
+    }, 500);
+}
+
+function insertIntoTextarea(markdown) {
+    const textarea = document.getElementById('content_markdown');
+    if (textarea) {
+        const start = textarea.selectionStart || textarea.value.length;
+        const end = textarea.selectionEnd || start;
+        const before = textarea.value.substring(0, start);
+        const after = textarea.value.substring(end);
+        textarea.value = before + markdown + after;
+        textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
+        textarea.focus();
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('components-modal');
+        if (modal && modal.style.display !== 'none') {
+            closeComponentsModal();
+        }
+    }
+});
+</script>
+{% endblock %}
+

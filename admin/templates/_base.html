@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Admin Console{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            900: '#0f172a',
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ url_for('admin-static', path='admin.css') }}">
+    {% block extra_head %}{% endblock %}
+    <script src="{{ url_for('admin-static', path='alpine.js') }}" defer></script>
+</head>
+<body class="min-h-full bg-slate-50 font-display text-slate-900">
+    <div class="min-h-screen lg:flex" x-data="{ 
+        sidebarOpen: false,
+            expandedSections: {
+            portfolio: {% if request.url.path.startswith('/admin/clients') or request.url.path.startswith('/admin/projects') or request.url.path.startswith('/admin/project-types') or request.url.path.startswith('/admin/tech-tags') or request.url.path.startswith('/admin/features') %}true{% else %}false{% endif %},
+            experience: {% if request.url.path.startswith('/admin/experience') %}true{% else %}false{% endif %},
+            documents: {% if request.url.path.startswith('/admin/documents') %}true{% else %}false{% endif %},
+            blog: {% if request.url.path.startswith('/admin/blog') %}true{% else %}false{% endif %},
+            sideProjects: {% if request.url.path.startswith('/admin/side-projects') %}true{% else %}false{% endif %},
+            magento: {% if request.url.path.startswith('/admin/magento') %}true{% else %}false{% endif %},
+            techSkills: {% if request.url.path.startswith('/admin/tech-skills') %}true{% else %}false{% endif %},
+            photography: {% if request.url.path.startswith('/admin/photography') %}true{% else %}false{% endif %},
+            cms: {% if request.url.path.startswith('/admin/cms') %}true{% else %}false{% endif %}
+        },
+        toggleSection(section) {
+            this.expandedSections[section] = !this.expandedSections[section];
+        }
+    }">
+        <!-- Mobile backdrop -->
+        <div x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-30 bg-slate-900/60 lg:hidden" @click="sidebarOpen = false"></div>
+
+        <!-- Sidebar -->
+        <aside class="fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 text-white shadow-xl transform transition-transform lg:translate-x-0 overflow-y-auto"
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+                <div>
+                    <p class="text-sm uppercase tracking-widest text-white/60">Admin</p>
+                    <h1 class="text-xl font-semibold">Console</h1>
+                </div>
+                <button class="lg:hidden text-white/70 hover:text-white" @click="sidebarOpen = false">
+                    <span class="sr-only">Close menu</span>
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="overflow-y-auto flex-1">
+                <!-- Dashboard -->
+                <div class="px-4 py-4">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.url.path == '/admin' %}is-active{% endif %}">
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+
+                <!-- Portfolio Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('portfolio')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Portfolio</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.portfolio }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.portfolio" x-transition>
+                        <a href="{{ url_for('clients_list') }}" class="nav-link {% if request.url.path.startswith('/admin/clients') %}is-active{% endif %}">
+                            <span>Clients</span>
+                        </a>
+                        <a href="{{ url_for('projects_list') }}" class="nav-link {% if request.url.path.startswith('/admin/projects') %}is-active{% endif %}">
+                            <span>Portfolio</span>
+                        </a>
+                        <a href="{{ url_for('project_types_list') }}" class="nav-link {% if request.url.path.startswith('/admin/project-types') %}is-active{% endif %}">
+                            <span>Portfolio Types</span>
+                        </a>
+                        <a href="{{ url_for('tech_tags_list') }}" class="nav-link {% if request.url.path.startswith('/admin/tech-tags') %}is-active{% endif %}">
+                            <span>Tech Tags</span>
+                        </a>
+                        <a href="{{ url_for('feature_library_list') }}" class="nav-link {% if request.url.path.startswith('/admin/features') %}is-active{% endif %}">
+                            <span>Features / Components</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Experience Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('experience')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Experience</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.experience }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.experience" x-transition>
+                        <a href="/admin/experience" class="nav-link {% if request.url.path == '/admin/experience' or (request.url.path.startswith('/admin/experience/') and not request.url.path.startswith('/admin/experience/companies') and not request.url.path.startswith('/admin/experience/skills') and not request.url.path.startswith('/admin/experience/tools') and not request.url.path.startswith('/admin/experience/soft-skills') and not request.url.path.startswith('/admin/experience/education')) %}is-active{% endif %}">
+                            <span>Job Experience</span>
+                        </a>
+                        <a href="/admin/experience/companies" class="nav-link {% if request.url.path.startswith('/admin/experience/companies') %}is-active{% endif %}">
+                            <span>Companies</span>
+                        </a>
+                        <a href="/admin/experience/skills" class="nav-link {% if request.url.path.startswith('/admin/experience/skills') %}is-active{% endif %}">
+                            <span>Skills Sets</span>
+                        </a>
+                        <a href="/admin/experience/tools" class="nav-link {% if request.url.path.startswith('/admin/experience/tools') %}is-active{% endif %}">
+                            <span>Tools</span>
+                        </a>
+                        <a href="/admin/experience/soft-skills" class="nav-link {% if request.url.path.startswith('/admin/experience/soft-skills') %}is-active{% endif %}">
+                            <span>Soft Skills</span>
+                        </a>
+                        <a href="/admin/experience/education" class="nav-link {% if request.url.path.startswith('/admin/experience/education') %}is-active{% endif %}">
+                            <span>Education</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Documents Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('documents')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Documents</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.documents }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.documents" x-transition>
+                        <a href="/admin/documents" class="nav-link {% if request.url.path == '/admin/documents' or (request.url.path.startswith('/admin/documents/') and not request.url.path.startswith('/admin/documents/categories') and not request.url.path.startswith('/admin/documents/types')) %}is-active{% endif %}">
+                            <span>Documents</span>
+                        </a>
+                        <a href="/admin/documents/categories" class="nav-link {% if request.url.path.startswith('/admin/documents/categories') %}is-active{% endif %}">
+                            <span>Categories</span>
+                        </a>
+                        <a href="/admin/documents/types" class="nav-link {% if request.url.path.startswith('/admin/documents/types') %}is-active{% endif %}">
+                            <span>Document Types</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Blog Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('blog')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Blog</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.blog }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.blog" x-transition>
+                        <a href="/admin/blog" class="nav-link {% if request.url.path == '/admin/blog' or (request.url.path.startswith('/admin/blog/') and not request.url.path.startswith('/admin/blog/categories')) %}is-active{% endif %}">
+                            <span>Blog Posts</span>
+                        </a>
+                        <a href="/admin/blog/categories" class="nav-link {% if request.url.path.startswith('/admin/blog/categories') %}is-active{% endif %}">
+                            <span>Categories</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- References Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <p class="text-xs uppercase tracking-widest text-white/40 mb-2 px-3">References</p>
+                    <nav class="space-y-1 text-sm font-medium">
+                        <a href="/admin/references" class="nav-link {% if request.url.path.startswith('/admin/references') %}is-active{% endif %}">
+                            <span>References</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Side Projects Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('sideProjects')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Side Projects</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.sideProjects }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.sideProjects" x-transition>
+                        <a href="/admin/side-projects" class="nav-link {% if request.url.path.startswith('/admin/side-projects') and not request.url.path.startswith('/admin/side-projects/categories') %}is-active{% endif %}">
+                            <span>Side Projects</span>
+                        </a>
+                        <a href="/admin/side-projects/categories" class="nav-link {% if request.url.path.startswith('/admin/side-projects/categories') %}is-active{% endif %}">
+                            <span>Categories</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Magento Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('magento')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Magento</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.magento }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.magento" x-transition>
+                        <a href="/admin/magento" class="nav-link {% if request.url.path.startswith('/admin/magento') and not request.url.path.startswith('/admin/magento/categories') %}is-active{% endif %}">
+                            <span>Magento Modules</span>
+                        </a>
+                        <a href="/admin/magento/categories" class="nav-link {% if request.url.path.startswith('/admin/magento/categories') %}is-active{% endif %}">
+                            <span>Categories</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Experience / Skills Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('techSkills')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Experience / Skills</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.techSkills }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.techSkills" x-transition>
+                        <a href="/admin/tech-skills" class="nav-link {% if request.url.path.startswith('/admin/tech-skills') and not request.url.path.startswith('/admin/tech-skills/categories') %}is-active{% endif %}">
+                            <span>Skills Sets</span>
+                        </a>
+                        <a href="/admin/tech-skills/categories" class="nav-link {% if request.url.path.startswith('/admin/tech-skills/categories') %}is-active{% endif %}">
+                            <span>Categories</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Photography Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('photography')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>Photography</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.photography }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.photography" x-transition>
+                        <a href="/admin/photography" class="nav-link {% if request.url.path.startswith('/admin/photography') and not request.url.path.startswith('/admin/photography/categories') %}is-active{% endif %}">
+                            <span>Photography</span>
+                        </a>
+                        <a href="/admin/photography/categories" class="nav-link {% if request.url.path.startswith('/admin/photography/categories') %}is-active{% endif %}">
+                            <span>Categories</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- CMS Section -->
+                <div class="px-4 py-2 border-t border-white/10">
+                    <button @click="toggleSection('cms')" class="w-full flex items-center justify-between text-xs uppercase tracking-widest text-white/40 mb-2 px-3 py-1 hover:text-white/60 transition">
+                        <span>CMS</span>
+                        <svg class="h-4 w-4 transition-transform duration-200" :class="{ 'rotate-180': expandedSections.cms }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <nav class="space-y-1 text-sm font-medium" x-show="expandedSections.cms" x-transition>
+                        <a href="/admin/cms/blocks" class="nav-link {% if request.url.path.startswith('/admin/cms/blocks') %}is-active{% endif %}">
+                            <span>CMS Blocks</span>
+                        </a>
+                        <a href="/admin/cms/settings" class="nav-link {% if request.url.path.startswith('/admin/cms/settings') %}is-active{% endif %}">
+                            <span>Site Settings</span>
+                        </a>
+                        <a href="/admin/cms/contact" class="nav-link {% if request.url.path.startswith('/admin/cms/contact') %}is-active{% endif %}">
+                            <span>Contact Info</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 border-t border-white/10 text-xs text-white/60 sticky bottom-0 bg-slate-900">
+                <p>Signed in locally</p>
+                <p class="mt-1 text-white">{{ request.client.host if request.client else 'localhost' }}</p>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <div class="flex-1 lg:flex lg:flex-col lg:min-h-screen lg:ml-72">
+            <header class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/90 px-6 py-4 backdrop-blur">
+                <div class="flex items-center gap-3">
+                    <button class="rounded-lg border border-slate-300 p-2 text-slate-600 shadow-sm hover:bg-slate-100 lg:hidden"
+                            @click="sidebarOpen = true">
+                        <span class="sr-only">Open menu</span>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h12m-12 6h16" />
+                        </svg>
+                    </button>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-slate-500">Admin System</p>
+                        <p class="font-semibold text-slate-900">{% block header_title %}{% endblock %}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 text-sm text-slate-500">
+                    <span class="hidden sm:block">Local Admin</span>
+                    <span class="font-semibold text-slate-700">{{ request.url.path }}</span>
+                </div>
+            </header>
+            <main class="flex-1 px-4 py-4 sm:px-6 lg:px-10">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

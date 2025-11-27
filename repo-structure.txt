@@ -1,0 +1,192 @@
+.
+├── 404.html
+├── assets
+│   ├── css
+│   │   ├── tailwind-built.css
+│   │   └── tailwind.css
+│   ├── images
+│   │   ├── logos
+│   │   │   ├── fineline-printing-group.webp
+│   │   │   ├── inputoutputunlimited.gif
+│   │   │   ├── klizer-black.png
+│   │   │   ├── metlife_insurance.svg.png
+│   │   │   ├── sokolin_91st_anniv.png
+│   │   │   ├── ultrasun_international.png
+│   │   │   └── us_water_systems.webp
+│   │   ├── magento-modules
+│   │   │   ├── .DS_Store
+│   │   │   ├── MageExp_AdvancedNewsletter
+│   │   │   ├── MageExp_AdvancedPopups
+│   │   │   ├── MageExp_CategoryRules
+│   │   │   ├── MageExp_CustomCRM
+│   │   │   ├── MageExp_CustomerOrderHistory
+│   │   │   │   ├── customerorderhistory_1f.png
+│   │   │   │   ├── customerorderhistory_2f.png
+│   │   │   │   ├── customerorderhistory_3f.png
+│   │   │   │   ├── customerorderhistory_4b.png
+│   │   │   │   ├── customerorderhistory_5b.png
+│   │   │   │   └── customerorderhistory_6b.png
+│   │   │   ├── MageExp_KnowledgeBaseSupport
+│   │   │   ├── MageExp_LiquidAssetsStorage
+│   │   │   │   ├── liquidassetsstorage_1b.png
+│   │   │   │   ├── liquidassetsstorage_2f.png
+│   │   │   │   ├── liquidassetsstorage_3f.png
+│   │   │   │   ├── liquidassetsstorage_4f.png
+│   │   │   │   ├── liquidassetsstorage_5f.png
+│   │   │   │   └── liquidassetsstorage_6f.png
+│   │   │   ├── MageExplorers_CustomerManager
+│   │   │   ├── MageExplorers_DynamicCategories
+│   │   │   ├── MageExplorers_ProductsDataSync
+│   │   │   ├── MageExp_WineKnowledge
+│   │   │   ├── MageExp_WinePairings
+│   │   │   ├── MageSoko_JennAi
+│   │   │   ├── MageSoko_XtentoStockImportAddon
+│   │   │   │   └── xtentostock_import_addon_1b.png
+│   │   │   ├── Sokolin_CheckoutUpsell
+│   │   │   │   ├── checkoutupsell_1b.png
+│   │   │   │   └── checkoutupsell_2f.png
+│   │   │   ├── Sokolin_Core
+│   │   │   │   ├── sokolin_core_1.png
+│   │   │   │   └── sokolin_core_2.png
+│   │   │   ├── Sokolin_OnePageCheckoutLayout
+│   │   │   │   └── onepagecheckout_1f.png
+│   │   │   ├── Sokolin_PlumrocketNewsletterExtension
+│   │   │   │   ├── plumrocketnewsletteraddon_1b.png
+│   │   │   │   ├── plumrocketnewsletteraddon_2b.png
+│   │   │   │   ├── plumrocketnewsletteraddon_3f.png
+│   │   │   │   ├── plumrocketnewsletteraddon_4b.png
+│   │   │   │   └── plumrocketnewsletteraddon_5b.png
+│   │   │   ├── Sokolin_Popups
+│   │   │   │   ├── custompopup_2f.png
+│   │   │   │   └── custompopups_backend_1b.png
+│   │   │   ├── Sokolin_ProductPageRendering
+│   │   │   │   ├── productpagerendering_1f.png
+│   │   │   │   ├── productpagerendering_2f.png
+│   │   │   │   └── productpagerendering_3f.png
+│   │   │   ├── Sokolin_ProductsSyncCron
+│   │   │   │   ├── productssynccron_10b.png
+│   │   │   │   ├── productssynccron_11b.png
+│   │   │   │   ├── productssynccron_12b.png
+│   │   │   │   ├── productssynccron_13b.png
+│   │   │   │   ├── productssynccron_1b.png
+│   │   │   │   ├── productssynccron_2b.png
+│   │   │   │   ├── productssynccron_3b.png
+│   │   │   │   ├── productssynccron_4b.png
+│   │   │   │   ├── productssynccron_5b.png
+│   │   │   │   ├── productssynccron_6b.png
+│   │   │   │   ├── productssynccron_7b.png
+│   │   │   │   ├── productssynccron_8b.png
+│   │   │   │   └── productssynccron_9b.png
+│   │   │   └── Sokolin_SearchRendering
+│   │   │       └── searchrendering_1b.png
+│   │   ├── personal
+│   │   │   ├── 4generations.jpg
+│   │   │   └── traveling_fun2.jpg
+│   │   ├── photography
+│   │   │   ├── landscape
+│   │   │   │   ├── downtown_canal_1.jpg
+│   │   │   │   └── downtown_indy.jpg
+│   │   │   ├── products
+│   │   │   │   ├── i9_closed.jpg
+│   │   │   │   └── sungate.jpg
+│   │   │   └── wine
+│   │   │       ├── 1982_mouton.png
+│   │   │       └── 2021_tyler_pinot_noir_santa_rita_hills.jpg
+│   │   ├── portfolio
+│   │   │   ├── addcitedusers.com.png
+│   │   │   └── ultrasunusa.com.png
+│   │   ├── profile
+│   │   │   └── bradley-clampitt-headshot.jpg
+│   │   └── skills
+│   │       ├── adobe_af.png
+│   │       └── zoom.svg
+│   └── js
+│       └── alpine.js
+├── blog
+│   ├── archive
+│   │   ├── ARCHIVE_README.txt
+│   │   ├── CONFLUENCE-STYLE-MARKDOWN.md
+│   │   ├── MARKDOWN-FEATURES.md
+│   │   └── QUICK-REFERENCE.md
+│   ├── blog-helpers.sh
+│   ├── blog-manager.py
+│   ├── CONFLUENCE-STYLE-MARKDOWN.md
+│   ├── FEATURES.md
+│   ├── MANAGEMENT.md
+│   ├── MARKDOWN-FEATURES.md
+│   ├── posts
+│   │   ├── alpinejs-state-management.html
+│   │   ├── cloudflare-edge-security.html
+│   │   ├── confluence-style-features.html
+│   │   ├── custom-blog-management-system.html
+│   │   ├── custom-magento-modules.html
+│   │   ├── kubernetes-deployment-strategies.html
+│   │   ├── magento-aws-docker-infrastructure.html
+│   │   ├── media
+│   │   │   ├── images
+│   │   │   │   └── placeholder_image.png
+│   │   │   └── videos
+│   │   ├── new-blog-management-system.html
+│   │   ├── None.html
+│   │   ├── performance-monitoring-production.html
+│   │   ├── tailwind-advanced-patterns.html
+│   │   └── test-post.html
+│   ├── posts.json
+│   ├── posts.md
+│   │   ├── 2024-12-10-custom-magento-modules.md
+│   │   ├── 2024-12-10-performance-monitoring-production.md
+│   │   ├── 2024-12-12-alpinejs-state-management.md
+│   │   ├── 2024-12-15-magento-aws-docker-infrastructure.md
+│   │   ├── 2024-12-15-tailwind-advanced-patterns.md
+│   │   ├── 2024-12-18-kubernetes-deployment-strategies.md
+│   │   ├── 2024-12-20-cloudflare-edge-security.md
+│   │   ├── 2025-01-01-confluence-style-features.md
+│   │   └── 2025-06-10-new-blog-management-system.md
+│   ├── post-template.html
+│   ├── QUICK-REFERENCE.md
+│   ├── README.md
+│   └── requirements.txt
+├── blog.html
+├── _config.yml
+├── contact.html
+├── docs
+│   ├── .DS_Store
+│   ├── references
+│   │   ├── api-reference.md
+│   │   ├── changelog.md
+│   │   ├── docs.md
+│   │   ├── documentation.md
+│   │   ├── examples.md
+│   │   ├── getting-started.md
+│   │   ├── guide.md
+│   │   ├── installation.md
+│   │   ├── manual.md
+│   │   ├── markdown.md
+│   │   ├── notes.md
+│   │   ├── README.md
+│   │   ├── reference.md
+│   │   ├── setup.md
+│   │   ├── troubleshooting.md
+│   │   └── tutorial.md
+│   └── resume
+│       ├── cv.pdf
+│       └── resume.pdf
+├── documents.html
+├── experience.html
+├── favicon.ico
+├── .gitignore
+├── .htaccess
+├── index.html
+├── magento.html
+├── package.json
+├── package-lock.json
+├── personal.html
+├── photography.html
+├── portfolio.html
+├── README.md
+├── _redirects
+├── repo-structure.txt
+├── side-projects.html
+└── tailwind.config.js
+
+49 directories, 398 files

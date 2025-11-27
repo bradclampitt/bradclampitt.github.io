@@ -1,0 +1,834 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Side Project' if project else 'New Side Project' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit Side Project' if project else 'New Side Project' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <form method="POST" action="/admin/side-projects/save" class="space-y-8" x-data="sideProjectForm()" @submit="syncFormData($event)">
+        {% if project %}
+        <input type="hidden" name="project_id" value="{{ project.id }}">
+        {% endif %}
+
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">{{ project.title if project else 'New Side Project' }}</h1>
+                <p class="mt-2 text-slate-600">Fill in the project details below</p>
+                <details class="mt-2">
+                    <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">Field Mapping Guide</summary>
+                    <div class="mt-2 p-3 bg-blue-50 rounded text-xs text-slate-700 space-y-1">
+                        <p><strong>Technologies:</strong> These appear as blue tags below the description (e.g., "Tailwind CSS", "AlpineJS", "PostgreSQL")</p>
+                        <p><strong>Features:</strong> These are the "Key Features" shown in the project detail view (e.g., "Multi-platform", "Task Management")</p>
+                        <p><strong>Technical Details:</strong> These appear in the "Technical Details" section (e.g., "Web Application: Laravel backend with Vue.js...")</p>
+                    </div>
+                </details>
+            </div>
+            <div class="flex gap-3">
+                <a href="/admin/side-projects" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </a>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-save mr-2"></i>Save Project
+                </button>
+            </div>
+        </div>
+
+        <!-- Basic Information -->
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Basic Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="title" class="block text-sm font-medium text-slate-700 mb-1">Title *</label>
+                    <input type="text" id="title" name="title" required
+                           value="{{ project.title if project else '' }}"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="slug" class="block text-sm font-medium text-slate-700 mb-1">Slug</label>
+                    <input type="text" id="slug" name="slug"
+                           value="{{ project.slug if project else '' }}"
+                           placeholder="Auto-generated from title"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="category_id" class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                    <select id="category_id" name="category_id"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">— None —</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if project and project.category_id == cat.id %}selected{% endif %}>
+                            {{ cat.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <select id="status" name="status"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="active" {% if project and project.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="in development" {% if not project or project.status == 'in development' %}selected{% endif %}>In Development</option>
+                        <option value="backlog" {% if project and project.status == 'backlog' %}selected{% endif %}>Backlog</option>
+                        <option value="archived" {% if project and project.status == 'archived' %}selected{% endif %}>Archived</option>
+                        <option value="brainstorming" {% if project and project.status == 'brainstorming' %}selected{% endif %}>Brainstorming</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="metrics" class="block text-sm font-medium text-slate-700 mb-1">Metrics</label>
+                    <input type="text" id="metrics" name="metrics"
+                           value="{{ project.metrics if project else '' }}"
+                           placeholder="e.g., Multi-platform, 50+ Scripts"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="posted_date" class="block text-sm font-medium text-slate-700 mb-1">Posted Date</label>
+                    <input type="date" id="posted_date" name="posted_date"
+                           value="{{ project.posted_date if project and project.posted_date else '' }}"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="revised_date" class="block text-sm font-medium text-slate-700 mb-1">Date Revised</label>
+                    <input type="date" id="revised_date" name="revised_date"
+                           value="{{ project.revised_date if project and project.revised_date else '' }}"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea id="description" name="description" rows="5"
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ project.description if project else '' }}</textarea>
+            </div>
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label for="stats" class="block text-sm font-medium text-slate-700">Project Statistics (JSON)</label>
+                    <button type="button" id="format-json-btn" class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition">
+                        <i class="fas fa-code mr-1"></i>Format JSON
+                    </button>
+                </div>
+                <textarea id="stats" name="stats" rows="12"
+                          placeholder='{
+  "platforms": {
+    "value": "3",
+    "label": "Platforms"
+  },
+  "features": {
+    "value": "25+",
+    "label": "Features"
+  },
+  "stage": {
+    "value": "Beta",
+    "label": "Stage"
+  },
+  "sync": {
+    "value": "Real-time",
+    "label": "Sync"
+  }
+}'
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 whitespace-pre">{{ project.stats if project and project.stats else '' }}</textarea>
+                <p class="text-xs text-slate-500 mt-1">JSON object with statistics. Each stat should have "value" and "label" properties. Click "Format JSON" to prettify your JSON.</p>
+                <details class="mt-2">
+                    <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">View Example</summary>
+                    <pre class="mt-2 p-3 bg-slate-100 rounded text-xs overflow-x-auto"><code>{
+  "platforms": {"value": "3", "label": "Platforms"},
+  "features": {"value": "25+", "label": "Features"},
+  "stage": {"value": "Beta", "label": "Stage"},
+  "sync": {"value": "Real-time", "label": "Sync"}
+}</code></pre>
+                </details>
+            </div>
+        </div>
+
+        <!-- Technologies -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Technologies</h2>
+            <div x-ref="technologiesContainer">
+                <template x-for="(item, index) in technologies" :key="index">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-center">
+                        <div class="md:col-span-5">
+                            <input type="text" x-model="item.name"
+                                   placeholder="Technology name"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-6">
+                            <input type="text" x-model="item.icon"
+                                   placeholder="Icon class (e.g., fas fa-code)"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-1">
+                            <button type="button" @click="removeTechnology(index)" 
+                                    class="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition" 
+                                    title="Remove this technology">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <button type="button" @click="addTechnology()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                <i class="fas fa-plus mr-2"></i>Add Technology
+            </button>
+        </div>
+
+        <!-- Features -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Features</h2>
+            <div x-ref="featuresContainer">
+                <template x-for="(item, index) in features" :key="index">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-center">
+                        <div class="md:col-span-3">
+                            <input type="text" x-model="item.name"
+                                   placeholder="Feature name"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-3">
+                            <input type="text" x-model="item.icon"
+                                   placeholder="Icon class"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-5">
+                            <input type="text" x-model="item.description"
+                                   placeholder="Description (optional)"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-1">
+                            <button type="button" @click="removeFeature(index)" 
+                                    class="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition" 
+                                    title="Remove this feature">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <button type="button" @click="addFeature()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                <i class="fas fa-plus mr-2"></i>Add Feature
+            </button>
+        </div>
+
+        <!-- Technical Details -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Technical Details</h2>
+            <div x-ref="technicalDetailsContainer">
+                <template x-for="(item, index) in technicalDetails" :key="index">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-center">
+                        <div class="md:col-span-5">
+                            <input type="text" x-model="item.title"
+                                   placeholder="Title"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-6">
+                            <input type="text" x-model="item.description"
+                                   placeholder="Description"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-1">
+                            <button type="button" @click="removeTechnicalDetail(index)" 
+                                    class="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition" 
+                                    title="Remove this technical detail">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <button type="button" @click="addTechnicalDetail()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                <i class="fas fa-plus mr-2"></i>Add Technical Detail
+            </button>
+        </div>
+
+        <!-- Images -->
+        {% if not project %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-sm text-blue-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Note:</strong> Images are optional and can be added after saving the project. You can save the project now and add images later when editing.
+            </p>
+        </div>
+        {% endif %}
+        {% if project %}
+        <div class="bg-white rounded-lg shadow p-6" x-data="imageGallery({{ images | tojson | safe }}, {{ project.id }})">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Images <span class="text-sm font-normal text-slate-500">(Optional)</span></h2>
+            
+            <!-- Upload Form -->
+            <div class="mb-6 space-y-4">
+                <form method="POST" action="/admin/side-projects/images/upload" enctype="multipart/form-data" novalidate @submit.prevent="uploadImage($event)">
+                    <input type="hidden" name="project_id" value="{{ project.id }}">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <input type="file" name="file" accept="image/*" x-ref="fileInput"
+                               class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label class="flex items-center px-4 py-2 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" name="is_cover" x-model="uploadAsCover" class="mr-2">
+                            <span class="text-sm text-slate-700">Set as Cover Image</span>
+                        </label>
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-upload mr-2"></i>Upload
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Browse Existing Images Button -->
+                <div class="flex items-center gap-4">
+                    <button @click="openImageBrowser()" type="button" class="bg-slate-600 text-white px-6 py-2 rounded-lg hover:bg-slate-700 transition">
+                        <i class="fas fa-folder-open mr-2"></i>Browse Existing Images
+                    </button>
+                    <span class="text-sm text-slate-500" x-show="browserLoading">Loading images...</span>
+                </div>
+            </div>
+            
+            <!-- Image Browser Modal -->
+            <div x-show="showBrowserModal" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+                 @click.away="closeImageBrowser()"
+                 style="display: none;">
+                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-900">Select Existing Image</h3>
+                        <button @click="closeImageBrowser()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-show="!browserLoading && availableImages.length > 0">
+                            <template x-for="img in availableImages" :key="img.url">
+                                <div class="relative group border-2 rounded-lg overflow-hidden cursor-pointer transition-all"
+                                     :class="selectedBrowserImage === img.url ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'"
+                                     @click="selectedBrowserImage = img.url">
+                                    <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                                        <img :src="img.url" :alt="img.filename" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity"></div>
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-2 truncate" x-text="img.filename"></div>
+                                    <div x-show="selectedBrowserImage === img.url" class="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1">
+                                        <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="!browserLoading && availableImages.length === 0" class="text-center py-12">
+                            <i class="fas fa-images text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-500">No images found in assets/images/projects/</p>
+                        </div>
+                        <div x-show="browserLoading" class="text-center py-12">
+                            <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-500">Loading images...</p>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-200 space-y-4">
+                        <div x-show="selectedBrowserImage" class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Image Description (Optional)</label>
+                                <input type="text" x-model="browserImageAlt" 
+                                       placeholder="Enter image description..."
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <label class="flex items-center">
+                                <input type="checkbox" x-model="browserImageAsCover" class="mr-2">
+                                <span class="text-sm text-slate-700">Set as Cover Image</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span x-text="availableImages.length"></span> images found
+                            </div>
+                            <div class="flex gap-3">
+                                <button @click="closeImageBrowser()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button @click="addSelectedImage()" 
+                                        :disabled="!selectedBrowserImage"
+                                        :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                                        class="px-4 py-2 text-white rounded-lg transition">
+                                    <i class="fas fa-plus mr-2"></i>Add Selected Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Gallery -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-show="images.length > 0">
+                <template x-for="(img, index) in images" :key="img.id">
+                    <div class="relative group border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                        <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden cursor-pointer" @click="openModal(index)">
+                            <template x-if="img.url">
+                                <img :src="img.url" :alt="img.alt || 'Project image'" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!img.url">
+                                <div class="text-center text-gray-400 w-full h-full flex items-center justify-center">
+                                    <div>
+                                        <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <p class="text-sm">No Image Available</p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button @click.stop="setCover(index)" 
+                                    :class="img.is_cover ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-blue-50'"
+                                    class="p-1.5 rounded shadow-sm" title="Set as cover">
+                                <i class="fas fa-star text-xs"></i>
+                            </button>
+                            <button @click.stop="deleteImage(img.id, index)" 
+                                    class="bg-red-600 text-white p-1.5 rounded shadow-sm hover:bg-red-700" title="Delete image">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1" x-show="img.is_cover">
+                            <i class="fas fa-star mr-1"></i>Cover Image
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="images.length === 0" class="text-center py-12 border-2 border-dashed border-slate-300 rounded-lg">
+                <div class="text-center text-gray-400">
+                    <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-sm text-slate-500">No images uploaded yet.</p>
+                </div>
+            </div>
+
+            <!-- Image Modal -->
+            <div x-show="showModal" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+                 @click.away="closeModal()"
+                 style="display: none;">
+                <div class="relative bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden" @click.stop>
+                    <button @click="closeModal()" class="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100">
+                        <i class="fas fa-times text-gray-600"></i>
+                    </button>
+                    
+                    <div class="relative">
+                        <template x-if="currentImage && currentImage.url">
+                            <img :src="currentImage.url" :alt="currentImage.alt || 'Project image'" 
+                                 class="w-full h-auto max-h-[70vh] object-contain bg-gray-50">
+                        </template>
+                        <template x-if="!currentImage || !currentImage.url">
+                            <div class="w-full h-96 flex items-center justify-center bg-gray-100">
+                                <div class="text-center text-gray-400">
+                                    <svg class="w-16 h-16 lg:w-20 lg:h-20 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p class="text-sm">No Image Available</p>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- Navigation Arrows -->
+                        <button x-show="images.length > 1 && currentIndex > 0" 
+                                @click="prevImage()"
+                                class="absolute left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button x-show="images.length > 1 && currentIndex < images.length - 1" 
+                                @click="nextImage()"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Image Info -->
+                    <div class="p-4 border-t border-gray-200" x-show="currentImage">
+                        <div class="mb-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Image Description</label>
+                            <input type="text" 
+                                   :value="currentImage ? currentImage.alt : ''"
+                                   @input="if (currentImage) currentImage.alt = $event.target.value"
+                                   @blur="if (currentImage && currentImage.id) updateImageDescription(currentImage.id, currentImage.alt)"
+                                   placeholder="Enter image description..."
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-slate-500">
+                            <span x-text="`Image ${currentIndex + 1} of ${images.length}`"></span>
+                            <span x-show="currentImage && currentImage.is_cover" class="text-blue-600">
+                                <i class="fas fa-star mr-1"></i>Cover Image
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<script type="application/json" id="project-data">
+{
+    "technologies": {{ technologies | tojson | safe }},
+    "features": {{ features | tojson | safe }},
+    "technical_details": {{ technical_details | tojson | safe }}
+}
+</script>
+
+<script>
+function sideProjectForm() {
+    const dataEl = document.getElementById('project-data');
+    const data = dataEl ? JSON.parse(dataEl.textContent) : { technologies: [], features: [], technical_details: [] };
+    
+    return {
+        technologies: Array.isArray(data.technologies) && data.technologies.length > 0 
+            ? data.technologies.map(t => ({ name: t.name || '', icon: t.icon || '' })) 
+            : [],
+        features: Array.isArray(data.features) && data.features.length > 0 
+            ? data.features.map(f => ({ name: f.name || '', icon: f.icon || '', description: f.description || '' })) 
+            : [],
+        technicalDetails: Array.isArray(data.technical_details) && data.technical_details.length > 0 
+            ? data.technical_details.map(td => ({ title: td.title || '', description: td.description || '' })) 
+            : [],
+        addTechnology() {
+            this.technologies.push({ name: '', icon: '' });
+        },
+        addFeature() {
+            this.features.push({ name: '', icon: '', description: '' });
+        },
+        addTechnicalDetail() {
+            this.technicalDetails.push({ title: '', description: '' });
+        },
+        removeTechnology(index) {
+            this.technologies.splice(index, 1);
+        },
+        removeFeature(index) {
+            this.features.splice(index, 1);
+        },
+        removeTechnicalDetail(index) {
+            this.technicalDetails.splice(index, 1);
+        },
+        syncFormData(event) {
+            // Sync Alpine.js data to hidden form inputs before submission
+            const form = event.target;
+            
+            // Remove existing hidden inputs
+            form.querySelectorAll('input[type="hidden"][data-dynamic]').forEach(el => el.remove());
+            
+            // Add technologies
+            this.technologies.forEach(tech => {
+                if (tech.name && tech.name.trim()) {
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'hidden';
+                    nameInput.name = 'technologies';
+                    nameInput.value = tech.name.trim();
+                    nameInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(nameInput);
+                    
+                    const iconInput = document.createElement('input');
+                    iconInput.type = 'hidden';
+                    iconInput.name = 'technology_icons';
+                    iconInput.value = tech.icon ? tech.icon.trim() : '';
+                    iconInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(iconInput);
+                }
+            });
+            
+            // Add features
+            this.features.forEach(feat => {
+                if (feat.name && feat.name.trim()) {
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'hidden';
+                    nameInput.name = 'features';
+                    nameInput.value = feat.name.trim();
+                    nameInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(nameInput);
+                    
+                    const iconInput = document.createElement('input');
+                    iconInput.type = 'hidden';
+                    iconInput.name = 'feature_icons';
+                    iconInput.value = feat.icon ? feat.icon.trim() : '';
+                    iconInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(iconInput);
+                    
+                    const descInput = document.createElement('input');
+                    descInput.type = 'hidden';
+                    descInput.name = 'feature_descriptions';
+                    descInput.value = feat.description ? feat.description.trim() : '';
+                    descInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(descInput);
+                }
+            });
+            
+            // Add technical details
+            this.technicalDetails.forEach(detail => {
+                if (detail.title && detail.title.trim()) {
+                    const titleInput = document.createElement('input');
+                    titleInput.type = 'hidden';
+                    titleInput.name = 'technical_detail_titles';
+                    titleInput.value = detail.title.trim();
+                    titleInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(titleInput);
+                    
+                    const descInput = document.createElement('input');
+                    descInput.type = 'hidden';
+                    descInput.name = 'technical_detail_descriptions';
+                    descInput.value = detail.description ? detail.description.trim() : '';
+                    descInput.setAttribute('data-dynamic', 'true');
+                    form.appendChild(descInput);
+                }
+            });
+        }
+    };
+}
+
+function imageGallery(initialImages, projectId) {
+    return {
+        images: Array.isArray(initialImages) ? initialImages.map(img => ({
+            id: img.id,
+            url: img.url || '',
+            alt: img.alt || '',
+            is_cover: img.is_cover === 1 || img.is_cover === true
+        })) : [],
+        showModal: false,
+        currentIndex: 0,
+        uploadAsCover: false,
+        projectId: projectId,
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImage: null,
+        browserImageAlt: '',
+        browserImageAsCover: false,
+        get currentImage() {
+            if (this.images.length === 0 || this.currentIndex < 0 || this.currentIndex >= this.images.length) {
+                return null;
+            }
+            return this.images[this.currentIndex];
+        },
+        openModal(index) {
+            this.currentIndex = index;
+            this.showModal = true;
+            document.body.style.overflow = 'hidden';
+        },
+        closeModal() {
+            this.showModal = false;
+            document.body.style.overflow = 'auto';
+        },
+        nextImage() {
+            if (this.currentIndex < this.images.length - 1) {
+                this.currentIndex++;
+            }
+        },
+        prevImage() {
+            if (this.currentIndex > 0) {
+                this.currentIndex--;
+            }
+        },
+        async uploadImage(event) {
+            event.preventDefault();
+            const form = event.target;
+            const fileInput = form.querySelector('input[type="file"]');
+            
+            // Validate that a file is selected
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+            
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to upload image');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Error uploading image');
+            }
+        },
+        async setCover(index) {
+            const image = this.images[index];
+            if (!image) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('image_id', image.id);
+                formData.append('is_cover', 'true');
+                
+                const response = await fetch(`/admin/side-projects/images/${image.id}/set-cover`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    // Unset all other cover images
+                    this.images.forEach(img => {
+                        if (img.id !== image.id) {
+                            img.is_cover = false;
+                        }
+                    });
+                    image.is_cover = true;
+                } else {
+                    alert('Failed to set cover image');
+                }
+            } catch (error) {
+                console.error('Set cover error:', error);
+                alert('Error setting cover image');
+            }
+        },
+        async deleteImage(imageId, index) {
+            if (!confirm('Are you sure you want to delete this image?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/side-projects/images/${imageId}/delete`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    this.images.splice(index, 1);
+                    if (this.currentIndex >= this.images.length) {
+                        this.currentIndex = Math.max(0, this.images.length - 1);
+                    }
+                    if (this.images.length === 0) {
+                        this.closeModal();
+                    }
+                } else {
+                    alert('Failed to delete image');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Error deleting image');
+            }
+        },
+        async updateImageDescription(imageId, description) {
+            if (!imageId || !this.currentImage) return;
+            try {
+                const formData = new FormData();
+                formData.append('alt', description || '');
+                
+                const response = await fetch(`/admin/side-projects/images/${imageId}/update`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    console.error('Failed to update image description');
+                }
+            } catch (error) {
+                console.error('Update description error:', error);
+            }
+        },
+        async openImageBrowser() {
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImage = null;
+            this.browserImageAlt = '';
+            this.browserImageAsCover = false;
+            
+            try {
+                const response = await fetch('/admin/side-projects/images/browse');
+                const data = await response.json();
+                this.availableImages = data.images || [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImage = null;
+            this.browserImageAlt = '';
+            this.browserImageAsCover = false;
+        },
+        async addSelectedImage() {
+            if (!this.selectedBrowserImage) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('project_id', this.projectId);
+                formData.append('url', this.selectedBrowserImage);
+                formData.append('alt', this.browserImageAlt || '');
+                formData.append('is_cover', this.browserImageAsCover ? 'true' : 'false');
+                
+                const response = await fetch('/admin/side-projects/images/add-existing', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Failed to add image');
+                }
+            } catch (error) {
+                console.error('Add image error:', error);
+                alert('Error adding image');
+            }
+        }
+    };
+}
+
+// JSON formatting functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const statsTextarea = document.getElementById('stats');
+    const formatBtn = document.getElementById('format-json-btn');
+    
+    function formatJSON(textarea) {
+        const value = textarea.value.trim();
+        if (!value) return;
+        
+        try {
+            // Parse and stringify with indentation
+            const parsed = JSON.parse(value);
+            const formatted = JSON.stringify(parsed, null, 2);
+            textarea.value = formatted;
+            
+            // Show success feedback
+            const originalText = formatBtn.innerHTML;
+            formatBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Formatted!';
+            formatBtn.classList.add('text-green-600');
+            setTimeout(() => {
+                formatBtn.innerHTML = originalText;
+                formatBtn.classList.remove('text-green-600');
+            }, 2000);
+        } catch (error) {
+            // Show error feedback
+            const originalText = formatBtn.innerHTML;
+            formatBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Invalid JSON';
+            formatBtn.classList.add('text-red-600');
+            setTimeout(() => {
+                formatBtn.innerHTML = originalText;
+                formatBtn.classList.remove('text-red-600');
+            }, 2000);
+        }
+    }
+    
+    // Format on button click
+    if (formatBtn && statsTextarea) {
+        formatBtn.addEventListener('click', function() {
+            formatJSON(statsTextarea);
+        });
+        
+        // Auto-format on page load if there's content
+        if (statsTextarea.value.trim()) {
+            formatJSON(statsTextarea);
+        }
+    }
+});
+</script>
+{% endblock %}
+

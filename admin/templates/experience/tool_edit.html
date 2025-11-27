@@ -1,0 +1,47 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Tool' if tool else 'New Tool' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit Tool' if tool else 'New Tool' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <form method="POST" action="/admin/experience/tools/save" class="space-y-6">
+        {% if tool %}
+        <input type="hidden" name="tool_id" value="{{ tool.id }}">
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">{{ tool.name if tool else 'New Tool' }}</h1>
+                    <p class="mt-2 text-slate-600">Fill in the tool details below</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/admin/experience/tools" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save mr-2"></i>Save Tool
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Name *</span>
+                    <input type="text" name="name" value="{{ tool.name if tool else '' }}" required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Icon (Font Awesome class)</span>
+                    <input type="text" name="icon" value="{{ tool.icon if tool else '' }}"
+                           placeholder="fab fa-figma"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

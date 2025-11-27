@@ -1,0 +1,49 @@
+{% extends "_base.html" %}
+
+{% block title %}Edit Client · Portfolio Admin{% endblock %}
+{% block header_title %}Edit Client{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-sm uppercase tracking-widest text-slate-500">Client</p>
+            <h2 class="text-3xl font-semibold text-slate-900">{{ client["name"] }}</h2>
+        </div>
+        <a href="{{ url_for('clients_list') }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+            ← Back to clients
+        </a>
+    </div>
+
+    <form method="post" action="{{ url_for('client_update') }}" class="glass-panel p-6 space-y-6">
+        <input type="hidden" name="client_id" value="{{ client['id'] }}">
+        <div class="grid gap-6 md:grid-cols-2">
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Client name</span>
+                <input type="text" name="name" class="w-full font-medium rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ client['name'] }}" required>
+            </label>
+            <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <span>Website</span>
+                <input type="url" name="website" class="w-full font-medium rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ client['website'] or '' }}" placeholder="https://example.com">
+            </label>
+        </div>
+        <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <span>Logo URL</span>
+            <input type="text" name="logo_url" class="w-full font-medium rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="{{ client['logo_url'] or '' }}" placeholder="/assets/images/portfolio/logo.png">
+        </label>
+        <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <span>Short blurb</span>
+            <textarea name="blurb" rows="4" class="w-full font-medium rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ client['blurb'] or '' }}</textarea>
+        </label>
+        <div class="flex justify-end">
+            <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition font-semibold">
+                Save changes
+            </button>
+        </div>
+    </form>
+    <form method="post" action="{{ url_for('client_delete') }}" class="flex justify-end" onsubmit="return confirm('Delete this client? This cannot be undone.');">
+        <input type="hidden" name="client_id" value="{{ client['id'] }}">
+        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition font-semibold">Delete client</button>
+    </form>
+</div>
+{% endblock %}

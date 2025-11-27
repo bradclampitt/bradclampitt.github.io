@@ -1,0 +1,70 @@
+{% extends "_base.html" %}
+
+{% block title %}Categories - Documents Admin{% endblock %}
+{% block header_title %}Categories{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Categories</h1>
+            <p class="mt-2 text-slate-600">Manage document categories</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Add New Category</h2>
+            <form method="POST" action="/admin/categories/new" class="space-y-4">
+                <div>
+                    <label for="code" class="block text-sm font-medium text-slate-700 mb-1">Code</label>
+                    <input type="text" id="code" name="code" required
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-xs text-slate-500">Unique identifier (e.g., "resume", "guide")</p>
+                </div>
+                <div>
+                    <label for="label" class="block text-sm font-medium text-slate-700 mb-1">Label</label>
+                    <input type="text" id="label" name="label" required
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="sort" class="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
+                    <input type="number" id="sort" name="sort" value="0"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    Add Category
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-900 mb-4">Existing Categories</h2>
+            {% if categories %}
+            <div class="space-y-3">
+                {% for category in categories %}
+                <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                    <div>
+                        <p class="font-medium text-slate-900">{{ category.label }}</p>
+                        <p class="text-sm text-slate-600">Code: <code class="bg-slate-100 px-1 rounded">{{ category.code }}</code></p>
+                        {% if category.description %}
+                        <p class="text-sm text-slate-500 mt-1">{{ category.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-slate-500">Sort: {{ category.sort }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-center py-8">No categories yet. Add one using the form on the left.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

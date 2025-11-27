@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Post - Bradley R. Clampitt</title>
+    <!-- Tailwind CSS -->
+    <link href="../assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- Alpine.js -->
+    <script src="../assets/js/alpine.js" defer></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50" x-data="{ showImageModal: false, currentImage: '', currentImageAlt: '' }">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <a href="../blog.html" class="flex items-center text-gray-600 hover:text-gray-900">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back to Blog
+                </a>
+                <div class="flex flex-wrap gap-4 text-sm sm:text-base">
+                    <a href="../index.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                    <a href="../experience.html" class="text-gray-600 hover:text-gray-900">Experience</a>
+                    <a href="../portfolio.html" class="text-gray-600 hover:text-gray-900">Portfolio</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Image Modal -->
+    <div x-show="showImageModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+         @click="showImageModal = false"
+         @keydown.escape.window="showImageModal = false">
+        <div class="relative max-w-4xl max-h-full">
+            <button @click="showImageModal = false" 
+                    class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <img :src="currentImage" 
+                 :alt="currentImageAlt" 
+                 class="max-w-full max-h-full object-contain rounded-lg"
+                 @click.stop>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-6 lg:py-8">
+        <article class="bg-white rounded-lg shadow-lg p-4 lg:p-8">
+            <!-- This is where the blog post content will be loaded -->
+            
+            <header class="mb-6 lg:mb-8">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4 lg:gap-0">
+                    <div class="flex flex-wrap gap-2">
+                        
+                    </div>
+                    <span class="text-gray-500 text-xs lg:text-sm">5 min read</span>
+                </div>
+                <h1 class="text-2xl lg:text-4xl font-bold text-gray-900 mb-4">Test Post</h1>
+                <div class="flex flex-col sm:flex-row sm:items-center text-gray-600 mb-6 gap-2 sm:gap-0 text-sm lg:text-base">
+                    <span>By Bradley R. Clampitt</span>
+                    <span class="hidden sm:inline mx-2">•</span>
+                    <time>2025-10-02</time>
+                </div>
+            </header>
+
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                
+<h1 class="text-xl lg:text-2xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">Test Post</h1>
+
+Write your blog post content here using Markdown.
+
+<h2 class="text-lg lg:text-xl font-bold text-gray-900 mt-4 lg:mt-6 mb-2 lg:mb-3">Section Heading</h2>
+
+Your content goes here...
+
+<h2 class="text-lg lg:text-xl font-bold text-gray-900 mt-4 lg:mt-6 mb-2 lg:mb-3">Code Examples</h2>
+
+<pre class="bg-gray-900 text-green-400 p-3 lg:p-4 rounded-lg mb-4 lg:mb-6 overflow-x-auto text-xs lg:text-sm"><code>// Add code examples here</code></pre>
+
+<h2 class="text-lg lg:text-xl font-bold text-gray-900 mt-4 lg:mt-6 mb-2 lg:mb-3">Conclusion</h2>
+
+Summarize your post here.
+
+            </div>
+        
+        </article>
+
+        <!-- Comments Section (placeholder) -->
+        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-8 mt-6 lg:mt-8">
+            <h3 class="text-lg lg:text-xl font-bold mb-4">Comments</h3>
+            <div class="text-gray-600 text-center py-6 lg:py-8">
+                <p class="text-sm lg:text-base">Comments system will be implemented here.</p>
+                <p class="text-xs lg:text-sm mt-2">Consider using Disqus, GitHub Issues, or a custom solution.</p>
+            </div>
+        </div>
+
+        <!-- Related Posts -->
+        <div class="bg-white rounded-lg shadow-lg p-4 lg:p-8 mt-6 lg:mt-8">
+            <h3 class="text-lg lg:text-xl font-bold mb-4">Related Posts</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Related posts will be dynamically loaded -->
+                <div class="text-gray-600 text-center py-6 lg:py-8 lg:col-span-2">
+                    <p class="text-sm lg:text-base">Related posts will be loaded dynamically based on tags and categories.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 lg:py-8 mt-12 lg:mt-16">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <p class="text-sm lg:text-base">&copy; 2025 Bradley R. Clampitt. All rights reserved.</p>
+            <p class="text-gray-400 text-xs lg:text-sm mt-2">Magento 2 Expert | AWS & DevOps Strategist | Scalable eCommerce Architect</p>
+        </div>
+    </footer>
+
+    <script>
+        // Function to make images clickable and show in modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('article img');
+            images.forEach(img => {
+                img.classList.add('cursor-pointer', 'hover:opacity-80', 'transition-opacity');
+                img.addEventListener('click', function() {
+                    window.currentImage = this.src;
+                    window.currentImageAlt = this.alt || 'Image';
+                    window.showImageModal = true;
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

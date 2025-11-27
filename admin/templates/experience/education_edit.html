@@ -1,0 +1,95 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Education' if edu else 'New Education' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit Education' if edu else 'New Education' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <form method="POST" action="/admin/experience/education/save" class="space-y-6">
+        {% if edu %}
+        <input type="hidden" name="edu_id" value="{{ edu.id }}">
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">{{ edu.certificate_name if edu else 'New Education Entry' }}</h1>
+                    <p class="mt-2 text-slate-600">Fill in the education details below</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/admin/experience/education" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save mr-2"></i>Save Education
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <label class="md:col-span-2">
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Certificate / Degree Name *</span>
+                    <input type="text" name="certificate_name" value="{{ edu.certificate_name if edu else '' }}" required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Subtitle</span>
+                    <input type="text" name="subtitle" value="{{ edu.subtitle if edu else '' }}"
+                           placeholder='("Computer Science")'
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Timeline Date *</span>
+                    <input type="text" name="timeline_date" value="{{ edu.timeline_date if edu else '' }}" required
+                           placeholder="December, 2001"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label class="md:col-span-2">
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">School Name *</span>
+                    <input type="text" name="school_name" value="{{ edu.school_name if edu else '' }}" required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Location</span>
+                    <input type="text" name="location" value="{{ edu.location if edu else '' }}"
+                           placeholder="Indianapolis, IN"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Start Year</span>
+                    <input type="text" name="start_year" value="{{ edu.start_year if edu else '' }}"
+                           placeholder="Nov. 1999"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">End Year</span>
+                    <input type="text" name="end_year" value="{{ edu.end_year if edu else '' }}"
+                           placeholder="Dec. 2001"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label class="md:col-span-2">
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Description / Summary</span>
+                    <textarea name="description" rows="5"
+                              class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">{{ edu.description if edu else '' }}</textarea>
+                </label>
+
+                <label class="md:col-span-2">
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Honors & Memberships (JSON array)</span>
+                    <textarea name="honors_memberships" rows="4"
+                              placeholder='["National Technical Vocation Honor Society Member"]'
+                              class="w-full rounded-lg border border-slate-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:ring-blue-500">{% if edu and edu.honors_memberships %}{{ edu.honors_memberships }}{% else %}[]{% endif %}</textarea>
+                    <p class="text-xs text-slate-500 mt-1">JSON array of strings, e.g., ["Honor 1", "Honor 2"]</p>
+                </label>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

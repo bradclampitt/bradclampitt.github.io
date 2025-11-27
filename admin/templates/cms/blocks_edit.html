@@ -1,0 +1,980 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit CMS Block' if block else 'New CMS Block' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit CMS Block' if block else 'New CMS Block' }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <form method="POST" action="/admin/cms/blocks/save" class="space-y-8">
+        {% if block %}
+        <input type="hidden" name="block_id" value="{{ block.id }}">
+        {% endif %}
+
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">{{ block.title if block else 'New CMS Block' }}</h1>
+                <p class="mt-2 text-slate-600">Manage content block that can be used in your HTML pages</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="/admin/cms/blocks" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </a>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition font-semibold" onclick="return syncEditorContent();">
+                    <i class="fas fa-save mr-2"></i>Save Block
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <section class="bg-blue-50 rounded-lg shadow overflow-hidden px-6 py-4 border-l-4 border-blue-500">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Block Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="block_id_code" class="block text-sm font-medium text-slate-700 mb-1">
+                            Block ID <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="block_id_code" name="block_id_code" required
+                               value="{{ block.block_id if block else '' }}"
+                               placeholder="e.g., about-me, family-first"
+                               pattern="[a-z0-9\-]+"
+                               title="Lowercase letters, numbers, and hyphens only"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-xs text-slate-500">Unique identifier used in HTML (lowercase, numbers, hyphens only)</p>
+                    </div>
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-slate-700 mb-1">
+                            Title <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="title" name="title" required
+                               value="{{ block.title if block else '' }}"
+                               placeholder="e.g., About Me"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-xs text-slate-500">Display title for admin panel</p>
+                    </div>
+                    <div>
+                        <label for="content_format" class="block text-sm font-medium text-slate-700 mb-1">Content Format</label>
+                        <select id="content_format" name="content_format" 
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="html" {% if not block or (block and block.content_format == 'html') %}selected{% endif %}>HTML</option>
+                            <option value="markdown" {% if block and block.content_format == 'markdown' %}selected{% endif %}>Markdown</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sort_order" class="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
+                        <input type="number" id="sort_order" name="sort_order"
+                               value="{{ block.sort_order if block else '0' }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <textarea id="description" name="description" rows="2"
+                                  placeholder="Optional description for admin reference"
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ block.description if block else '' }}</textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_active" value="true"
+                                   {% if not block or (block and block.is_active == 1) %}checked{% endif %}
+                                   class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-slate-700">Active (block will be available on frontend)</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Image Section -->
+            <section class="bg-white rounded-lg shadow overflow-hidden px-6 py-4 border border-slate-200">
+                <div x-data="{ showImageSection: false }">
+                    <!-- Collapsible Header -->
+                    <button type="button" 
+                            @click="showImageSection = !showImageSection"
+                            class="w-full flex items-center justify-between text-left mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2 -m-2">
+                        <div>
+                            <h2 class="text-xl font-semibold text-slate-900">Block Image</h2>
+                            <p class="text-sm text-slate-500 mt-1">Add a single image to display with the block content</p>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform" :class="{ 'rotate-180': showImageSection }"></i>
+                    </button>
+                    
+                    <!-- Collapsible Content -->
+                    <div x-show="showImageSection" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 max-h-0"
+                         x-transition:enter-end="opacity-100 max-h-[5000px]"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 max-h-[5000px]"
+                         x-transition:leave-end="opacity-0 max-h-0"
+                         class="overflow-hidden"
+                         style="display: none;">
+                {% if block %}
+                <div x-data="cmsBlockImageManager({ blockId: {{ block.id }}, currentImage: '{{ block.image if block.image else '' }}', currentImageDescription: '{{ block.image_description if block.image_description else '' }}' })">
+                    <div class="flex flex-col gap-4">
+                        <!-- Current Image Display -->
+                        <div x-show="currentImage" class="mb-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Current Image</label>
+                            <div class="relative inline-block">
+                                <img :src="currentImage" alt="Block image" class="max-w-xs h-auto rounded-lg border border-slate-300 shadow-sm">
+                                <button type="button" @click="removeImage()" class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Image Selection Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button type="button" @click="openImageBrowser()" class="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition">
+                                <i class="fas fa-folder-open mr-2"></i>Browse Existing Images
+                            </button>
+                        </div>
+                        
+                        <!-- Upload Form -->
+                        <form method="POST" action="/admin/cms/blocks/images/upload" enctype="multipart/form-data" class="flex flex-col gap-3">
+                            <input type="hidden" name="block_id" value="{{ block.id }}">
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <input type="file" name="file" accept="image/*" @change="handleFileSelect($event)"
+                                       class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                                    <i class="fas fa-upload mr-2"></i>Upload
+                                </button>
+                            </div>
+                            
+                            <!-- Preview Area -->
+                            <div x-show="previewUrl" class="mt-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Preview</label>
+                                <img :src="previewUrl" alt="Preview" class="max-w-xs h-auto rounded-lg border border-slate-300 shadow-sm">
+                            </div>
+                        </form>
+                        
+                        <!-- Image Position Selector -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Image Position</label>
+                            <select name="image_position" id="image_position" 
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="none" {% if block and block.image_position == 'none' %}selected{% endif %}>No Image</option>
+                                <option value="left" {% if block and block.image_position == 'left' %}selected{% endif %}>Left of Text</option>
+                                <option value="right" {% if not block or (block and block.image_position == 'right') %}selected{% endif %}>Right of Text</option>
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">Choose where the image appears relative to the text content</p>
+                        </div>
+                        
+                        <!-- Image Description -->
+                        <div class="mt-4">
+                            <label for="image_description" class="block text-sm font-medium text-slate-700 mb-2">Image Description/Caption</label>
+                            <input type="text" id="image_description" name="image_description"
+                                   value="{{ block.image_description if block and block.image_description else '' }}"
+                                   placeholder="e.g., The Clampitt Family"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p class="mt-1 text-xs text-slate-500">Optional: Description or caption text displayed below the image</p>
+                        </div>
+                        
+                        <!-- Hidden input for form submission -->
+                        <input type="hidden" name="image" id="block_image" :value="currentImage || ''">
+                        
+                        <!-- Image Browser Modal -->
+                        <div x-show="showBrowserModal" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 z-50 overflow-y-auto" 
+                             style="display: none;"
+                             @click.self="closeImageBrowser()">
+                            <div class="flex items-center justify-center min-h-screen px-4">
+                                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6" @click.stop>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-xl font-semibold text-slate-900">Select Image</h3>
+                                        <button @click="closeImageBrowser()" class="text-slate-400 hover:text-slate-600">
+                                            <i class="fas fa-times text-xl"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div x-show="browserLoading" class="text-center py-8">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <p class="mt-4 text-slate-600">Loading images...</p>
+                                    </div>
+                                    
+                                    <div x-show="!browserLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                                        <template x-for="img in availableImages" :key="img.url">
+                                            <div @click="selectImage(img.url)" 
+                                                 :class="selectedBrowserImage === img.url ? 'ring-2 ring-blue-600' : 'hover:ring-2 hover:ring-blue-300'"
+                                                 class="relative cursor-pointer rounded-lg border border-slate-200 overflow-hidden transition">
+                                                <img :src="img.url" :alt="img.filename" class="w-full h-32 object-cover">
+                                                <div class="p-2 bg-white">
+                                                    <p class="text-xs text-slate-600 truncate" x-text="img.filename"></p>
+                                                    <p class="text-xs text-slate-400" x-text="img.directory"></p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <div x-show="availableImages.length === 0 && !browserLoading" class="text-center py-8 text-slate-500">
+                                        <i class="fas fa-inbox text-4xl mb-4 text-slate-300"></i>
+                                        <p>No images found</p>
+                                    </div>
+                                    
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button @click="closeImageBrowser()" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50">
+                                            Cancel
+                                        </button>
+                                        <button @click="confirmImageSelection()" 
+                                                :disabled="!selectedBrowserImage"
+                                                :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'"
+                                                class="px-4 py-2 text-white rounded-lg transition">
+                                            Select Image
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-sm text-slate-500">Save the block first to add an image.</p>
+                {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gallery Images Section -->
+            <section class="bg-white rounded-lg shadow overflow-hidden px-6 py-4 border border-slate-200">
+                <div x-data="{ showGallerySection: false }">
+                    <!-- Collapsible Header -->
+                    <button type="button" 
+                            @click="showGallerySection = !showGallerySection"
+                            class="w-full flex items-center justify-between text-left mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2 -m-2">
+                        <div>
+                            <h2 class="text-xl font-semibold text-slate-900">Gallery Images</h2>
+                            <p class="text-sm text-slate-500 mt-1">Add multiple images for gallery blocks (e.g., "Life in Photos")</p>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform" :class="{ 'rotate-180': showGallerySection }"></i>
+                    </button>
+                    
+                    <!-- Collapsible Content -->
+                    <div x-show="showGallerySection" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 max-h-0"
+                         x-transition:enter-end="opacity-100 max-h-[5000px]"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 max-h-[5000px]"
+                         x-transition:leave-end="opacity-0 max-h-0"
+                         class="overflow-hidden"
+                         style="display: none;">
+                        <!-- Store gallery images data in a script tag for safe access -->
+                        <script type="application/json" id="gallery-images-data">{% if block and block.gallery_images %}{{ block.gallery_images | tojson }}{% else %}[]{% endif %}</script>
+                        
+                        <div x-data="galleryImageManager()">
+                    <!-- Gallery Images List -->
+                    <div class="space-y-4 mb-4">
+                        <template x-for="(image, index) in galleryImages" :key="index">
+                            <div class="flex gap-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
+                                <!-- Image Preview -->
+                                <div class="flex-shrink-0">
+                                    <img :src="image.src" :alt="image.alt || 'Gallery image'" 
+                                         class="w-24 h-24 object-cover rounded-lg border border-slate-300"
+                                         onerror="this.src='https://placehold.co/96x96/6366f1/fff?text=Image'">
+                                </div>
+                                
+                                <!-- Image Details -->
+                                <div class="flex-1 space-y-2">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">Image URL</label>
+                                        <input type="text" 
+                                               x-model="image.src"
+                                               placeholder="assets/images/personal/photo.jpg"
+                                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">Alt Text</label>
+                                        <input type="text" 
+                                               x-model="image.alt"
+                                               placeholder="Photo description"
+                                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">Description (for modal)</label>
+                                        <textarea x-model="image.description"
+                                                  placeholder="Detailed description shown in modal"
+                                                  rows="2"
+                                                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="flex flex-col gap-2">
+                                    <button type="button" 
+                                            @click="openImageBrowser(index)"
+                                            class="px-3 py-2 bg-slate-600 text-white text-sm rounded-lg hover:bg-slate-700 transition">
+                                        <i class="fas fa-folder-open mr-1"></i>Browse
+                                    </button>
+                                    <button type="button" 
+                                            @click="removeImage(index)"
+                                            class="px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition">
+                                        <i class="fas fa-trash mr-1"></i>Remove
+                                    </button>
+                                    <button type="button" 
+                                            @click="moveImage(index, -1)"
+                                            :disabled="index === 0"
+                                            :class="index === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                            class="px-3 py-2 text-white text-sm rounded-lg transition">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </button>
+                                    <button type="button" 
+                                            @click="moveImage(index, 1)"
+                                            :disabled="index === galleryImages.length - 1"
+                                            :class="index === galleryImages.length - 1 ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                                            class="px-3 py-2 text-white text-sm rounded-lg transition">
+                                        <i class="fas fa-arrow-down"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <div x-show="galleryImages.length === 0" class="text-center py-8 text-slate-400 border-2 border-dashed border-slate-300 rounded-lg">
+                            <i class="fas fa-images text-4xl mb-2"></i>
+                            <p>No gallery images added yet</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Add Image Button -->
+                    <button type="button" 
+                            @click="addImage()"
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-plus mr-2"></i>Add Image
+                    </button>
+                    
+                    <!-- Hidden input for form submission -->
+                    <input type="hidden" name="gallery_images" :value="JSON.stringify(galleryImages)">
+                    
+                    <!-- Image Browser Modal (reused from block image) -->
+                    <div x-show="showBrowserModal" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="fixed inset-0 z-50 overflow-y-auto" 
+                         style="display: none;"
+                         @click.self="closeImageBrowser()">
+                        <div class="flex items-center justify-center min-h-screen px-4">
+                            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6" @click.stop>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-xl font-semibold text-slate-900">Select Image</h3>
+                                    <button @click="closeImageBrowser()" class="text-slate-400 hover:text-slate-600">
+                                        <i class="fas fa-times text-xl"></i>
+                                    </button>
+                                </div>
+                                
+                                <div x-show="browserLoading" class="text-center py-8">
+                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    <p class="mt-4 text-slate-600">Loading images...</p>
+                                </div>
+                                
+                                <div x-show="!browserLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                                    <template x-for="img in availableImages" :key="img.url">
+                                        <div @click="selectImage(img.url)" 
+                                             :class="selectedBrowserImage === img.url ? 'ring-2 ring-blue-600' : 'hover:ring-2 hover:ring-blue-300'"
+                                             class="relative cursor-pointer rounded-lg border border-slate-200 overflow-hidden transition">
+                                            <img :src="img.url" :alt="img.filename" class="w-full h-32 object-cover">
+                                            <div class="p-2 bg-white">
+                                                <p class="text-xs text-slate-600 truncate" x-text="img.filename"></p>
+                                                <p class="text-xs text-slate-400" x-text="img.directory"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <div x-show="availableImages.length === 0 && !browserLoading" class="text-center py-8 text-slate-500">
+                                    <i class="fas fa-inbox text-4xl mb-4 text-slate-300"></i>
+                                    <p>No images found</p>
+                                </div>
+                                
+                                <div class="mt-6 flex justify-end gap-3">
+                                    <button @click="closeImageBrowser()" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50">
+                                        Cancel
+                                    </button>
+                                    <button @click="confirmImageSelection()" 
+                                            :disabled="!selectedBrowserImage"
+                                            :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'"
+                                            class="px-4 py-2 text-white rounded-lg transition">
+                                        Select Image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white rounded-lg shadow overflow-hidden px-6 py-4 border border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4">Content</h2>
+                
+                <!-- Toggle between Editor and Raw HTML -->
+                <div class="mb-4 flex gap-2">
+                    <button type="button" 
+                            id="toggle-editor-btn"
+                            onclick="toggleEditorMode()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                        <i class="fas fa-code mr-2"></i>Switch to Raw HTML
+                    </button>
+                    <p class="text-xs text-slate-500 self-center">
+                        <span id="editor-mode-indicator">WYSIWYG Editor Mode</span>
+                    </p>
+                </div>
+                
+                <!-- WYSIWYG Editor -->
+                <div id="editor-container">
+                    <div id="editor" style="min-height: 400px;"></div>
+                </div>
+                
+                <!-- Raw HTML Editor -->
+                <div id="raw-html-container" style="display: none;">
+                    <textarea id="raw-content" 
+                              name="content" 
+                              rows="20"
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Paste your raw HTML here...">{{ block.content if block else '' }}</textarea>
+                    <p class="mt-2 text-xs text-slate-500">
+                        <i class="fas fa-info-circle mr-1"></i>Raw HTML mode - paste HTML directly. The content will be saved as-is.
+                    </p>
+                </div>
+                
+                <!-- Hidden textarea for form submission (used when in WYSIWYG mode) -->
+                <textarea id="content" name="content" style="display: none;">{{ block.content if block else '' }}</textarea>
+            </section>
+            
+            <!-- Reference: Frontend Usage -->
+            {% if frontend_usage and frontend_usage|length > 0 %}
+            <section class="bg-blue-50 rounded-lg shadow overflow-hidden px-6 py-4 border border-blue-200">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-globe text-blue-600"></i>
+                    <span>Frontend Usage: CMS Blocks in Use</span>
+                </h2>
+                <p class="text-sm text-slate-600 mb-4">These Block IDs are currently referenced in your frontend HTML pages.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for block_id, files in frontend_usage.items() %}
+                    <div class="bg-white rounded-lg border border-blue-200 p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <code class="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded" x-text="'{{ block_id }}'"></code>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>In Use
+                            </span>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-xs font-semibold text-slate-600 mb-1">Used in:</p>
+                            <ul class="text-xs text-slate-500 space-y-1">
+                                {% for file in files %}
+                                <li class="flex items-center gap-1">
+                                    <i class="fas fa-file-code text-blue-400"></i>
+                                    <span>{{ file }}</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Reference: All CMS Blocks -->
+            <section class="bg-slate-50 rounded-lg shadow overflow-hidden px-6 py-4 border border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-list text-slate-500"></i>
+                    <span>Reference: All CMS Blocks</span>
+                </h2>
+                <p class="text-sm text-slate-600 mb-4">Use this list as a reference for existing Block IDs. Click "Edit" to modify an existing block.</p>
+                
+                {% if all_blocks and all_blocks|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-100 text-xs uppercase tracking-widest text-slate-500">
+                            <tr>
+                                <th class="px-3 py-3 text-left">Block ID</th>
+                                <th class="px-3 py-3 text-left hidden md:table-cell">Title</th>
+                                <th class="px-3 py-3 text-left hidden lg:table-cell">Description</th>
+                                <th class="px-3 py-3 text-left">Status</th>
+                                <th class="px-3 py-3 text-left hidden lg:table-cell">Frontend Usage</th>
+                                <th class="px-3 py-3 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            {% for ref_block in all_blocks %}
+                            <tr class="hover:bg-slate-50 {% if block and block.id == ref_block.id %}bg-blue-50{% endif %}">
+                                <td class="px-3 py-3">
+                                    <code class="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded" x-text="'{{ ref_block.block_id }}'"></code>
+                                </td>
+                                <td class="px-3 py-3 text-slate-700 hidden md:table-cell">
+                                    {{ ref_block.title }}
+                                </td>
+                                <td class="px-3 py-3 text-slate-500 text-xs hidden lg:table-cell">
+                                    {{ ref_block.description[:50] if ref_block.description else '-' }}{{ '...' if ref_block.description and ref_block.description|length > 50 else '' }}
+                                </td>
+                                <td class="px-3 py-3">
+                                    {% if ref_block.is_active == 1 or ref_block.is_active == True %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>Active
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <i class="fas fa-times-circle mr-1"></i>Inactive
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-3 hidden lg:table-cell">
+                                    {% if frontend_usage and ref_block.block_id in frontend_usage %}
+                                    <div class="flex flex-col gap-1">
+                                        {% for file in frontend_usage[ref_block.block_id] %}
+                                        <span class="inline-flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                            <i class="fas fa-file-code mr-1 text-xs"></i>{{ file }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-xs text-slate-400 italic">Not in use</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-3">
+                                    <a href="/admin/cms/blocks/{{ ref_block.id }}" 
+                                       class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">
+                                        {% if block and block.id == ref_block.id %}
+                                        <i class="fas fa-edit mr-1"></i>Current
+                                        {% else %}
+                                        <i class="fas fa-edit mr-1"></i>Edit
+                                        {% endif %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-slate-500">
+                    <i class="fas fa-inbox text-4xl mb-4 text-slate-300"></i>
+                    <p>No CMS blocks created yet.</p>
+                    <p class="text-xs mt-2">Create your first block above!</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </form>
+</div>
+
+<script>
+let editor;
+let isRawHtmlMode = false;
+let EditorClass = null;
+let editorPlugins = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const contentFormat = document.getElementById('content_format').value;
+    const initialContent = document.getElementById('content').value;
+    
+    // Store Editor class and plugins globally for use in toggleEditorMode
+    EditorClass = toastui.Editor;
+    
+    // Try to load codeSyntaxHighlight plugin if available, otherwise use empty array
+    try {
+        if (EditorClass.plugin && EditorClass.plugin.codeSyntaxHighlight) {
+            editorPlugins = [EditorClass.plugin.codeSyntaxHighlight];
+        }
+    } catch (e) {
+        // Plugin not available, continue without it
+        console.log('Code syntax highlight plugin not available, continuing without it');
+    }
+    
+    // If HTML format, start in raw HTML mode
+    if (contentFormat === 'html') {
+        isRawHtmlMode = true;
+        document.getElementById('editor-container').style.display = 'none';
+        document.getElementById('raw-html-container').style.display = 'block';
+        document.getElementById('toggle-editor-btn').innerHTML = '<i class="fas fa-eye mr-2"></i>Switch to WYSIWYG Editor';
+        document.getElementById('editor-mode-indicator').textContent = 'Raw HTML Mode';
+        document.getElementById('content').removeAttribute('name');
+        document.getElementById('raw-content').setAttribute('name', 'content');
+    } else {
+        // Initialize editor if not in raw HTML mode
+        initializeEditor(contentFormat, initialContent);
+    }
+    
+    // Update editor when format changes
+    document.getElementById('content_format').addEventListener('change', function() {
+        const newFormat = this.value;
+        
+        if (newFormat === 'html') {
+            // Switch to raw HTML mode
+            if (editor) {
+                const htmlContent = editor.getHTML();
+                document.getElementById('raw-content').value = htmlContent;
+                editor.destroy();
+                editor = null;
+            }
+            isRawHtmlMode = true;
+            document.getElementById('editor-container').style.display = 'none';
+            document.getElementById('raw-html-container').style.display = 'block';
+            document.getElementById('toggle-editor-btn').innerHTML = '<i class="fas fa-eye mr-2"></i>Switch to WYSIWYG Editor';
+            document.getElementById('editor-mode-indicator').textContent = 'Raw HTML Mode';
+            document.getElementById('content').removeAttribute('name');
+            document.getElementById('raw-content').setAttribute('name', 'content');
+        } else {
+            // Switch to editor mode
+            const currentContent = document.getElementById('raw-content').value || document.getElementById('content').value;
+            isRawHtmlMode = false;
+            document.getElementById('editor-container').style.display = 'block';
+            document.getElementById('raw-html-container').style.display = 'none';
+            document.getElementById('toggle-editor-btn').innerHTML = '<i class="fas fa-code mr-2"></i>Switch to Raw HTML';
+            document.getElementById('editor-mode-indicator').textContent = 'WYSIWYG Editor Mode';
+            document.getElementById('raw-content').removeAttribute('name');
+            document.getElementById('content').setAttribute('name', 'content');
+            
+            // Initialize or recreate editor
+            if (editor) {
+                editor.destroy();
+            }
+            
+            editor = new Editor({
+                el: document.querySelector('#editor'),
+                height: '500px',
+                initialEditType: newFormat === 'markdown' ? 'markdown' : 'wysiwyg',
+                previewStyle: 'vertical',
+                plugins: plugins,
+                initialValue: currentContent,
+                toolbarItems: [
+                    ['heading', 'bold', 'italic', 'strike'],
+                    ['hr', 'quote'],
+                    ['ul', 'ol', 'task', 'indent', 'outdent'],
+                    ['table', 'image', 'link'],
+                    ['code', 'codeblock'],
+                    ['scrollSync'],
+                ],
+            });
+        }
+    });
+});
+
+function initializeEditor(contentFormat, initialContent) {
+    if (!EditorClass) {
+        console.error('Toast UI Editor not loaded');
+        return;
+    }
+    
+    // Destroy existing editor if it exists
+    if (editor) {
+        try {
+            editor.destroy();
+        } catch (e) {
+            console.error('Error destroying editor:', e);
+        }
+        editor = null;
+    }
+    
+    // Clear the editor container
+    const editorEl = document.querySelector('#editor');
+    if (editorEl) {
+        editorEl.innerHTML = '';
+    }
+    
+    // Initialize new editor
+    try {
+        editor = new EditorClass({
+            el: editorEl,
+            height: '500px',
+            initialEditType: contentFormat === 'markdown' ? 'markdown' : 'wysiwyg',
+            previewStyle: 'vertical',
+            plugins: editorPlugins,
+            initialValue: initialContent || '',
+            toolbarItems: [
+                ['heading', 'bold', 'italic', 'strike'],
+                ['hr', 'quote'],
+                ['ul', 'ol', 'task', 'indent', 'outdent'],
+                ['table', 'image', 'link'],
+                ['code', 'codeblock'],
+                ['scrollSync'],
+            ],
+        });
+    } catch (e) {
+        console.error('Error initializing editor:', e);
+    }
+}
+
+function toggleEditorMode() {
+    const editorContainer = document.getElementById('editor-container');
+    const rawHtmlContainer = document.getElementById('raw-html-container');
+    const toggleBtn = document.getElementById('toggle-editor-btn');
+    const modeIndicator = document.getElementById('editor-mode-indicator');
+    const contentTextarea = document.getElementById('content');
+    const rawContentTextarea = document.getElementById('raw-content');
+    const contentFormat = document.getElementById('content_format').value;
+    
+    if (isRawHtmlMode) {
+        // Switch to WYSIWYG mode
+        isRawHtmlMode = false;
+        editorContainer.style.display = 'block';
+        rawHtmlContainer.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="fas fa-code mr-2"></i>Switch to Raw HTML';
+        modeIndicator.textContent = 'WYSIWYG Editor Mode';
+        
+        // Hide raw content textarea name so it doesn't submit
+        rawContentTextarea.removeAttribute('name');
+        // Show content textarea name so it submits
+        contentTextarea.setAttribute('name', 'content');
+        
+        // Initialize editor if it doesn't exist, or update content if it does
+        const contentToLoad = rawContentTextarea.value || contentTextarea.value || '';
+        if (!editor) {
+            // Editor was never initialized, create it now
+            initializeEditor(contentFormat, contentToLoad);
+        } else {
+            // Editor exists, update its content
+            try {
+                editor.setHTML(contentToLoad);
+            } catch (e) {
+                console.error('Error setting editor content:', e);
+                // If setHTML fails, reinitialize the editor
+                initializeEditor(contentFormat, contentToLoad);
+            }
+        }
+    } else {
+        // Switch to Raw HTML mode
+        isRawHtmlMode = true;
+        editorContainer.style.display = 'none';
+        rawHtmlContainer.style.display = 'block';
+        toggleBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>Switch to WYSIWYG Editor';
+        modeIndicator.textContent = 'Raw HTML Mode';
+        
+        // Sync content from editor to raw HTML
+        if (editor) {
+            try {
+                const htmlContent = editor.getHTML();
+                rawContentTextarea.value = htmlContent;
+            } catch (e) {
+                console.error('Error getting editor content:', e);
+                // Fallback to markdown if HTML fails
+                try {
+                    const markdownContent = editor.getMarkdown();
+                    rawContentTextarea.value = markdownContent;
+                } catch (e2) {
+                    console.error('Error getting markdown:', e2);
+                }
+            }
+        }
+        // Hide content textarea name so it doesn't submit
+        contentTextarea.removeAttribute('name');
+        // Show raw content textarea name so it submits
+        rawContentTextarea.setAttribute('name', 'content');
+    }
+}
+
+function syncEditorContent() {
+    if (isRawHtmlMode) {
+        // In raw HTML mode, the raw-content textarea already has the name="content" attribute
+        // so it will be submitted automatically - no sync needed
+        return true;
+    } else {
+        // In WYSIWYG mode, sync editor content to hidden textarea
+        if (editor) {
+            try {
+                const content = editor.getHTML();
+                document.getElementById('content').value = content;
+            } catch (e) {
+                console.error('Error syncing editor content:', e);
+                // Fallback: try to get markdown and convert
+                try {
+                    const markdown = editor.getMarkdown();
+                    document.getElementById('content').value = markdown;
+                } catch (e2) {
+                    console.error('Error getting markdown:', e2);
+                }
+            }
+        }
+        return true;
+    }
+}
+
+// CMS Block Image Manager Component
+function cmsBlockImageManager(config) {
+    return {
+        blockId: config.blockId,
+        currentImage: config.currentImage || '',
+        currentImageDescription: config.currentImageDescription || '',
+        previewUrl: null,
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImage: null,
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.previewUrl = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                this.previewUrl = null;
+            }
+        },
+        async openImageBrowser() {
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImage = null;
+            
+            try {
+                const response = await fetch('/admin/cms/blocks/images/browse');
+                const data = await response.json();
+                this.availableImages = data.images || [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImage = null;
+        },
+        selectImage(url) {
+            this.selectedBrowserImage = url;
+        },
+        confirmImageSelection() {
+            if (this.selectedBrowserImage) {
+                this.currentImage = this.selectedBrowserImage;
+                document.getElementById('block_image').value = this.selectedBrowserImage;
+                this.closeImageBrowser();
+            }
+        },
+        async removeImage() {
+            if (confirm('Are you sure you want to remove this image?')) {
+                this.currentImage = '';
+                document.getElementById('block_image').value = '';
+                
+                // Update database via API
+                try {
+                    const formData = new FormData();
+                    formData.append('block_id', this.blockId);
+                    formData.append('image', '');
+                    
+                    const response = await fetch('/admin/cms/blocks/save', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        // Reload page to reflect changes
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    console.error('Error removing image:', error);
+                }
+            }
+        }
+    };
+}
+
+// Gallery Image Manager Component
+function galleryImageManager() {
+    // Read gallery images from the script tag
+    let images = [];
+    try {
+        const dataElement = document.getElementById('gallery-images-data');
+        if (dataElement) {
+            const jsonText = dataElement.textContent || dataElement.innerText;
+            if (jsonText && jsonText.trim()) {
+                images = JSON.parse(jsonText);
+                if (!Array.isArray(images)) {
+                    images = [];
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Error parsing gallery images:', e);
+        images = [];
+    }
+    
+    return {
+        galleryImages: images,
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImage: null,
+        editingIndex: null,
+        
+        addImage() {
+            this.galleryImages.push({
+                src: '',
+                alt: '',
+                description: ''
+            });
+        },
+        
+        removeImage(index) {
+            if (confirm('Are you sure you want to remove this image?')) {
+                this.galleryImages.splice(index, 1);
+            }
+        },
+        
+        moveImage(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex >= 0 && newIndex < this.galleryImages.length) {
+                const temp = this.galleryImages[index];
+                this.galleryImages[index] = this.galleryImages[newIndex];
+                this.galleryImages[newIndex] = temp;
+            }
+        },
+        
+        async openImageBrowser(index) {
+            this.editingIndex = index;
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImage = null;
+            
+            try {
+                const response = await fetch('/admin/cms/blocks/images/browse');
+                const data = await response.json();
+                this.availableImages = data.images || [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImage = null;
+            this.editingIndex = null;
+        },
+        
+        selectImage(url) {
+            this.selectedBrowserImage = url;
+        },
+        
+        confirmImageSelection() {
+            if (this.selectedBrowserImage && this.editingIndex !== null) {
+                this.galleryImages[this.editingIndex].src = this.selectedBrowserImage;
+                // Auto-fill alt text from filename if empty
+                if (!this.galleryImages[this.editingIndex].alt) {
+                    const filename = this.selectedBrowserImage.split('/').pop().replace(/\.[^/.]+$/, '');
+                    this.galleryImages[this.editingIndex].alt = filename.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                }
+                this.closeImageBrowser();
+            }
+        }
+    };
+}
+</script>
+{% endblock %}
+

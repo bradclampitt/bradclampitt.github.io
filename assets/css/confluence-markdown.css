@@ -1,0 +1,416 @@
+        /* Universal code block styling - Confluence-like */
+        .code-block pre,
+        .code-block pre[class*=language-],
+        pre[class*=language-],
+        pre.line-numbers {
+            background: #F0F1F2 !important; /* pale blue */
+            color: #0b1220 !important; /* dark code text */
+            text-shadow: none !important;
+            border: 1px solid rgba(12,40,72,0.06) !important;
+            border-radius: 10px !important;
+            /* push code content to the right of the gutter (gutter width ~40px + inset) */
+            padding: 0.25rem 0.75rem 0.25rem 4.5rem !important;
+            margin: 1.25rem 0 !important;
+            font-family: 'Fira Code', 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, monospace !important;
+            font-size: 0.95rem !important;
+            line-height: 1.7 !important;
+            box-shadow: none !important;
+            overflow: auto !important;
+            position: relative !important; /* For absolute positioning of gutter */
+        }
+
+        /* Code element styling (transparent background inside pre) */
+        .code-block code,
+        .code-block pre code,
+        pre[class*=language-] code,
+        pre code[class*=language-] {
+            color: inherit !important;
+            background: transparent !important;
+            font-family: inherit !important;
+            font-size: inherit !important;
+            line-height: inherit !important;
+            margin-left: 0 !important;                      /* Prevent overlap into gutter */
+            padding-left: 0 !important;
+            display: block !important;
+        }
+
+        /* Line numbers gutter: rounded dark box on the left with centered numbers */
+        .line-numbers, pre.line-numbers {
+            position: relative !important;
+            padding-left: 3.5rem !important;                /* Consistent space for gutter (56px); matches pre padding */
+        }
+
+        /* Gutter uses block flow so each span lines up with a code line. Avoid flex+gap which breaks alignment. */
+        .line-numbers .line-numbers-rows {
+            position: absolute !important;
+            left: 0px !important;
+            top: 0rem !important;                           /* match <pre> padding-top */
+            bottom: 0rem !important;                        /* match <pre> padding-bottom */
+            width: 55px !important;
+            box-sizing: border-box !important;
+            background: #E3E5E7 !important;
+            border-radius: 0px 0 0 0px !important;
+            padding: 0 !important;                          /* let spans define the height */
+            display: block !important;
+            overflow: hidden !important;                    /* no vertical scrollbar */
+            border-right: 0;
+        }
+
+        /* Each line number occupies the same height as a code line (use em to tie to font size).
+           This ensures numbers vertically align with code lines. Avoid gaps between items. */
+        .line-numbers-rows > span {
+            display: block !important;
+            height: 1.7em !important;                       /* match the <pre> line-height */
+            line-height: 1.7em !important;
+            text-align: center !important;
+            font-family: 'Fira Code','JetBrains Mono','SFMono-Regular',Menlo,Monaco,monospace !important;
+            font-size: 0.95rem !important;
+            color: #000000 !important;                      /* readable in light gutter */
+        }
+
+        /* Ensure the code block content itself doesn't add extra left padding/margin */
+        .line-numbers > code,
+        pre.line-numbers > code {
+            display: block !important;
+            margin: 0 !important;
+            padding-left: 0 !important;
+            white-space: pre !important;
+            margin-left: 0 !important;                          /* Extra safeguard against overlap */
+        }
+
+        .line-numbers-rows>span:before {
+            color: #000000 !important;                      /* dark line numbers */
+            padding-top: 3px;
+        }
+
+        /* Ensure code text doesn't overlap the left gutter */
+        .line-numbers code { 
+            display: block; 
+            padding-left: 0 !important; 
+            margin-left: 0 !important;
+        }
+
+        /* Override any other potential conflicts */
+        .code-block *,
+        .code-block pre *,
+        .code-block code * {
+            background: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Inline code chip */
+        code {
+            background: #e7f8ff;
+            border: 1px solid #c4c4c4;
+            padding: 0.25rem 0.25rem;
+            border-radius: 5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 0.95em;
+            white-space: nowrap;
+            margin: 0px 3px 0px 3px;
+        }
+        pre code { background: transparent; border: 0; padding: 0; }
+        .cust-rounded-lg { border-radius: 0.9rem !important; }
+        .cust-border-lg { border-left-width: 6px !important; }
+
+        /* Copy button for code blocks */
+        .code-block { position: relative; }
+        .code-copy-btn { position: absolute; right: 14px; top: 1px; background: rgba(255,255,255,0.98); border: 1px solid rgba(12,40,72,0.08); padding: 4px 7px; height: auto; border-radius: 8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; color:#0f1722; }
+        .code-copy-btn:hover { background: #f1f7ff; }
+        .code-copy-btn:active { transform: translateY(1px); }
+        .code-copy-toast { position: absolute; right: 16px; top: 56px; background: rgba(12,40,72,0.95); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; display: none; box-shadow: 0 4px 12px rgba(2,6,23,0.12); }
+
+        /* Clearfix for article content to contain floats */
+        article::after { content: ""; display: table; clear: both; }
+        article { overflow: auto; }
+
+        /* Ensure callout boxes are full-width and never allow floated images to intrude */
+        .info-box, .warning-box, .success-box, .error-box, .tip-box { clear: both; width: 100%; }
+
+        /* Horizontal paragraph padding applied by generator */
+        .px-10 { padding-left: 10px; padding-right: 10px; }
+
+        /* Inner padding used around img tags so surrounding text doesn't sit flush against image borders */
+        .fig-inner-pad { padding: 10px; box-sizing: border-box; }
+
+        /* Placeholder visual box used by the generator */
+        .placeholder-inner { border: 2px dashed #d1d5db; background-color: #f8fafc; padding: 10px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-weight: 500; }
+        .placeholder-inner.small { min-height: 120px; }
+        .placeholder-inner.default { min-height: 234px; }
+
+        /* Clearing helpers used before floated figures/sections */
+        .clear-left { clear: left; }
+        /* Use clear:both for right floats to ensure they drop below previous floats and block content when desired */
+        .clear-right { clear: both; margin-top: 56px; }
+        .clear-both { clear: both; margin-top: 12px; }
+
+        /* Placeholder spacing helpers: push text away from placeholder boxes */
+        .placeholder-mr { margin-right: 20px; }
+        .placeholder-ml { margin-left: 20px; }
+
+        /* Force-float helpers: apply both float and !important inline-like behavior
+        to ensure Safari honors the intended float direction in tricky layouts. */
+        .float-left-force { float: left !important; }
+        .float-right-force { float: right !important; }
+
+        /* HR spacing helper (used in generator to preserve separation) */
+        .hr-spaced { padding-top: 15px; padding-bottom: 15px; }
+
+        /* Constrain figure widths emitted by generator */
+        .figure-max-600 { max-width: 600px; }
+        .figure-max-300 { max-width: 300px; }
+
+        /* Figure alignment helpers: block-level figures that do NOT allow text wrapping
+        Use these for 'real' images so surrounding blog text appears only above or below. */
+        .figure-left { display: block; margin-left: 0; margin-right: auto; }
+        .figure-right { display: block; margin-left: auto; margin-right: 0; }
+        .figure-center { display: block; margin-left: auto; margin-right: auto; }
+
+        /* Default figcaption styling (below the image) */
+        figure figcaption { display: block; font-size: 0.875rem; color: #6b7280; margin-top: 8px; }
+
+        /* Callout padding wrapper (replaces inline padding on callout boxes) */
+        .callout-padding { padding: 18px; clear: both; width: 100%; }
+
+        /* Themed callouts (pastel backgrounds + padding) */
+        .callout { border-radius: 10px; padding: 14px 16px; margin: 16px 0; border: 1px solid #e6edf6; }
+        .callout .title { font-weight: 700; margin-bottom: 4px; display: inline-block; }
+        .callout.info    { background: #f0f7ff; }   /* light blue */
+        .callout.warning { background: #fff8db; }   /* light yellow */
+        .callout.success { background: #edfdf5; }   /* light green */
+        .callout.tip     { background: #f5f0ff; }   /* light indigo/purple */
+        .callout.error   { background: #ffe8e8; }   /* light red */
+
+        /* Keep full-width behavior and separation from floats */
+        .callout { clear: both; width: 100%; }
+
+        .callout { 
+            border-radius: 12px; 
+            padding: 14px 16px; 
+            margin: 16px 0; 
+            border: 1px solid #e6edf6; 
+            clear: both; 
+            width: 100%;
+            box-shadow: 0 1px 2px rgba(2,6,23,0.04);
+        }
+        .callout .row { display:flex; gap:12px; align-items:flex-start; }
+        .callout .icon { 
+            width: 28px;
+            height: 28px;
+            border-radius: 8px; 
+            display:inline-flex;
+            align-items:center;
+            justify-content:center; 
+            /*background:#ffffff;
+            border:1px solid rgba(12,40,72,0.08); */
+            flex: 0 0 28px;
+        }
+        .callout .title { font-weight: 700; margin-right: 6px; }
+
+        /* Pastel backgrounds per type + icon color */
+        .callout.info    { background:#f0f7ff; border-color:#dbeafe; }
+        .callout.info .icon i    { color:#1e40af; }  /* info */
+        .callout.warning { background:#fff7d6; border-color:#fde68a; }
+        .callout.warning .icon i { color:#b45309; }  /* warning */
+        .callout.success { background:#ecfdf5; border-color:#86efac; }
+        .callout.success .icon i { color:#15803d; }  /* success */
+        .callout.tip     { background:#f5f0ff; border-color:#d8b4fe; }
+        .callout.tip .icon i     { color:#6d28d9; }  /* tip */
+        .callout.error   { background:#ffe4e6; border-color:#fca5a5; }
+        .callout.error .icon i   { color:#b91c1c; }  /* error */
+
+        .fa-circle-info:before,
+        triangle-exclamation:before,
+        .fa-circle-check:before,
+        .fa-lightbulb:before,
+        .fa-circle-xmark:before { font-size: 22px; }
+
+        details summary .summary-icon, details.details-panel summary .summary-icon { font-size: 18px; }
+
+        /* Info panel (Confluence-like) */
+        .info-panel { background: #f8fbff; border-left: 4px solid #2b6cb0; padding: 14px; border-radius: 8px; display:flex; gap:12px; align-items:flex-start; }
+        .info-panel .icon { font-size: 18px; color: #ffffff; background: #1e40af; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; flex:0 0 28px; }
+        .info-panel .panel-body { color: #0f172a; line-height:1.5; }
+
+        /* Collapsible details styling (applies to plain <details> and .details-panel) */
+        details, details.details-panel { background: #ffffff; border: 1px solid #e6edf6; border-radius: 8px; padding: 0; overflow: hidden; box-shadow: 0 1px 2px rgba(2,6,23,0.04); }
+        details summary, details.details-panel summary { list-style: none; cursor: pointer; padding: 12px 14px; display:flex; align-items:center; gap:12px; font-weight:600; background: #f9fbfc; }
+        details summary::-webkit-details-marker, details.details-panel summary::-webkit-details-marker { display: none; }
+        details summary .summary-icon, details.details-panel summary .summary-icon { width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; background:#eef2ff; color:#1e40af; border-radius:6px; font-size:14px; transition: transform .18s ease; }
+        details[open] summary .summary-icon, details[open].details-panel summary .summary-icon { transform: rotate(90deg); }
+        details .details-content, details.details-panel .details-content { padding: 18px; border-top: 1px solid #eef3f8; background: #ffffff; }
+
+            /* Make nested details visually distinct and padded */
+        /* Nested details */
+        details details, details.details-panel details.details-panel { margin: 10px 0 0 0; border: 1px solid #eef3f8; box-shadow: none; border-radius: 6px; }
+        details details .details-content, details.details-panel details.details-panel .details-content { padding: 12px; background: #fbfdff; }
+
+        /* Ensure code blocks inside details are padded and scrollable */
+        details .code-block pre,
+        details pre[class*=language-],
+        details pre.line-numbers,
+        details.details-panel .code-block pre,
+        details.details-panel pre[class*=language-],
+        details.details-panel pre.line-numbers {
+            margin: 0 0 12px 0 !important;
+            padding: 12px !important;
+            border-radius: 6px !important;
+            box-shadow: none !important;
+            overflow: auto !important;
+            background: #F0F1F2 !important; /* readable light blue inside details */
+            color: #000000 !important;
+            text-shadow: none !important;
+            padding: 0.25rem 0.75rem 0.25rem 4.5rem !important;
+        }
+
+        /* Tables inside details should retain confluence-table styling with inner spacing */
+        details .confluence-table, details.details-panel .confluence-table { margin: 0 0 12px 0; border-radius:6px; overflow:hidden; }
+        details .confluence-table th, details .confluence-table td, details.details-panel .confluence-table th, details.details-panel .confluence-table td { padding: 8px 10px; }
+
+        /* Table styling to mimic Confluence-like clean tables */
+        .confluence-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .confluence-table th, .confluence-table td { border: 1px solid #e6eef5; padding: 10px 12px; text-align: left; }
+        .confluence-table thead th { background: #f8fafc; font-weight: 700; color: #0f172a; }
+        .confluence-table tbody tr:nth-child(even) td { background: #fbfdff; }
+        .confluence-table tfoot td { background: #f8fafc; font-weight: 600; }
+        .embed-block { margin: 20px 0; }
+        .embed { display: block; margin: 0; font-family: inherit; }
+        .embed-card { display: flex; align-items: stretch; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; overflow: hidden; text-decoration: none; color: inherit; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06); transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; min-height: 120px; position: relative; }
+        .embed-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12); border-color: #cbd5f5; }
+        .embed-card-media, .embed-card-placeholder { width: 160px; max-width: 35%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .embed-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .embed-card-placeholder { color: #334155; font-size: 24px; font-weight: 700; letter-spacing: 0.04em; }
+        .embed-card-body { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+        .embed-card-site { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+        .embed-card-title { font-size: 18px; font-weight: 600; color: #0f172a; line-height: 1.35; }
+        .embed-card-description { font-size: 15px; color: #475569; line-height: 1.55; }
+        .embed-card-placeholder + .embed-card-body { align-items: flex-start; }
+        .embed-simple { display: block; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; background: #ffffff; text-decoration: none; color: inherit; transition: border-color 0.2s ease, box-shadow 0.2s ease; min-height: 72px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+        .embed-simple:hover { border-color: #cbd5f5; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10); }
+        .embed-simple-title { display: block; font-weight: 600; font-size: 17px; color: #0f172a; margin-bottom: 6px; }
+        .embed-simple-description { display: block; font-size: 14px; color: #475569; line-height: 1.55; margin-bottom: 6px; }
+        .embed-simple-domain { display: block; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; }
+        .embed-youtube { margin: 24px 0; border-radius: 14px; overflow: hidden; background: #000000; }
+        .embed-youtube .embed-media { position: relative; padding-bottom: 56.25%; height: 0; }
+        .embed-youtube .embed-media iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .embed-caption { margin-top: 8px; font-size: 14px; color: #475569; text-align: center; }
+        .tab-set { margin: 26px 0; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08); display: flex; flex-wrap: wrap; overflow: hidden; }
+        .tab-set > input { display: none; }
+        .tab-set > label.tab-trigger { order: 1; display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex: 1 1 auto; padding: 14px 20px; font-weight: 600; font-size: 15px; text-transform: none; letter-spacing: 0.01em; cursor: pointer; color: #475569; background: #f8fafc; border-bottom: 1px solid #e2e8f0; transition: all 0.2s ease; }
+        .tab-set > label.tab-trigger:not(:last-of-type) { border-right: 1px solid #e2e8f0; }
+        .tab-set > input:checked + label.tab-trigger { background: #ffffff; color: #1d4ed8; border-bottom-color: transparent; box-shadow: inset 0 -3px 0 #1d4ed8; }
+        .tab-set > input:checked + label.tab-trigger .tab-badge { background: #1d4ed8; color: #ffffff; }
+        .tab-set > label.tab-trigger:hover { color: #1d4ed8; }
+        .tab-set > label.tab-trigger .tab-icon { font-size: 18px; }
+        .tab-set > label.tab-trigger .tab-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 999px; background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+        .tab-set > .tab-panel { order: 2; width: 100%; padding: 22px 24px; display: none; border-top: 1px solid #e2e8f0; background: #ffffff; }
+        .tab-set > .tab-panel > :last-child { margin-bottom: 0; }
+        .tab-set > input:checked + label + .tab-panel { display: block; animation: tabFade 0.24s ease; }
+        @keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .column-set { margin: 24px 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .column-item { border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; padding: 20px 22px; box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; gap: 12px; }
+        .column-item .column-title { font-weight: 600; font-size: 16px; color: #0f172a; }
+        .column-item .column-body > :last-child { margin-bottom: 0; }
+        .column-span-2 { grid-column: span 2; }
+        .column-span-3 { grid-column: span 3; }
+        .card-grid { margin: 26px 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .card-item { display: flex; flex-direction: column; gap: 14px; border: 1px solid #e2e8f0; border-radius: 18px; padding: 22px 24px; background: #ffffff; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); text-decoration: none; color: inherit; transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; position: relative; overflow: hidden; }
+        .card-item:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(15, 23, 42, 0.16); border-color: #cbd5f5; }
+        .card-icon { font-size: 28px; line-height: 1; color: #1d4ed8; }
+        .card-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+        .card-title > p { margin: 0; }
+        .card-body { color: #475569; font-size: 15px; line-height: 1.6; }
+        .card-body > :last-child { margin-bottom: 0; }
+        .card-cta { margin-top: auto; font-weight: 600; color: #1d4ed8; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+        .card-accent-blue { border-color: #bfdbfe; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); }
+        .card-accent-green { border-color: #bbf7d0; background: linear-gradient(180deg, #ecfdf3 0%, #ffffff 100%); }
+        .card-accent-purple { border-color: #ddd6fe; background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%); }
+        .card-accent-amber { border-color: #fcd34d; background: linear-gradient(180deg, #fef3c7 0%, #ffffff 100%); }
+        .quote-block { margin: 28px 0; padding: 26px 28px; border-radius: 18px; border: 1px solid #cbd5f5; background: linear-gradient(135deg, rgba(226, 232, 240, 0.32), rgba(248, 250, 252, 0.9)); box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18), 0 8px 24px rgba(15, 23, 42, 0.1); position: relative; overflow: hidden; }
+        .quote-block::before { content: "“"; position: absolute; top: -26px; left: 16px; font-size: 96px; font-family: Georgia, serif; color: rgba(148, 163, 184, 0.18); }
+        .quote-block blockquote { margin: 0; font-size: 20px; line-height: 1.65; color: #0f172a; font-weight: 500; }
+        .quote-block blockquote > :last-child { margin-bottom: 0; }
+        .quote-block figcaption { margin-top: 16px; font-size: 14px; font-weight: 600; color: #1d4ed8; letter-spacing: 0.06em; text-transform: uppercase; display: flex; gap: 10px; align-items: center; }
+        .quote-cite-title { font-weight: 700; color: #0f172a; text-transform: none; letter-spacing: 0.02em; }
+        .quote-cite-author { opacity: 0.85; }
+        .note-block { margin: 24px 0; border: 1px solid #bfdbfe; border-radius: 16px; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12); overflow: hidden; }
+        .note-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: rgba(191, 219, 254, 0.35); border-bottom: 1px solid #bfdbfe; }
+        .note-badge { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 999px; background: #1d4ed8; color: #ffffff; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+        .note-text { font-weight: 600; color: #1e3a8a; font-size: 15px; }
+        .note-body { padding: 18px 22px; color: #0f172a; font-size: 15px; line-height: 1.6; }
+        .note-body > :last-child { margin-bottom: 0; }
+        .note-body ul { padding-left: 1.2rem; margin: 0.5rem 0 0; }
+        .task-list { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 12px; }
+        .task-list-item { list-style: none; margin: 0; padding: 0; }
+        .task-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08); position: relative; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+        .task-item:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(15, 23, 42, 0.12); border-color: #cbd5f5; }
+        .task-item.task-open { background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); border-color: #dbeafe; }
+        .task-item.task-complete { background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%); border-color: #bbf7d0; }
+        .task-item.task-complete::after { content: "Completed"; position: absolute; top: 12px; right: 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #16a34a; opacity: 0.8; }
+        .task-checkbox { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #94a3b8; background: #ffffff; flex-shrink: 0; margin-top: 2px; position: relative; transition: all 0.2s ease; }
+        .task-item.task-open .task-checkbox { border-color: #94a3b8; background: #ffffff; }
+        .task-item.task-open .task-checkbox::after { content: ""; position: absolute; inset: 4px; border-radius: 4px; background: rgba(148, 163, 184, 0.18); opacity: 0; transition: opacity 0.2s ease; }
+        .task-item.task-open:hover .task-checkbox::after { opacity: 1; }
+        .task-item.task-complete .task-checkbox { background: #22c55e; border-color: #22c55e; }
+        .task-item.task-complete .task-checkbox::after { content: ""; position: absolute; top: 3px; left: 6px; width: 6px; height: 11px; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff; transform: rotate(45deg); }
+        .task-text { flex: 1; color: #0f172a; font-size: 15px; line-height: 1.55; }
+        .task-item.task-complete .task-text { color: #166534; }
+        .task-list .task-list { margin: 12px 0 0 36px; padding-left: 0; gap: 10px; border-left: 1px dashed #cbd5f5; padding-left: 18px; }
+        .task-list .task-list .task-item { box-shadow: none; }
+        .task-list .task-list .task-item:hover { transform: none; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08); }
+        .task-list .task-list .task-item::after { top: 10px; }
+        @media (max-width: 768px) {
+            .embed-card { flex-direction: column; }
+            .embed-card-media, .embed-card-placeholder { width: 100%; max-width: 100%; height: 180px; }
+            .embed-card-body { padding: 18px; }
+            .task-item { flex-direction: row; align-items: flex-start; padding: 12px 14px; }
+            .task-item::after { display: none; }
+            .tab-set { border-radius: 14px; }
+            .tab-set > label.tab-trigger { flex: 1 1 100%; border-right: none; }
+            .tab-set > label.tab-trigger + .tab-panel { border-top: 1px solid #e2e8f0; }
+            .column-set { grid-template-columns: 1fr; }
+            .card-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Ensure bullets/numbers show up and have spacing in #blog-content */
+        #blog-content ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+        #blog-content ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+        #blog-content li { margin: 0.25rem 0; }
+
+        /* Match paragraph left padding (px-10 => 2.5rem) */
+        #blog-content > ul,
+        #blog-content > ol {
+            padding-left: 2.5rem;   /* line up with paragraphs */
+            margin-left: 0;
+            list-style-position: outside; /* keep hanging bullets, text aligns with paragraph edge */
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Optional: nested lists slightly indented, not as much as top-level */
+        #blog-content ul ul,
+        #blog-content ol ol {
+            padding-left: 1.5rem;
+        }
+
+        /* Keep nice spacing for items */
+        #blog-content li { margin: 0.25rem 0; }
+
+        #blog-content h1 { @apply text-xl lg:text-2xl font-bold text-gray-900 mt-8 lg:mt-10 mb-4 lg:mb-6; }
+        #blog-content h2 { @apply text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4; }
+        #blog-content h3 { @apply text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3; }
+        #blog-content h4 { @apply text-sm lg:text-sm font-semibold mt-3 mb-2 text-gray-800; }
+
+        /* Keep code blocks plain: no bold/italic added by Prism */
+        pre[class*="language-"] code,
+        pre[class*="language-"] { font-weight: 400; font-style: normal; }
+
+        /* Specifically neutralize Prism's markdown tokens */
+        pre[class*="language-markdown"] .token.bold,
+        pre[class*="language-markdown"] .token.important { font-weight: 400; }
+        pre[class*="language-markdown"] .token.italic { font-style: normal; }
+
+        /* If you want NO special token weights for ANY language */
+        pre[class*="language-"] .token.bold,
+        pre[class*="language-"] .token.important { font-weight: 400; }
+        pre[class*="language-"] .token.italic { font-style: normal; }

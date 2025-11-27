@@ -1,0 +1,33 @@
+# GitHub Pages Configuration
+# This file helps GitHub Pages handle the custom 404 page
+
+# Plugins (GitHub Pages compatible)
+plugins:
+  - jekyll-redirect-from
+
+# Exclude files from processing
+exclude:
+  - README.md
+  - blog/README.md
+  - node_modules/
+  - .gitignore
+
+# Include files that start with underscore
+include:
+  - _redirects
+
+# Markdown settings
+markdown: kramdown
+highlighter: rouge
+
+# Site settings (optional)
+title: "Bradley R. Clampitt - Portfolio"
+description: "Magento 2 Expert | AWS & DevOps Strategist | Scalable eCommerce Architect"
+url: ""  # Leave empty for GitHub Pages to auto-configure
+
+# Custom 404 page
+permalink: pretty
+
+# Sass configuration
+sass:
+  style: compressed 

@@ -1,0 +1,137 @@
+@layer base {
+  :root {
+    --sidebar-width: 18rem;
+  }
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(148, 163, 184, 0.2);
+  color: #fff;
+}
+
+.nav-link.is-active {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.data-table th {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.filter-pill {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 0.4rem 1rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.filter-pill.is-active {
+  border-color: #2563eb;
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.chip-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: 3rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 0.35rem 0.75rem;
+}
+
+.chip-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.9rem;
+  background: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.chip-entry.badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.chip-entry button {
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.6);
+  cursor: pointer;
+}
+
+.chip-input-field {
+  border: none;
+  flex: 1;
+  min-width: 120px;
+  font-size: 0.9rem;
+  outline: none;
+}

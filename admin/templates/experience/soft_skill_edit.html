@@ -1,0 +1,47 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Soft Skill' if skill else 'New Soft Skill' }} - Admin Console{% endblock %}
+{% block header_title %}{{ 'Edit Soft Skill' if skill else 'New Soft Skill' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <form method="POST" action="/admin/experience/soft-skills/save" class="space-y-6">
+        {% if skill %}
+        <input type="hidden" name="skill_id" value="{{ skill.id }}">
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">{{ skill.name if skill else 'New Soft Skill' }}</h1>
+                    <p class="mt-2 text-slate-600">Fill in the soft skill details below</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="/admin/experience/soft-skills" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save mr-2"></i>Save Soft Skill
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Name *</span>
+                    <input type="text" name="name" value="{{ skill.name if skill else '' }}" required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+
+                <label>
+                    <span class="block text-sm font-semibold text-slate-700 mb-2">Icon (Font Awesome class)</span>
+                    <input type="text" name="icon" value="{{ skill.icon if skill else '' }}"
+                           placeholder="fas fa-users"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+                </label>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

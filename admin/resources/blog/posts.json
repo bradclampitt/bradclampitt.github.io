@@ -1,0 +1,223 @@
+{
+  "posts": [
+    {
+      "id": 12,
+      "slug": "handling-a-full-house-of-different-forms-of-adhd",
+      "title": "Handling a full house of different forms of ADHD",
+      "excerpt": "",
+      "author": "Bradley R. Clampitt",
+      "date": "2025-12-05",
+      "category": "Personal",
+      "tags": [],
+      "featured": false,
+      "readTime": "1 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 11,
+      "slug": "defining-the-process",
+      "title": "Defining the Process",
+      "excerpt": "",
+      "author": "Bradley R. Clampitt",
+      "date": "2025-11-20",
+      "category": "devops",
+      "tags": [],
+      "featured": false,
+      "readTime": "1 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 9,
+      "slug": "this-is-a-test",
+      "title": "This is a test",
+      "excerpt": "A lightweight, Markdown-driven blog engine for GitHub with Confluence-style formatting and Python automation.",
+      "author": "Bradley R. Clampitt",
+      "date": "2025-11-09",
+      "category": "tests",
+      "tags": [
+        "Markdown",
+        "Development",
+        "Automation",
+        "Python",
+        "GitHub Pages"
+      ],
+      "featured": false,
+      "readTime": "8 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 13,
+      "slug": "lose-a-job-and-the-issues-as-a-family",
+      "title": "Lose a Job and the issues as a family",
+      "excerpt": "",
+      "author": "Bradley R. Clampitt",
+      "date": "2025-09-12",
+      "category": "Personal",
+      "tags": [],
+      "featured": false,
+      "readTime": "1 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 8,
+      "slug": "custom-blog-management-system",
+      "title": "Introducing My New Custom Blog Management System",
+      "excerpt": "A lightweight, Markdown-driven blog engine for GitHub with Confluence-style formatting and Python automation.",
+      "author": "Bradley R. Clampitt",
+      "date": "2025-06-10",
+      "category": "announcements",
+      "tags": [
+        "Markdown",
+        "Development",
+        "Automation",
+        "Python",
+        "GitHub Pages"
+      ],
+      "featured": true,
+      "readTime": "7 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 1,
+      "slug": "confluence-style-features",
+      "title": "Enhanced Blog with Confluence-Style Markdown Elements",
+      "excerpt": "Discover the new Confluence-style markdown features in our blog system, including info boxes, enhanced image handling, and professional content formatting.",
+      "author": "Bradley R. Clampitt",
+      "date": "2025-01-01",
+      "category": "tutorials",
+      "tags": [
+        "Markdown",
+        "Content",
+        "Features"
+      ],
+      "featured": true,
+      "readTime": "8 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 10,
+      "slug": "cloudflare-edge-security",
+      "title": "Implementing Cloudflare Edge Security for Better Performance and Protection",
+      "excerpt": "Comprehensive guide to configuring Cloudflare edge security features including WAF, DDoS protection, and global edge computing to enhance your website's performance and security.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-20",
+      "category": "devops",
+      "tags": [
+        "Cloudflare",
+        "Security",
+        "Performance",
+        "CDN"
+      ],
+      "featured": false,
+      "readTime": "10 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 2,
+      "slug": "kubernetes-deployment-strategies",
+      "title": "Advanced Kubernetes Deployment Strategies for Production Environments",
+      "excerpt": "Explore rolling updates, blue-green deployments, canary releases, and other advanced Kubernetes deployment patterns for zero-downtime application updates in production.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-18",
+      "category": "devops",
+      "tags": [
+        "Kubernetes",
+        "DevOps",
+        "Deployment",
+        "CI/CD"
+      ],
+      "featured": false,
+      "readTime": "14 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 4,
+      "slug": "tailwind-advanced-patterns",
+      "title": "Advanced Tailwind CSS Patterns for Professional Web Applications",
+      "excerpt": "Master advanced Tailwind CSS patterns including component composition, responsive design strategies, custom utilities, and performance optimization techniques for enterprise-grade applications.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-15",
+      "category": "tutorials",
+      "tags": [
+        "Tailwind CSS",
+        "Frontend",
+        "Design",
+        "CSS"
+      ],
+      "featured": false,
+      "readTime": "12 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 7,
+      "slug": "magento-aws-docker-infrastructure",
+      "title": "Building Scalable Magento 2 Infrastructure with AWS and Docker",
+      "excerpt": "A comprehensive guide to setting up a production-ready Magento 2 environment using AWS services, Docker containers, and CI/CD pipelines. Learn how to achieve 99.9% uptime and handle traffic spikes effectively.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-15",
+      "category": "magento",
+      "tags": [
+        "Magento 2",
+        "AWS",
+        "Docker",
+        "DevOps"
+      ],
+      "featured": true,
+      "readTime": "12 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 3,
+      "slug": "alpinejs-state-management",
+      "title": "Advanced Alpine.js State Management and Component Patterns",
+      "excerpt": "Learn advanced Alpine.js patterns for complex state management, component communication, reactive data flow, and enterprise-level interactive applications.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-12",
+      "category": "tutorials",
+      "tags": [
+        "AlpineJS",
+        "JavaScript",
+        "Frontend",
+        "State Management"
+      ],
+      "featured": false,
+      "readTime": "11 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 5,
+      "slug": "performance-monitoring-production",
+      "title": "Comprehensive Performance Monitoring for Production Applications",
+      "excerpt": "Build a complete performance monitoring system with APM, Real User Monitoring, server metrics, and automated alerting to ensure optimal application performance in production.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-10",
+      "category": "devops",
+      "tags": [
+        "Performance",
+        "Monitoring",
+        "APM",
+        "DevOps"
+      ],
+      "featured": false,
+      "readTime": "13 min read",
+      "coverImage": ""
+    },
+    {
+      "id": 6,
+      "slug": "custom-magento-modules",
+      "title": "Custom Magento 2 Module Development Best Practices",
+      "excerpt": "Essential guidelines for creating maintainable and scalable custom modules in Magento 2, including dependency injection, plugin usage, and testing strategies.",
+      "author": "Bradley R. Clampitt",
+      "date": "2024-12-10",
+      "category": "magento",
+      "tags": [
+        "Magento 2",
+        "PHP",
+        "Development"
+      ],
+      "featured": false,
+      "readTime": "8 min read",
+      "coverImage": ""
+    }
+  ]
+}

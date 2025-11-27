@@ -1,0 +1,597 @@
+{% extends "_base.html" %}
+
+{% block title %}{{ 'Edit Project' if mode == 'edit' else 'New Project' }} · Portfolio Admin{% endblock %}
+{% block header_title %}{{ 'Edit Project' if mode == 'edit' else 'New Project' }}{% endblock %}
+
+{% set feature_ns = namespace(items=[]) %}
+{% for feature in features %}
+    {% set _ = feature_ns.items.append({
+        'label': feature['label']|default('', true),
+        'icon': feature['icon']|default('', true),
+        'description': feature['description']|default('', true),
+        'sort': feature['sort']|default(0, true)
+    }) %}
+{% endfor %}
+
+{% set library_ns = namespace(items=[]) %}
+{% for lib in feature_library %}
+    {% set _ = library_ns.items.append({
+        'id': lib['id'],
+        'label': lib['label'],
+        'icon': lib['icon'] or '',
+        'description': lib['description'] or '',
+        'category': lib['category'] or ''
+    }) %}
+{% endfor %}
+
+{% set tags_ns = namespace(items=[]) %}
+{% if project and project['tags'] %}
+    {% for tag in project['tags'].split(',') %}
+        {% if tag.strip() %}
+            {% set _ = tags_ns.items.append(tag.strip()) %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% set badges_ns = namespace(items=[]) %}
+{% if extra_data.get('badges') %}
+    {% for badge in extra_data.get('badges') %}
+        {% if badge %}
+            {% set _ = badges_ns.items.append(badge) %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% block content %}
+<div class="space-y-8" x-data='projectEditor({
+    features: {{ feature_ns.items | tojson | safe }},
+    tags: {{ tags_ns.items | tojson | safe }},
+    badges: {{ badges_ns.items | tojson | safe }},
+    selectedTabs: {{ selected_tabs | tojson | safe }},
+    availableTabs: {{ tabs_payload | tojson | safe }},
+    selectedTech: {{ selected_tech | tojson | safe }},
+    techTags: {{ tech_payload | tojson | safe }},
+    featureLibrary: {{ library_ns.items | tojson | safe }},
+    statusOptions: {{ status_options | tojson | safe }},
+    currentStatus: {{ selected_status | tojson | safe }}
+})' x-init="init()">
+    <form method="post" action="{{ url_for('project_save') }}" class="glass-panel p-6 space-y-8">
+        {% if project %}
+        <input type="hidden" name="project_id" value="{{ project['id'] }}">
+        {% endif %}
+        <input type="hidden" name="extra" value='{{ project["extra"] if project and project["extra"] else "{}" }}'>
+
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm uppercase tracking-widest text-slate-500">{{ mode|title }}</p>
+                <h2 class="text-3xl font-semibold text-slate-900">{{ project['title'] if project else 'New Project' }}</h2>
+                <p class="text-sm text-slate-500">Populate all metadata directly from this page.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ url_for('projects_list') }}" class="inline-flex items-center rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">← Back</a>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition font-semibold">Save Project</button>
+            </div>
+        </div>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            <label class="space-y-2 text-sm font-semibold text-slate-600">
+                <span>Project title</span>
+                <input name="title" required value="{{ project['title'] if project else '' }}" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </label>
+            <label class="space-y-2 text-sm font-semibold text-slate-600">
+                <span>Slug</span>
+                <input name="slug" value="{{ project['slug'] if project else '' }}" placeholder="auto-generated if blank" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </label>
+            <label class="space-y-2 text-sm font-semibold text-slate-600">
+                <span>Client</span>
+                <select name="client_id" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">— None —</option>
+                    {% for client in clients %}
+                    <option value="{{ client['id'] }}" {% if project and project['client_id'] == client['id'] %}selected{% endif %}>{{ client['name'] }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="space-y-2 text-sm font-semibold text-slate-600">
+                <span>Project type</span>
+                <select name="type_id" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">— None —</option>
+                    {% for pt in project_types %}
+                    <option value="{{ pt['id'] }}" {% if project and project['type_id'] == pt['id'] %}selected{% endif %}>{{ pt['label'] }} ({{ pt['code'] }})</option>
+                    {% endfor %}
+                </select>
+                <p class="text-sm text-slate-400">Need a new option? <a href="{{ url_for('project_types_list') }}" class="text-blue-600 hover:underline">Manage project types</a>.</p>
+            </label>
+            <label class="space-y-2 text-sm font-semibold text-slate-600 lg:col-span-2">
+                <span>Summary</span>
+                <textarea name="summary" rows="3" class="w-full font-medium rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ project['summary'] if project else '' }}</textarea>
+            </label>
+            <label class="space-y-2 text-sm font-semibold text-slate-600 lg:col-span-2">
+                <span>Description (HTML allowed)</span>
+                <textarea name="description_html" rows="6" class="w-full font-medium rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ project['description_html'] if project else '' }}</textarea>
+            </label>
+        </section>
+
+        <section class="space-y-4">
+            <p class="text-sm font-semibold text-slate-600">Key Dates</p>
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {% set date_fields = [
+                ('launched_date', 'Launched'),
+                ('posted_at', 'Posted'),
+                ('updated_at', 'Last Edited'),
+                ('in_use_start', 'In Use · Start'),
+                ('in_use_end', 'In Use · End')
+            ] %}
+            {% for field, label in date_fields %}
+            <div class="space-y-2 text-xs font-semibold uppercase tracking-wide text-slate-500" x-data="datePicker('{{ project[field] if project else '' }}', '{{ field }}')">
+                <span>{{ label }}</span>
+                <div class="relative">
+                    <button type="button" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 px-3 py-2 text-left text-slate-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500" @click="toggle">
+                        <span x-text="displayValue || 'Select date'"></span>
+                        <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7l4 4 4-4m0 6l-4 4-4-4" />
+                        </svg>
+                    </button>
+                    <div class="absolute left-0 z-20 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-4 text-slate-700 shadow-2xl" x-show="show" x-transition @click.away="close">
+                        <div class="mb-3 flex items-center justify-between text-sm font-semibold">
+                            <button type="button" class="rounded-full p-1 hover:bg-slate-100" @click="previousMonth">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 18l-6-6 6-6" />
+                                </svg>
+                            </button>
+                            <span x-text="monthNames[month] + ' ' + year"></span>
+                            <button type="button" class="rounded-full p-1 hover:bg-slate-100" @click="nextMonth">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 6l6 6-6 6" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1 text-center text-xs uppercase text-slate-400">
+                            <template x-for="day in dayLabels" :key="day">
+                                <span x-text="day"></span>
+                            </template>
+                        </div>
+                        <div class="mt-1 grid grid-cols-7 gap-1 text-center text-sm">
+                            <template x-for="blank in blankDays" :key="'blank-' + blank">
+                                <span></span>
+                            </template>
+                            <template x-for="day in days" :key="day">
+                                <button type="button"
+                                    class="rounded-full py-1"
+                                    :class="isSelected(day) ? 'bg-blue-600 text-white' : 'hover:bg-blue-50'"
+                                    @click="selectDate(day)"
+                                    x-text="day"></button>
+                            </template>
+                        </div>
+                    </div>
+                    <input type="hidden" :name="fieldName" :value="value">
+                </div>
+            </div>
+            {% endfor %}
+            <label class="space-y-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <span>Display Order</span>
+                <input type="number" name="sort_order" value="{{ project['sort_order'] if project else 0 }}" class="rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <p class="text-[11px] text-slate-400">Higher numbers appear first on the public grid.</p>
+            </label>
+        </div>
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            <div class="space-y-2">
+                <label class="text-sm font-semibold text-slate-600">Portfolio tabs</label>
+                <div class="rounded-2xl border border-slate-200 p-4">
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="tab in availableTabs" :key="tab.id">
+                            <button type="button" class="filter-pill text-xs"
+                                    :class="selectedTabs.includes(tab.id) ? 'is-active' : ''"
+                                    @click="toggleTab(tab.id)">
+                                <span x-text="tab.label"></span>
+                            </button>
+                        </template>
+                    </div>
+                    <template x-for="id in selectedTabs" :key="'tab-' + id">
+                        <input type="hidden" name="tab_ids" :value="id">
+                    </template>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-semibold text-slate-600">Status</label>
+                <div class="flex gap-2">
+                    <select class="w-1/2 font-medium text-sm rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" x-model="statusSelection" @change="syncStatusSelection">
+                        <option value="">— None —</option>
+                        <template x-for="status in statusOptions" :key="status">
+                            <option :value="status" x-text="status"></option>
+                        </template>
+                    </select>
+                    <input type="text" placeholder="Or type a new status" class="w-1/2 font-medium text-sm rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" x-model="statusInput" @keydown.enter.prevent="addStatusFromInput" @blur="addStatusFromInput">
+                </div>
+                <input type="hidden" name="status" :value="statusValue()">
+            </div>
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            <div class="space-y-2">
+                <label class="text-sm font-semibold text-slate-600">Meta tags (press Enter to add)</label>
+                <div class="chip-input" @click="$refs.tagInput.focus()">
+                    <template x-for="(tag, idx) in tags" :key="'tag-' + idx">
+                        <span class="chip-entry">
+                            <span x-text="tag"></span>
+                            <button type="button" @click.stop="removeTag(idx)">×</button>
+                        </span>
+                    </template>
+                    <input x-ref="tagInput" type="text" class="chip-input-field font-medium text-sm" placeholder="Type and hit Enter"
+                           x-model="tagDraft" @keydown.enter.prevent="commitTag">
+                </div>
+                <input type="hidden" name="tags" :value="tags.join(', ')">
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-semibold text-slate-600">Badges</label>
+                <div class="chip-input" @click="$refs.badgeInput.focus()">
+                    <template x-for="(badge, idx) in badges" :key="'badge-' + idx">
+                        <span class="chip-entry badge font-medium text-sm">
+                            <span x-text="badge"></span>
+                            <button type="button" @click.stop="removeBadge(idx)">×</button>
+                        </span>
+                    </template>
+                    <input x-ref="badgeInput" type="text" class="chip-input-field font-medium text-sm" placeholder="Type and hit Enter"
+                           x-model="badgeDraft" @keydown.enter.prevent="commitBadge">
+                </div>
+                <input type="hidden" name="badges" :value="badges.join(', ')">
+            </div>
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            <label class="space-y-2 text-sm font-semibold text-slate-600">
+                <span>Primary link</span>
+                <input name="primary_link" value="{{ primary_link }}" placeholder="https://project.com" class="rounded-2xl font-medium text-sm border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </label>
+            <label class="space-y-2 text-sm font-semibold text-slate-600">
+                <span>Primary link label</span>
+                <input name="primary_link_label" value="{{ primary_link_label or 'Visit Website' }}" class="rounded-2xl font-medium text-sm border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </label>
+        </section>
+
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-slate-600">Features / Components</p>
+                    <p class="text-xs text-slate-400">Drag from the library or craft custom entries.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100" @click="addFeature()">Add Row</button>
+                    <div class="relative">
+                        <button type="button" class="rounded-2xl border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50" @click="libraryOpen = !libraryOpen">Library</button>
+                        <div x-show="libraryOpen" x-transition class="absolute right-0 z-10 mt-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-xl">
+                            <div class="max-h-72 overflow-y-auto p-3 space-y-2 text-sm">
+                                <template x-for="item in featureLibrary" :key="item.id">
+                                    <button type="button" class="flex w-full flex-col rounded-xl border border-slate-100 px-3 py-2 text-left hover:bg-slate-50" @click="addFeatureFromLibrary(item); libraryOpen = false;">
+                                        <span class="font-semibold text-slate-800" x-text="item.label"></span>
+                                        <span class="text-xs text-slate-500" x-text="item.description"></span>
+                                    </button>
+                                </template>
+                                <p class="text-xs text-slate-400" x-show="!featureLibrary.length">Add entries in the Features page.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <template x-for="(feature, idx) in features" :key="'feature-' + idx">
+                    <div class="rounded-2xl border bg-blue-100 border-slate-200 p-4">
+                        <div class="grid gap-4 lg:grid-cols-12">
+                            <div class="space-y-3 lg:col-span-9">
+                                <label class="text-xs font-semibold text-slate-500 space-y-1">
+                                    <span>Label</span>
+                                    <input type="text" name="feature_labels" x-model="feature.label" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                                </label>
+                                <label class="text-xs font-semibold text-slate-500 space-y-1">
+                                    <span>Description</span>
+                                    <input type="text" name="feature_descriptions" x-model="feature.description" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                                </label>
+                            </div>
+                            <div class="grid gap-3 lg:col-span-3">
+                                <label class="text-xs font-semibold text-slate-500 space-y-1">
+                                    <span>Icon</span>
+                                    <input type="text" name="feature_icons" x-model="feature.icon" placeholder="fas fa-iconname" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                                </label>
+                                <label class="text-xs font-semibold text-slate-500 space-y-1">
+                                    <span>Sort</span>
+                                    <input type="number" name="feature_sorts" x-model="feature.sort" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" class="mt-3 text-xs font-semibold text-rose-600 hover:underline" @click="removeFeature(idx)">Remove</button>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <section class="space-y-4">
+            <p class="text-sm font-semibold text-slate-600">Tech Stack</p>
+            <div class="grid gap-3 md:grid-cols-3">
+                {% for tag in tech_tags %}
+                <label class="flex items-center gap-2 rounded-2xl border bg-green-100 border-slate-200 px-3 py-2 text-sm text-slate-700">
+                    <input type="checkbox" name="tech_tag_ids" value="{{ tag['id'] }}" {% if tag['id'] in selected_tech %}checked{% endif %} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <span>
+                        <span class="font-semibold">{{ tag['label'] }}</span>
+                        {% if tag['category'] %}
+                            <span class="block text-xs text-slate-400">{{ tag['category'] }}</span>
+                        {% endif %}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            <p class="text-xs text-slate-400">Need a new tag? <a href="{{ url_for('tech_tags_list') }}" class="text-blue-600 hover:underline">Manage tech tags</a>.</p>
+        </section>
+
+        <div class="flex justify-end">
+            <button type="submit" class="inline-flex items-center rounded-2xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Save Project</button>
+        </div>
+    </form>
+
+    <div class="glass-panel p-6">
+        <h3 class="text-lg font-semibold text-slate-900 mb-4">Images</h3>
+        {% if not project %}
+            <p class="text-sm text-slate-500">Save the project first to unlock uploads and attachments.</p>
+        {% else %}
+            <div class="grid gap-4 lg:grid-cols-2">
+                <form method="post" action="{{ url_for('upload_image') }}" enctype="multipart/form-data" class="space-y-3 rounded-2xl border border-slate-200 p-4">
+                    <input type="hidden" name="project_id" value="{{ project['id'] }}">
+                    <label class="space-y-1 text-sm font-semibold text-slate-600">
+                        <span>Upload file</span>
+                        <input type="file" name="file" required class="w-full font-medium rounded-xl border-slate-200">
+                    </label>
+                    <label class="space-y-1 text-sm font-semibold text-slate-600">
+                        <span>Alt text</span>
+                        <input name="alt" class="w-full font-medium rounded-xl border-slate-200">
+                    </label>
+                    <label class="space-y-1 text-sm font-semibold text-slate-600">
+                        <span>Sort order</span>
+                        <input type="number" name="sort" value="0" class="w-full font-medium rounded-xl border-slate-200">
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                        <input type="checkbox" name="is_cover" value="1" class="rounded font-medium border-slate-300 text-blue-600 focus:ring-blue-500">
+                        Make cover image
+                    </label>
+                    <button type="submit" class="w-full rounded-2xl bg-slate-900 py-2 text-sm font-semibold text-white">Upload image</button>
+                </form>
+
+                <form method="post" action="{{ url_for('add_existing_image') }}" class="space-y-3 rounded-2xl border border-slate-200 p-4">
+                    <input type="hidden" name="project_id" value="{{ project['id'] }}">
+                    <label class="space-y-1 text-sm font-semibold text-slate-600">
+                        <span>Attach existing asset</span>
+                        <select name="image_path" class="w-full font-medium text-sm rounded-xl border-slate-200" required>
+                            <option value="">— Select image —</option>
+                            {% for path in available_images %}
+                            <option value="{{ path }}">{{ path }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="space-y-1 text-sm font-semibold text-slate-600">
+                        <span>Alt text</span>
+                        <input name="alt" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                    </label>
+                    <label class="space-y-1 text-sm font-semibold text-slate-600">
+                        <span>Sort order</span>
+                        <input type="number" name="sort" value="0" class="w-full text-sm font-medium rounded-xl border-slate-200">
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                        <input type="checkbox" name="is_cover" value="1" class="rounded font-medium text-sm border-slate-300 text-blue-600 focus:ring-blue-500">
+                        Make cover image
+                    </label>
+                    <button type="submit" class="w-full rounded-2xl border border-slate-900 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-900 hover:text-white">Attach image</button>
+                </form>
+            </div>
+
+            <div class="mt-6 overflow-x-auto">
+                {% if images %}
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Preview</th>
+                            <th class="px-4 py-2 text-left">Path</th>
+                            <th class="px-4 py-2 text-left">Alt</th>
+                            <th class="px-4 py-2 text-left">Sort</th>
+                            <th class="px-4 py-2 text-left">Cover</th>
+                            <th class="px-4 py-2 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        {% for image in images %}
+                        <tr>
+                            <td class="px-4 py-2">
+                                <img src="{{ image['url'] }}" alt="" class="h-16 w-24 rounded object-cover">
+                            </td>
+                            <td class="px-4 py-2 text-xs text-slate-500">{{ image['url'] }}</td>
+                            <td class="px-4 py-2">{{ image['alt'] or '—' }}</td>
+                            <td class="px-4 py-2">{{ image['sort'] }}</td>
+                            <td class="px-4 py-2">{{ 'Yes' if image['is_cover'] else 'No' }}</td>
+                            <td class="px-4 py-2 text-right space-x-2">
+                                <form method="post" action="{{ url_for('set_cover_image') }}" class="inline">
+                                    <input type="hidden" name="project_id" value="{{ project['id'] }}">
+                                    <input type="hidden" name="image_id" value="{{ image['id'] }}">
+                                    <button type="submit" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100" {% if image['is_cover'] %}disabled{% endif %}>Set cover</button>
+                                </form>
+                                <form method="post" action="{{ url_for('delete_image') }}" class="inline" onsubmit="return confirm('Delete this image?');">
+                                    <input type="hidden" name="project_id" value="{{ project['id'] }}">
+                                    <input type="hidden" name="image_id" value="{{ image['id'] }}">
+                                    <button type="submit" class="rounded-2xl border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-sm text-slate-500">No images uploaded yet.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function projectEditor(initial) {
+    return {
+        features: initial.features && initial.features.length ? initial.features : [{ label: '', icon: '', description: '', sort: 0 }],
+        tags: initial.tags || [],
+        badges: initial.badges || [],
+        tagDraft: '',
+        badgeDraft: '',
+        selectedTabs: initial.selectedTabs || [],
+        availableTabs: initial.availableTabs || [],
+        selectedTech: initial.selectedTech || [],
+        techTags: initial.techTags || [],
+        featureLibrary: initial.featureLibrary || [],
+        libraryOpen: false,
+        statusOptions: Array.from(new Set(initial.statusOptions || [])),
+        statusSelection: initial.currentStatus || '',
+        statusInput: '',
+        init() {
+            if (this.statusSelection && !this.statusOptions.includes(this.statusSelection)) {
+                this.statusOptions.push(this.statusSelection);
+            }
+        },
+        addFeature() {
+            this.features.push({ label: '', icon: '', description: '', sort: this.features.length });
+        },
+        removeFeature(idx) {
+            if (this.features.length === 1) {
+                this.features[0] = { label: '', icon: '', description: '', sort: 0 };
+            } else {
+                this.features.splice(idx, 1);
+            }
+        },
+        addFeatureFromLibrary(item) {
+            this.features.push({
+                label: item.label,
+                icon: item.icon || '',
+                description: item.description || '',
+                sort: this.features.length,
+            });
+        },
+        toggleTab(tabId) {
+            if (this.selectedTabs.includes(tabId)) {
+                this.selectedTabs = this.selectedTabs.filter((id) => id !== tabId);
+            } else {
+                this.selectedTabs.push(tabId);
+            }
+        },
+        commitTag() {
+            const value = this.tagDraft.trim();
+            if (value && !this.tags.includes(value)) {
+                this.tags.push(value);
+            }
+            this.tagDraft = '';
+        },
+        removeTag(idx) {
+            this.tags.splice(idx, 1);
+        },
+        commitBadge() {
+            const value = this.badgeDraft.trim();
+            if (value && !this.badges.includes(value)) {
+                this.badges.push(value);
+            }
+            this.badgeDraft = '';
+        },
+        removeBadge(idx) {
+            this.badges.splice(idx, 1);
+        },
+        syncStatusSelection() {
+            if (this.statusSelection && !this.statusOptions.includes(this.statusSelection)) {
+                this.statusOptions.push(this.statusSelection);
+            }
+            this.statusInput = '';
+        },
+        statusValue() {
+            return this.statusInput.trim() || this.statusSelection || '';
+        },
+        addStatusFromInput() {
+            const value = this.statusInput.trim();
+            if (!value) {
+                return;
+            }
+            if (!this.statusOptions.includes(value)) {
+                this.statusOptions.push(value);
+            }
+            this.statusSelection = value;
+        },
+    };
+}
+
+function datePicker(initialValue = '', fieldName = '') {
+    return {
+        show: false,
+        month: 0,
+        year: 0,
+        days: [],
+        blankDays: [],
+        value: initialValue || '',
+        displayValue: '',
+        fieldName,
+        monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        dayLabels: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+        init() {
+            let baseDate = initialValue ? new Date(initialValue) : new Date();
+            if (Number.isNaN(baseDate.getTime())) {
+                baseDate = new Date();
+            }
+            this.month = baseDate.getMonth();
+            this.year = baseDate.getFullYear();
+            this.displayValue = this.value ? this.formatDisplay(new Date(this.value)) : '';
+            this.getNoOfDays();
+        },
+        toggle() {
+            this.show = !this.show;
+        },
+        close() {
+            this.show = false;
+        },
+        previousMonth() {
+            if (this.month === 0) {
+                this.month = 11;
+                this.year -= 1;
+            } else {
+                this.month -= 1;
+            }
+            this.getNoOfDays();
+        },
+        nextMonth() {
+            if (this.month === 11) {
+                this.month = 0;
+                this.year += 1;
+            } else {
+                this.month += 1;
+            }
+            this.getNoOfDays();
+        },
+        getNoOfDays() {
+            const daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
+            const dayOfWeek = new Date(this.year, this.month, 1).getDay();
+            this.blankDays = Array.from({ length: dayOfWeek }, (_, i) => i + 1);
+            this.days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+        },
+        selectDate(day) {
+            const selectedDate = new Date(this.year, this.month, day);
+            this.value = this.formatDate(selectedDate);
+            this.displayValue = this.formatDisplay(selectedDate);
+            this.close();
+        },
+        formatDate(date) {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${date.getFullYear()}-${month}-${day}`;
+        },
+        formatDisplay(date) {
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        },
+        isSelected(day) {
+            if (!this.value) {
+                return false;
+            }
+            const current = new Date(this.value);
+            return current.getFullYear() === this.year && current.getMonth() === this.month && current.getDate() === day;
+        },
+    };
+}
+</script>
+{% endblock %}
