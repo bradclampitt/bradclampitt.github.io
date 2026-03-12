@@ -4,7 +4,7 @@
 {% block header_title %}Tech Skills{% endblock %}
 
 {% block content %}
-<div class="space-y-8" x-data='skillsTable({ 
+<div class="space-y-8" x-data='skillsTable({
     skills: {{ skills_payload | tojson | safe }},
     categories: {{ categories | tojson | safe }},
     skillLevels: {{ skill_levels | tojson | safe }}
@@ -25,13 +25,13 @@
             <!-- Search Input -->
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Search Skills</label>
-                <input type="text" 
+                <input type="text"
                        placeholder="Type to search by skill name..."
                        class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
                        x-model="searchQuery"
                        @input="currentPage = 1">
             </div>
-            
+
             <!-- Other Filters -->
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
                 <div class="flex-1 min-w-[200px]">
@@ -92,7 +92,7 @@
                                 <div class="text-xs text-slate-500 mt-1 lg:hidden" x-text="skill.category_name || 'Uncategorized'"></div>
                             </td>
                             <td class="px-3 py-4 whitespace-nowrap sm:px-4">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" 
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
                                       :class="{
                                           'bg-red-100 text-red-800': skill.skill_level === 'Expert',
                                           'bg-orange-100 text-orange-800': skill.skill_level === 'Advanced',
@@ -142,17 +142,17 @@
                     </template>
                 </select>
             </div>
-            
+
             <!-- Middle: Showing count -->
             <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
-            
+
             <!-- Right: Page navigation -->
             <div class="flex items-center gap-2">
                 <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
                 <template x-for="page in pageNumbers()" :key="'skill-page-' + page">
-                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
-                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
-                            @click="goToPage(page)" 
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold"
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            @click="goToPage(page)"
                             x-text="page"></button>
                 </template>
                 <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
@@ -183,31 +183,31 @@ function skillsTable(initial) {
         },
         filteredSkills() {
             let filtered = this.skills.slice();
-            
+
             // Apply search query filter (skill name)
             if (this.searchQuery && this.searchQuery.trim()) {
                 const query = this.searchQuery.trim().toLowerCase();
-                filtered = filtered.filter(skill => 
+                filtered = filtered.filter(skill =>
                     (skill.skill_name || '').toLowerCase().includes(query)
                 );
             }
-            
+
             // Apply category filter
             if (this.filterCategory) {
-                filtered = filtered.filter(skill => 
+                filtered = filtered.filter(skill =>
                     (skill.category_name || 'Uncategorized') === this.filterCategory
                 );
             }
-            
+
             // Apply level filter
             if (this.filterLevel) {
                 filtered = filtered.filter(skill => skill.skill_level === this.filterLevel);
             }
-            
+
             // Apply sorting
             filtered.sort((a, b) => {
                 let aVal, bVal;
-                
+
                 switch(this.sortBy) {
                     case 'category_name':
                         aVal = (a.category_name || 'Uncategorized').toLowerCase();
@@ -224,12 +224,12 @@ function skillsTable(initial) {
                         bVal = (b.skill_name || '').toLowerCase();
                         break;
                 }
-                
+
                 if (aVal < bVal) return -1;
                 if (aVal > bVal) return 1;
                 return 0;
             });
-            
+
             return filtered;
         },
         totalPages() {
@@ -255,18 +255,18 @@ function skillsTable(initial) {
             const total = this.totalPages();
             if (total === 0) return [];
             if (total === 1) return [1];
-            
+
             const current = this.currentPage;
             const pages = [];
-            
+
             // Show current page and 1 page on each side
             const start = Math.max(1, current - 1);
             const end = Math.min(total, current + 1);
-            
+
             for (let i = start; i <= end; i++) {
                 pages.push(i);
             }
-            
+
             return pages;
         },
         rangeSummary() {

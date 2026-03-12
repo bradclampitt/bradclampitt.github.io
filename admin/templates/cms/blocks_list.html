@@ -16,6 +16,29 @@
             </a>
         </div>
 
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Blocks</label>
+                <input type="text" 
+                       placeholder="Type to search by block ID or title..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="block_id">Block ID</option>
+                    <option value="title">Title</option>
+                    <option value="updated_at">Updated Date</option>
+                </select>
+            </div>
+        </div>
+
         <div class="overflow-x-auto -mx-6 px-6">
             <table class="w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
@@ -28,8 +51,8 @@
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedBlocks().length">
-                    <template x-for="block in paginatedBlocks()" :key="block.id">
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="filteredAndPaginatedBlocks().length">
+                    <template x-for="block in filteredAndPaginatedBlocks()" :key="block.id">
                         <tr class="hover:bg-slate-50">
                             <td class="px-3 py-4 sm:px-4">
                                 <div class="text-sm font-medium text-slate-900" x-text="block.block_id"></div>
@@ -61,20 +84,20 @@
                                 <span x-text="block.updated_at || '-'"></span>
                             </td>
                             <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
-                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
-                                    <a :href="'/admin/cms/blocks/' + block.id" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</a>
-                                    <form method="POST" action="/admin/cms/blocks/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this block?');">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2 sm:items-center">
+                                    <a :href="'/admin/cms/blocks/' + block.id" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition whitespace-nowrap shrink-0 w-fit">Edit</a>
+                                    <form method="POST" action="/admin/cms/blocks/delete" class="inline shrink-0" onsubmit="return confirm('Are you sure you want to delete this block?');">
                                         <input type="hidden" name="block_id" :value="block.id">
-                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition whitespace-nowrap">Delete</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     </template>
                 </tbody>
-                <tbody x-show="!paginatedBlocks().length">
+                <tbody x-show="!filteredAndPaginatedBlocks().length">
                     <tr>
-                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No CMS blocks yet.</td>
+                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No CMS blocks match your filters.</td>
                     </tr>
                 </tbody>
             </table>
@@ -160,19 +183,64 @@ function blocksTable(initial) {
         currentPage: 1,
         blocks: initial.blocks || [],
         frontendUsage: initial.frontendUsage || {},
+        searchQuery: '',
+        sortBy: 'block_id',
         init() {
             this.$watch('perPage', () => { this.currentPage = 1; });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
         },
         hasBlock(blockId) {
             return this.blocks.some(block => block.block_id === blockId);
         },
+        filteredBlocks() {
+            let filtered = [...this.blocks];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(block => 
+                    (block.block_id || '').toLowerCase().includes(query) ||
+                    (block.title || '').toLowerCase().includes(query) ||
+                    (block.description || '').toLowerCase().includes(query)
+                );
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(this.sortBy) {
+                    case 'title':
+                        aVal = (a.title || '').toLowerCase();
+                        bVal = (b.title || '').toLowerCase();
+                        break;
+                    case 'updated_at':
+                        aVal = (a.updated_at || '').toLowerCase();
+                        bVal = (b.updated_at || '').toLowerCase();
+                        return bVal.localeCompare(aVal); // Descending
+                    case 'block_id':
+                    default:
+                        aVal = (a.block_id || '').toLowerCase();
+                        bVal = (b.block_id || '').toLowerCase();
+                        break;
+                }
+                
+                if (aVal < bVal) return -1;
+                if (aVal > bVal) return 1;
+                return 0;
+            });
+            
+            return filtered;
+        },
         totalPages() {
-            const total = this.blocks.length;
+            const total = this.filteredBlocks().length;
             return Math.max(1, Math.ceil(total / this.perPage));
         },
-        paginatedBlocks() {
+        filteredAndPaginatedBlocks() {
+            const filtered = this.filteredBlocks();
             const start = (this.currentPage - 1) * this.perPage;
-            return this.blocks.slice(start, start + this.perPage);
+            return filtered.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -202,12 +270,13 @@ function blocksTable(initial) {
             return pages;
         },
         rangeSummary() {
-            if (!this.blocks.length) {
+            const filtered = this.filteredBlocks();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.blocks.length);
-            return `Showing ${start}-${end} of ${this.blocks.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
         },
     };
 }

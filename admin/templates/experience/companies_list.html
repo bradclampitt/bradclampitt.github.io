@@ -19,9 +19,9 @@
         </div>
 
         <!-- Filters and Sorting -->
-        <div class="flex flex-col gap-4 border-b border-slate-200 pb-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
             <!-- Search Input -->
-            <div>
+            <div class="flex-1">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Search Companies</label>
                 <input type="text" 
                        placeholder="Type to search by name, location, or description..."
@@ -31,9 +31,10 @@
             </div>
             
             <!-- Sort by -->
-            <div class="flex-1 min-w-[200px]">
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
                 <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="manual">Manual order</option>
                     <option value="name">Name</option>
                     <option value="position_count">Positions</option>
                     <option value="location">Location</option>
@@ -45,6 +46,7 @@
             <table class="w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
                     <tr>
+                        <th class="px-2 py-3 text-left hidden sm:table-cell sm:px-3 sm:py-3"></th>
                         <th class="px-3 py-3 text-left hidden sm:table-cell sm:px-4 sm:py-3">Logo</th>
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Name</th>
                         <th class="px-3 py-3 text-left hidden md:table-cell sm:px-4 sm:py-3">Location</th>
@@ -54,7 +56,17 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedItems().length">
                     <template x-for="company in paginatedItems()" :key="company.id">
-                        <tr class="hover:bg-slate-50">
+                        <tr class="hover:bg-slate-50"
+                            :class="canReorder() ? 'cursor-grab' : 'cursor-default opacity-80'"
+                            :draggable="canReorder()"
+                            @dragstart="dragStart(company.id)"
+                            @dragover.prevent="dragOver(company.id)"
+                            @drop="drop(company.id)">
+                            <td class="px-2 py-4 whitespace-nowrap hidden sm:table-cell sm:px-3">
+                                <span class="text-slate-400" :class="canReorder() ? 'cursor-grab' : 'opacity-50'">
+                                    <i class="fas fa-grip-vertical"></i>
+                                </span>
+                            </td>
                             <td class="px-3 py-4 whitespace-nowrap hidden sm:table-cell sm:px-4">
                                 <template x-if="company.logo_url">
                                     <img :src="company.logo_url" :alt="company.name" class="w-8 h-8 sm:w-10 sm:h-10 rounded object-contain">
@@ -89,11 +101,15 @@
                 </tbody>
                 <tbody x-show="!paginatedItems().length">
                     <tr>
-                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No companies match your filters.</td>
+                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No companies match your filters.</td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+        <p class="text-xs text-slate-500">
+            Drag to reorder when sorted by Manual order with no search filters and all items visible.
+        </p>
 
         <!-- Pagination -->
         <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -133,7 +149,8 @@ function itemsTable(initial) {
         currentPage: 1,
         items: Array.isArray(initial.items) ? initial.items : [],
         searchQuery: '',
-        sortBy: 'name',
+        sortBy: 'manual',
+        dragId: null,
         init() {
             // Ensure items is always an array
             if (!Array.isArray(this.items)) {
@@ -161,31 +178,68 @@ function itemsTable(initial) {
             }
             
             // Apply sorting
-            filtered.sort((a, b) => {
-                let aVal, bVal;
-                
-                switch(this.sortBy) {
-                    case 'position_count':
-                        aVal = a.position_count || 0;
-                        bVal = b.position_count || 0;
-                        return bVal - aVal; // Descending order
-                    case 'location':
-                        aVal = (a.location || '').toLowerCase();
-                        bVal = (b.location || '').toLowerCase();
-                        break;
-                    case 'name':
-                    default:
-                        aVal = (a.name || '').toLowerCase();
-                        bVal = (b.name || '').toLowerCase();
-                        break;
-                }
-                
-                if (aVal < bVal) return -1;
-                if (aVal > bVal) return 1;
-                return 0;
-            });
+            if (this.sortBy !== 'manual') {
+                filtered.sort((a, b) => {
+                    let aVal, bVal;
+                    
+                    switch(this.sortBy) {
+                        case 'position_count':
+                            aVal = a.position_count || 0;
+                            bVal = b.position_count || 0;
+                            return bVal - aVal; // Descending order
+                        case 'location':
+                            aVal = (a.location || '').toLowerCase();
+                            bVal = (b.location || '').toLowerCase();
+                            break;
+                        case 'name':
+                        default:
+                            aVal = (a.name || '').toLowerCase();
+                            bVal = (b.name || '').toLowerCase();
+                            break;
+                    }
+                    
+                    if (aVal < bVal) return -1;
+                    if (aVal > bVal) return 1;
+                    return 0;
+                });
+            }
             
             return filtered;
+        },
+        canReorder() {
+            return this.sortBy === 'manual' &&
+                !this.searchQuery.trim() &&
+                this.filteredItems().length <= this.perPage;
+        },
+        dragStart(companyId) {
+            if (!this.canReorder()) return;
+            this.dragId = companyId;
+        },
+        dragOver(companyId) {
+            if (!this.canReorder()) return;
+            this.dragId = this.dragId ?? companyId;
+        },
+        drop(targetId) {
+            if (!this.canReorder() || this.dragId === null || this.dragId === targetId) return;
+            const fromIndex = this.items.findIndex(item => item.id === this.dragId);
+            const toIndex = this.items.findIndex(item => item.id === targetId);
+            if (fromIndex === -1 || toIndex === -1) return;
+            const [moved] = this.items.splice(fromIndex, 1);
+            this.items.splice(toIndex, 0, moved);
+            this.dragId = null;
+            this.persistOrder();
+        },
+        async persistOrder() {
+            const order = this.items.map(item => item.id);
+            try {
+                await fetch('/admin/experience/companies/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order }),
+                });
+            } catch (err) {
+                console.error('Failed to save company order', err);
+            }
         },
         totalPages() {
             const total = this.filteredItems().length;

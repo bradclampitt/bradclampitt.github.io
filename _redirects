@@ -12,4 +12,4 @@
 # http://bradleyclampitt.com/* https://bradleyclampitt.com/:splat 301
 
 # Optional: Redirect www to non-www
-# https://www.bradleyclampitt.com/* https://bradleyclampitt.com/:splat 301 
+# https://www.bradleyclampitt.com/* https://bradleyclampitt.com/:splat 301

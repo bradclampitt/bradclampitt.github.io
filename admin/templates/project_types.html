@@ -19,36 +19,33 @@
                     </svg>
                     <input type="search" placeholder="Filter by code or label" class="w-full border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:ring-0" x-model="query">
                 </label>
-                <div class="flex items-center gap-4 text-sm text-slate-500">
-                    <span>Per page</span>
-                    <select class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" x-model.number="perPage" style="padding-left: 20px; padding-right: 30px;">
-                        <template x-for="size in perPageOptions" :key="'type-size-' + size">
-                            <option :value="size" x-text="size"></option>
-                        </template>
-                    </select>
-                </div>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <div class="overflow-x-auto -mx-2 sm:mx-0">
+            <table class="min-w-full divide-y divide-slate-200 text-sm table-fixed" style="min-width: 42rem;">
+                <colgroup>
+                    <col style="width: 45%">
+                    <col style="width: 45%">
+                    <col style="width: 10%">
+                </colgroup>
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
                     <tr>
-                        <th class="px-6 py-3 text-left">Code</th>
-                        <th class="px-6 py-3 text-left">Label</th>
-                        <th class="px-6 py-3 text-right">Actions</th>
+                        <th class="px-3 sm:px-6 py-3 text-left">Code</th>
+                        <th class="px-3 sm:px-6 py-3 text-left">Label</th>
+                        <th class="px-3 sm:px-6 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedTypes().length">
                     <template x-for="type in paginatedTypes()" :key="type.id">
                         <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-4">
-                                <input name="code" :form="'type-form-' + type.id" x-model="type.code" class="w-32 rounded-xl border-slate-200 text-sm">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 align-top">
+                                <input name="code" :form="'type-form-' + type.id" x-model="type.code" class="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                             </td>
-                            <td class="px-6 py-4">
-                                <input name="label" :form="'type-form-' + type.id" x-model="type.label" class="w-full rounded-xl border-slate-200 text-sm">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 align-top">
+                                <input name="label" :form="'type-form-' + type.id" x-model="type.label" class="w-full min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
                             </td>
-                            <td class="px-6 py-4 text-right space-x-2">
+                            <td class="px-3 sm:px-6 py-3 sm:py-4 text-right align-top">
                                 <div class="flex flex-col gap-1 sm:flex-row sm:gap-2 justify-end">
                                 <form :id="'type-form-' + type.id" method="post" action="{{ url_for('update_project_type') }}" class="inline">
                                     <input type="hidden" name="type_id" :value="type.id">
@@ -71,22 +68,35 @@
             </table>
         </div>
         <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-sm text-slate-500" x-text="rangeSummary()"></p>
+            <!-- Left: Per Page Dropdown -->
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span>Per page</span>
+                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
+                    <template x-for="size in perPageOptions" :key="'type-size-' + size">
+                        <option :value="size" x-text="size"></option>
+                    </template>
+                </select>
+            </div>
+
+            <!-- Middle: Showing count -->
+            <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
+
+            <!-- Right: Page navigation -->
             <div class="flex items-center gap-2">
-                <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
                 <template x-for="page in pageWindow()" :key="'type-page-' + page">
-                    <button type="button" class="rounded-2xl border px-3 py-1 text-xs font-semibold" :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" @click="goToPage(page)" x-text="page"></button>
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" @click="goToPage(page)" x-text="page"></button>
                 </template>
-                <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
             </div>
         </div>
     </section>
 
     <!-- Project Type Add Form -->
-    <section class="glass-panel p-6" style="max-width: 70%;">
+    <section class="glass-panel p-6 w-full max-w-2xl">
         <h3 class="text-lg font-semibold text-slate-900">Add new type</h3>
         <p class="text-sm text-slate-500 mb-4">Codes should be lowercase and URL-friendly.</p>
-        <form method="post" action="{{ url_for('create_project_type') }}" class="grid gap-4 md:grid-cols-2">
+        <form method="post" action="{{ url_for('create_project_type') }}" class="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <label class="text-sm font-semibold text-slate-600 space-y-2">
                 <span>Code</span>
                 <input name="code" placeholder="ecommerce" required class="w-full rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">

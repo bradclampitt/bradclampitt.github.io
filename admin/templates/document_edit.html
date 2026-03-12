@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="w-full">
     <form method="POST" action="/admin/documents/save" class="space-y-8">
         {% if document %}
         <input type="hidden" name="doc_id" value="{{ document.id }}">
@@ -55,7 +55,7 @@
                     </div>
                     <div>
                         <label for="status" class="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                        <select id="status" name="status" 
+                        <select id="status" name="status"
                                 class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="Published" {% if not document or (document and document.status == 'Published') %}selected{% endif %}>Published</option>
                             <option value="Draft" {% if document and document.status == 'Draft' %}selected{% endif %}>Draft</option>
@@ -63,23 +63,32 @@
                         <p class="mt-1 text-xs text-slate-500">Draft documents are not shown on the frontend</p>
                     </div>
                     <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="featured" value="1"
+                                   {% if document and document.featured %}checked{% endif %}
+                                   class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+                            <span class="ml-2 text-sm font-medium text-slate-700">Featured Document</span>
+                        </label>
+                        <p class="mt-1 text-xs text-slate-500">Featured documents appear prominently on the documents page</p>
+                    </div>
+                    <div>
                         <label for="category_id" class="block text-sm font-medium text-slate-700 mb-1">Category</label>
                         <div x-data="searchableDropdown({
                             options: [
-                                {id: '', label: '— None —', icon: ''},
+                                {id: '', label: '- None -', icon: ''},
                                 {% for cat in categories %}
                                 {id: {{ cat.id }}, label: '{{ cat.label|replace("'", "\\'") }}', icon: '{{ cat.icon or "" }}'},
                                 {% endfor %}
                             ],
                             selectedId: {{ document.category_id if document and document.category_id else 'null' }},
                             name: 'category_id'
-                        })" 
+                        })"
                         x-init="init()"
                         @click.away="if (open && !isOpening) closeDropdown()"
                         class="relative">
                             <!-- Hidden input for form submission -->
                             <input type="hidden" name="category_id" :value="selectedId || ''">
-                            
+
                             <!-- Button / Search Input (switches based on open state) -->
                             <template x-if="!open">
                                 <button type="button" @click="openDropdown()" x-ref="button"
@@ -88,32 +97,32 @@
                                         <template x-if="selectedOption && selectedOption.icon">
                                             <i :class="selectedOption.icon" class="text-slate-500"></i>
                                         </template>
-                                        <span x-text="selectedOption ? selectedOption.label : '— None —'" class="text-slate-700"></span>
+                                        <span x-text="selectedOption ? selectedOption.label : '- None -'" class="text-slate-700"></span>
                                     </span>
                                     <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
                                 </button>
                             </template>
                             <template x-if="open">
                                 <div class="relative" x-ref="searchContainer">
-                                    <input type="text" x-model="search" @keydown.escape="closeDropdown()" 
+                                    <input type="text" x-model="search" @keydown.escape="closeDropdown()"
                                            x-ref="searchInput"
-                                           placeholder="Search..." 
+                                           placeholder="Search..."
                                            autofocus
                                            class="w-full px-3 py-2 text-left bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <i class="fas fa-chevron-up text-slate-400 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                                 </div>
                             </template>
-                            
+
                             <!-- Dropdown Menu -->
-                            <div x-show="open" 
+                            <div x-show="open"
                                  x-ref="dropdownMenu"
                                  @click.stop
                                  @mousedown.stop
-                                 x-transition:enter="transition ease-out duration-100" 
-                                 x-transition:enter-start="opacity-0 scale-95" 
-                                 x-transition:enter-end="opacity-100 scale-100" 
-                                 x-transition:leave="transition ease-in duration-75" 
-                                 x-transition:leave-start="opacity-100 scale-100" 
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
                                  class="fixed bg-white border border-slate-300 rounded-lg shadow-xl overflow-hidden"
                                  style="z-index: 9999; max-height: 250px;"
@@ -121,7 +130,7 @@
                                 <!-- Options List -->
                                 <div class="overflow-y-auto" style="max-height: 250px;">
                                     <template x-for="option in filteredOptions" :key="option.id">
-                                        <div @click="selectOption(option)" 
+                                        <div @click="selectOption(option)"
                                              class="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 last:border-b-0"
                                              :class="{'bg-blue-50': selectedId === option.id}">
                                             <template x-if="option.icon">
@@ -147,20 +156,20 @@
                         <label for="type_id" class="block text-sm font-medium text-slate-700 mb-1">Document Type</label>
                         <div x-data="searchableDropdown({
                             options: [
-                                {id: '', label: '— None —', icon: ''},
+                                {id: '', label: '- None -', icon: ''},
                                 {% for type in types %}
                                 {id: {{ type.id }}, label: '{{ type.label|replace("'", "\\'") }}', icon: '{{ type.icon or "" }}'},
                                 {% endfor %}
                             ],
                             selectedId: {{ document.type_id if document and document.type_id else 'null' }},
                             name: 'type_id'
-                        })" 
+                        })"
                         x-init="init()"
                         @click.away="if (open && !isOpening) closeDropdown()"
                         class="relative">
                             <!-- Hidden input for form submission -->
                             <input type="hidden" name="type_id" :value="selectedId || ''">
-                            
+
                             <!-- Button / Search Input (switches based on open state) -->
                             <template x-if="!open">
                                 <button type="button" @click="openDropdown()" x-ref="button"
@@ -169,32 +178,32 @@
                                         <template x-if="selectedOption && selectedOption.icon">
                                             <i :class="selectedOption.icon" class="text-slate-500"></i>
                                         </template>
-                                        <span x-text="selectedOption ? selectedOption.label : '— None —'" class="text-slate-700"></span>
+                                        <span x-text="selectedOption ? selectedOption.label : '- None -'" class="text-slate-700"></span>
                                     </span>
                                     <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
                                 </button>
                             </template>
                             <template x-if="open">
                                 <div class="relative" x-ref="searchContainer">
-                                    <input type="text" x-model="search" @keydown.escape="closeDropdown()" 
+                                    <input type="text" x-model="search" @keydown.escape="closeDropdown()"
                                            x-ref="searchInput"
-                                           placeholder="Search..." 
+                                           placeholder="Search..."
                                            autofocus
                                            class="w-full px-3 py-2 text-left bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <i class="fas fa-chevron-up text-slate-400 text-xs absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                                 </div>
                             </template>
-                            
+
                             <!-- Dropdown Menu -->
-                            <div x-show="open" 
+                            <div x-show="open"
                                  x-ref="dropdownMenu"
                                  @click.stop
                                  @mousedown.stop
-                                 x-transition:enter="transition ease-out duration-100" 
-                                 x-transition:enter-start="opacity-0 scale-95" 
-                                 x-transition:enter-end="opacity-100 scale-100" 
-                                 x-transition:leave="transition ease-in duration-75" 
-                                 x-transition:leave-start="opacity-100 scale-100" 
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
                                  class="fixed bg-white border border-slate-300 rounded-lg shadow-xl overflow-hidden"
                                  style="z-index: 9999; max-height: 250px;"
@@ -202,7 +211,7 @@
                                 <!-- Options List -->
                                 <div class="overflow-y-auto" style="max-height: 250px;">
                                     <template x-for="option in filteredOptions" :key="option.id">
-                                        <div @click="selectOption(option)" 
+                                        <div @click="selectOption(option)"
                                              class="px-3 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100 last:border-b-0"
                                              :class="{'bg-blue-50': selectedId === option.id}">
                                             <template x-if="option.icon">
@@ -253,6 +262,82 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <!-- Image Browser Button (only show for markdown format) -->
+                    <div id="image-browser-section" x-data="documentImageBrowser()" style="display: none;">
+                        <button type="button" 
+                                @click="openImageBrowser()"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-image mr-2"></i>Browse Images from /assets/images/documents
+                        </button>
+                        
+                        <!-- Image Browser Modal -->
+                        <div x-show="showBrowserModal" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 z-50 overflow-y-auto" 
+                             style="display: none;"
+                             @click.self="closeImageBrowser()">
+                            <div class="flex items-center justify-center min-h-screen px-4">
+                                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6" @click.stop>
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-xl font-semibold text-slate-900">Select Image from /assets/images/documents</h3>
+                                        <button @click="closeImageBrowser()" class="text-slate-400 hover:text-slate-600">
+                                            <i class="fas fa-times text-xl"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label for="image-alt-text" class="block text-sm font-medium text-slate-700 mb-1">Alt Text (optional)</label>
+                                        <input type="text" 
+                                               id="image-alt-text"
+                                               x-model="imageAltText"
+                                               placeholder="Describe the image"
+                                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    
+                                    <div x-show="browserLoading" class="text-center py-8">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <p class="mt-4 text-slate-600">Loading images...</p>
+                                    </div>
+                                    
+                                    <div x-show="!browserLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                                        <template x-for="img in availableImages" :key="img.url">
+                                            <div @click="selectImage(img.url)" 
+                                                 :class="selectedBrowserImage === img.url ? 'ring-2 ring-blue-600' : 'hover:ring-2 hover:ring-blue-300'"
+                                                 class="relative cursor-pointer rounded-lg border border-slate-200 overflow-hidden transition">
+                                                <img :src="img.url" :alt="img.filename" class="w-full h-32 object-contain bg-slate-50">
+                                                <div class="p-2 bg-white">
+                                                    <p class="text-xs text-slate-600 truncate" x-text="img.filename"></p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <div x-show="availableImages.length === 0 && !browserLoading" class="text-center py-8 text-slate-500">
+                                        <i class="fas fa-inbox text-4xl mb-4 text-slate-300"></i>
+                                        <p>No images found in /assets/images/documents</p>
+                                    </div>
+                                    
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button type="button" @click="closeImageBrowser()" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50">
+                                            Cancel
+                                        </button>
+                                        <button type="button" @click="insertImageIntoEditor()" 
+                                                :disabled="!selectedBrowserImage"
+                                                :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'"
+                                                class="px-4 py-2 text-white rounded-lg transition">
+                                            Insert Image
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="content-path-field" style="display: none;">
                         <label for="content_path" class="block text-sm font-medium text-slate-700 mb-1">Content Path</label>
                         <input type="text" id="content_path" name="content_path"
@@ -262,7 +347,7 @@
                     </div>
                     <!-- Custom Components Examples -->
                     <div class="mb-4">
-                        <button type="button" 
+                        <button type="button"
                                 onclick="openComponentsModal()"
                                 class="w-full flex items-center justify-between px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition">
                             <span class="text-sm font-semibold text-blue-900">
@@ -271,9 +356,9 @@
                             <i class="fas fa-external-link-alt text-blue-600"></i>
                         </button>
                     </div>
-                    
+
                     <!-- Components Modal -->
-                    <div id="components-modal" 
+                    <div id="components-modal"
                          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
                          style="display: none;"
                          onclick="if(event.target === this) closeComponentsModal()">
@@ -283,26 +368,28 @@
                                 <h2 class="text-2xl font-bold text-slate-900">
                                     <i class="fas fa-code mr-2 text-blue-600"></i>Custom Markdown Components
                                 </h2>
-                                <button type="button" 
+                                <button type="button"
                                         onclick="closeComponentsModal()"
                                         class="text-slate-400 hover:text-slate-600 transition">
                                     <i class="fas fa-times text-xl"></i>
                                 </button>
                             </div>
-                            
+
                             <!-- Modal Content -->
                             <div class="flex-1 overflow-y-auto p-6" id="components-modal-content">
                                 <!-- Content will be populated by JavaScript -->
                             </div>
                         </div>
                     </div>
-                    
+
                     <div id="content-markdown-field">
                         <label for="content_markdown" class="block text-sm font-medium text-slate-700 mb-1">Markdown Content</label>
-                        <div id="markdown-editor-container" class="border border-slate-300 rounded-lg overflow-hidden bg-white">
-                            <!-- Hidden textarea for form submission - Toast UI Editor will sync to this -->
-                            <textarea id="content_markdown" name="content_markdown" rows="15"
-                                      style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;">{{ document.content_markdown if document else '' }}</textarea>
+                        <div class="markdown-editor-resizable border border-slate-300 rounded-lg overflow-hidden bg-white" style="resize: vertical; min-height: 360px; height: 360px; max-height: 90vh;">
+                            <div id="markdown-editor-container" class="h-full min-h-0">
+                                <!-- Hidden textarea for form submission - Toast UI Editor will sync to this -->
+                                <textarea id="content_markdown" name="content_markdown" rows="15"
+                                          style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;">{{ document.content_markdown if document else '' }}</textarea>
+                            </div>
                         </div>
                         <p class="mt-2 text-xs text-slate-500">
                             Use the toolbar buttons or keyboard shortcuts to format your markdown. Switch between Edit, Preview, and Split view modes.
@@ -394,7 +481,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     {% for img in images %}
                     <div class="relative border border-slate-200 rounded-lg overflow-hidden group">
-                        <img src="{{ img.url }}" alt="{{ img.alt or '' }}" 
+                        <img src="{{ img.url }}" alt="{{ img.alt or '' }}"
                              @click="modalImageUrl = '{{ img.url }}'; modalOpen = true"
                              class="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity">
                         {% if img.is_cover %}
@@ -402,7 +489,7 @@
                         {% endif %}
                         <form method="POST" action="/admin/documents/images/delete" class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <input type="hidden" name="image_id" value="{{ img.id }}">
-                            <button type="submit" onclick="return confirm('Are you sure you want to delete this image?');" 
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this image?');"
                                     class="bg-red-600 text-white text-xs px-2 py-1 rounded hover:bg-red-700">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
@@ -410,9 +497,9 @@
                     </div>
                     {% endfor %}
                 </div>
-                
+
                 <!-- Image Modal for existing images -->
-                <div x-show="modalOpen" 
+                <div x-show="modalOpen"
                      @click.away="modalOpen = false"
                      @keydown.escape.window="modalOpen = false"
                      x-transition:enter="transition ease-out duration-200"
@@ -424,7 +511,7 @@
                      class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-75 p-4"
                      style="display: none;">
                     <div class="relative max-w-7xl max-h-full">
-                        <button @click="modalOpen = false" 
+                        <button @click="modalOpen = false"
                                 class="absolute -top-10 right-0 text-white hover:text-slate-300 transition">
                             <i class="fas fa-times text-2xl"></i>
                         </button>
@@ -433,34 +520,64 @@
                 </div>
                 {% endif %}
                 <div x-data="imageUploadPreview()">
-                    <form method="POST" action="/admin/documents/images/upload" enctype="multipart/form-data" class="flex gap-3">
-                        <input type="hidden" name="document_id" value="{{ document.id }}">
-                        <input type="file" name="file" accept="image/*" @change="handleFileSelect($event)"
-                               class="flex-1 px-3 py-2 border border-slate-300 rounded-lg">
-                        <label class="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" name="is_cover" value="1">
-                            <span class="text-sm">Cover</span>
-                        </label>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                            Upload
-                        </button>
-                    </form>
+                    <!-- Error/Success Messages -->
+                    <div x-show="getUrlParameter('error') || getUrlParameter('success')" 
+                         x-cloak
+                         x-init="setTimeout(() => { const url = new URL(window.location); url.searchParams.delete('error'); url.searchParams.delete('success'); window.history.replaceState({}, '', url); }, 5000)"
+                         class="mb-4 p-4 rounded-lg"
+                         :class="getUrlParameter('error') ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-green-50 border border-green-200 text-green-800'">
+                        <div class="flex items-center">
+                            <i :class="getUrlParameter('error') ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'" class="mr-2"></i>
+                            <span x-text="decodeURIComponent(getUrlParameter('error') || getUrlParameter('success') || '')"></span>
+                        </div>
+                    </div>
                     
+                    <div class="space-y-3">
+                        <form method="POST" action="/admin/documents/images/upload" enctype="multipart/form-data" class="flex gap-3" @submit.prevent="if (hasFile) { $el.submit(); } else { alert('Please select an image file to upload.'); return false; }">
+                            <input type="hidden" name="document_id" value="{{ document.id }}">
+                            <input type="file" name="file" accept="image/*"
+                                   @change="hasFile = $event.target.files.length > 0; fileName = hasFile ? $event.target.files[0].name : ''; handleFileSelect($event)"
+                                   class="flex-1 px-3 py-2 border border-slate-300 rounded-lg">
+                            <label class="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="is_cover" value="1">
+                                <span class="text-sm">Cover</span>
+                            </label>
+                            <button type="submit" 
+                                    :disabled="!hasFile"
+                                    :class="hasFile ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                                    class="text-white px-4 py-2 rounded-lg transition">
+                                Upload
+                            </button>
+                        </form>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-slate-600">or</span>
+                            <button type="button" @click="openImageBrowser()" class="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition">
+                                <i class="fas fa-folder-open mr-2"></i>Browse for Cover Image
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2" x-show="hasFile">
+                        Selected: <span x-text="fileName" class="font-medium"></span>
+                    </p>
+                    <p class="text-xs text-slate-500 mt-2" x-show="!hasFile">
+                        Please select an image file (PNG, JPG, JPEG, GIF, WEBP, SVG)
+                    </p>
+
                     <!-- Preview Area -->
                     <div x-show="previewUrl" class="mt-4">
                         <div class="relative inline-block border-2 border-blue-500 rounded-lg overflow-hidden shadow-lg">
-                            <img :src="previewUrl" alt="Preview" 
+                            <img :src="previewUrl" alt="Preview"
                                  @click="openImageModal(previewUrl)"
                                  class="max-w-xs max-h-64 cursor-pointer object-contain bg-slate-50">
-                            <button @click="clearPreview()" 
+                            <button @click="clearPreview()"
                                     class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700 transition">
                                 <i class="fas fa-times text-xs"></i>
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Image Modal -->
-                    <div x-show="modalOpen" 
+                    <div x-show="modalOpen"
                          @click.away="modalOpen = false"
                          @keydown.escape.window="modalOpen = false"
                          x-transition:enter="transition ease-out duration-200"
@@ -472,11 +589,63 @@
                          class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-75 p-4"
                          style="display: none;">
                         <div class="relative max-w-7xl max-h-full">
-                            <button @click="modalOpen = false" 
+                            <button @click="modalOpen = false"
                                     class="absolute -top-10 right-0 text-white hover:text-slate-300 transition">
                                 <i class="fas fa-times text-2xl"></i>
                             </button>
                             <img :src="modalImageUrl" alt="Full size" class="max-w-full max-h-[90vh] object-contain">
+                        </div>
+                    </div>
+
+                    <!-- Image Browser Modal -->
+                    <div x-show="showBrowserModal" 
+                         x-cloak
+                         class="fixed inset-0 z-50 overflow-y-auto"
+                         style="display: none;"
+                         @click.away="closeImageBrowser()">
+                        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="closeImageBrowser()"></div>
+                            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                                <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-medium text-gray-900">Select Cover Image</h3>
+                                        <button type="button" @click="closeImageBrowser()" class="text-gray-400 hover:text-gray-500">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div x-show="browserLoading" class="text-center py-8">
+                                        <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
+                                        <p class="mt-2 text-sm text-gray-500">Loading images...</p>
+                                    </div>
+                                    <div x-show="!browserLoading && availableImages.length === 0" class="text-center py-8">
+                                        <p class="text-sm text-gray-500">No images found in /assets/images/documents/</p>
+                                    </div>
+                                    <div x-show="!browserLoading && availableImages.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                                        <template x-for="img in availableImages" :key="img.url">
+                                            <div @click="selectedBrowserImage = img.url" 
+                                                 :class="selectedBrowserImage === img.url ? 'ring-2 ring-blue-500' : 'ring-1 ring-gray-200'"
+                                                 class="relative cursor-pointer rounded-lg overflow-hidden bg-gray-50 hover:ring-2 hover:ring-blue-300 transition">
+                                                <img :src="img.url" :alt="img.filename" class="w-full h-24 object-contain">
+                                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate" x-text="img.filename"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                    <button type="button" 
+                                            @click="addImageAsCover()" 
+                                            :disabled="!selectedBrowserImage"
+                                            :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                                        Add as Cover Image
+                                    </button>
+                                    <button type="button" 
+                                            @click="closeImageBrowser()"
+                                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -494,7 +663,7 @@
                         </div>
                         <form method="POST" action="/admin/documents/links/delete" class="ml-4">
                             <input type="hidden" name="link_id" value="{{ link.id }}">
-                            <button type="submit" onclick="return confirm('Are you sure you want to delete this link?');" 
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this link?');"
                                     class="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
@@ -536,7 +705,7 @@ function searchableDropdown(config) {
                 return this.options;
             }
             const searchLower = this.search.toLowerCase();
-            return this.options.filter(opt => 
+            return this.options.filter(opt =>
                 opt.label.toLowerCase().includes(searchLower)
             );
         },
@@ -544,7 +713,7 @@ function searchableDropdown(config) {
             // Store button position before opening
             this.buttonRect = null;
             this.isOpening = false;
-            
+
             // Watch for open state changes
             this.$watch('open', (value) => {
                 if (value) {
@@ -573,7 +742,7 @@ function searchableDropdown(config) {
                     this.isOpening = false;
                 }
             });
-            
+
             // Update position on scroll
             const scrollHandler = () => {
                 if (this.open) {
@@ -592,7 +761,7 @@ function searchableDropdown(config) {
             };
             window.addEventListener('scroll', scrollHandler, true);
             window.addEventListener('resize', scrollHandler);
-            
+
             // Cleanup on component destroy
             this.$el.addEventListener('alpine:destroy', () => {
                 window.removeEventListener('scroll', scrollHandler, true);
@@ -613,7 +782,7 @@ function searchableDropdown(config) {
             if (!this.open || !this.$refs.dropdownMenu) {
                 return;
             }
-            
+
             // Use stored button position or get from current element
             let rect;
             if (this.buttonRect) {
@@ -628,12 +797,12 @@ function searchableDropdown(config) {
                     width: elementRect.width
                 };
             }
-            
+
             // For fixed positioning, use viewport coordinates directly
             const top = rect.bottom + 4;
             const left = rect.left;
             const width = rect.width;
-            
+
             this.menuStyle = `top: ${top}px; left: ${left}px; width: ${width}px;`;
         },
         selectOption(option) {
@@ -649,8 +818,65 @@ function imageUploadPreview() {
         previewUrl: null,
         modalOpen: false,
         modalImageUrl: null,
+        hasFile: false,
+        fileName: '',
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImage: null,
+        getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        },
+        async openImageBrowser() {
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImage = null;
+            try {
+                const response = await fetch('/admin/documents/images/browse');
+                const data = await response.json();
+                this.availableImages = Array.isArray(data.images) ? data.images : [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImage = null;
+        },
+        async addImageAsCover() {
+            if (!this.selectedBrowserImage) return;
+            const documentId = document.querySelector('input[name="document_id"]')?.value;
+            if (!documentId) {
+                alert('Document ID not found');
+                return;
+            }
+            try {
+                const formData = new FormData();
+                formData.append('document_id', documentId);
+                formData.append('image_path', this.selectedBrowserImage);
+                formData.append('is_cover', '1');
+                const response = await fetch('/admin/documents/images/add-existing', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Error adding image as cover');
+                }
+            } catch (error) {
+                console.error('Error adding image:', error);
+                alert('Error adding image as cover');
+            }
+        },
         handleFileSelect(event) {
             const file = event.target.files[0];
+            this.hasFile = file && file.type.startsWith('image/');
+            this.fileName = this.hasFile ? file.name : '';
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -663,6 +889,8 @@ function imageUploadPreview() {
         },
         clearPreview() {
             this.previewUrl = null;
+            this.hasFile = false;
+            this.fileName = '';
             // Reset file input
             const fileInput = this.$el.querySelector('input[type="file"]');
             if (fileInput) {
@@ -672,6 +900,104 @@ function imageUploadPreview() {
         openImageModal(imageUrl) {
             this.modalImageUrl = imageUrl;
             this.modalOpen = true;
+        }
+    };
+}
+
+// Document Image Browser Component
+function documentImageBrowser() {
+    return {
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImage: null,
+        imageAltText: '',
+        
+        async openImageBrowser() {
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImage = null;
+            this.imageAltText = '';
+            
+            try {
+                const response = await fetch('/admin/documents/images/browse');
+                const data = await response.json();
+                this.availableImages = data.images || [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImage = null;
+            this.imageAltText = '';
+        },
+        
+        selectImage(url) {
+            this.selectedBrowserImage = url;
+        },
+        
+        insertImageIntoEditor() {
+            if (!this.selectedBrowserImage) return;
+            
+            // Build markdown image syntax
+            const altText = this.imageAltText.trim() || 'Image';
+            const imageMarkdown = `![${altText}](${this.selectedBrowserImage})`;
+            
+            // Insert into Toast UI Editor if available
+            if (markdownEditor && typeof markdownEditor.insertText === 'function') {
+                // Try to insert at cursor position
+                try {
+                    markdownEditor.insertText(imageMarkdown);
+                } catch (e) {
+                    // Fallback: append to end
+                    const current = markdownEditor.getMarkdown();
+                    markdownEditor.setMarkdown(current + '\n\n' + imageMarkdown);
+                }
+            } else if (markdownEditor && typeof markdownEditor.replaceSelection === 'function') {
+                // Alternative method
+                markdownEditor.replaceSelection(imageMarkdown);
+            } else if (markdownEditor && typeof markdownEditor.getMarkdown === 'function') {
+                // Fallback: get current content, insert at cursor, set back
+                const current = markdownEditor.getMarkdown();
+                const selection = markdownEditor.getSelection();
+                let cursorPos = current.length;
+                
+                if (selection && selection.startOffset !== undefined) {
+                    cursorPos = selection.startOffset;
+                }
+                
+                const before = current.substring(0, cursorPos);
+                const after = current.substring(cursorPos);
+                const newContent = before + '\n\n' + imageMarkdown + '\n\n' + after;
+                markdownEditor.setMarkdown(newContent);
+                
+                // Try to restore cursor position after a short delay
+                setTimeout(() => {
+                    const newPos = cursorPos + imageMarkdown.length + 4; // +4 for the two newlines
+                    if (typeof markdownEditor.setSelection === 'function') {
+                        markdownEditor.setSelection([newPos, newPos]);
+                    }
+                }, 100);
+            } else {
+                // Fallback to textarea if editor not available
+                const textarea = document.getElementById('content_markdown');
+                if (textarea) {
+                    const start = textarea.selectionStart || textarea.value.length;
+                    const end = textarea.selectionEnd || start;
+                    const before = textarea.value.substring(0, start);
+                    const after = textarea.value.substring(end);
+                    textarea.value = before + '\n\n' + imageMarkdown + '\n\n' + after;
+                    textarea.selectionStart = textarea.selectionEnd = start + imageMarkdown.length + 4;
+                    textarea.focus();
+                }
+            }
+            
+            this.closeImageBrowser();
         }
     };
 }
@@ -692,7 +1018,7 @@ let markdownEditor = null;
         }
         return false;
     };
-    
+
     // Catch image errors specifically
     window.addEventListener('error', function(e) {
         if (e.target && e.target.tagName === 'IMG') {
@@ -703,7 +1029,7 @@ let markdownEditor = null;
             return true;
         }
     }, true);
-    
+
     // Also intercept image creation
     const originalCreateElement = document.createElement;
     document.createElement = function(tagName) {
@@ -731,10 +1057,10 @@ document.addEventListener('DOMContentLoaded', function() {
             markdownEditor.destroy();
             markdownEditor = null;
         }
-        
+
         if (markdownTextarea && contentMarkdownField && contentMarkdownField.style.display !== 'none') {
             let markdownContent = markdownTextarea.value || '';
-            
+
             // Pre-process markdown to handle broken image references
             // Replace common broken image patterns with placeholder images
             // This prevents 404/422 errors when the editor tries to load non-existent images
@@ -742,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 /!\[([^\]]*)\]\((image\.jpg|image\.png|image\.jpeg|image\.gif|placeholder_image\.png|placeholder[^)]*\.(jpg|png|jpeg|gif))\)/gi,
                 '![$1](https://placehold.co/400x300/6366f1/ffffff?text=Image+Not+Found)'
             );
-            
+
             // Also handle relative paths that might not exist
             markdownContent = markdownContent.replace(
                 /!\[([^\]]*)\]\((media\/images\/[^)]+)\)/gi,
@@ -754,12 +1080,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     return match;
                 }
             );
-            
+
             const container = document.getElementById('markdown-editor-container');
+            const resizableWrapper = container ? container.closest('.markdown-editor-resizable') : null;
+            var initialHeight = (resizableWrapper && resizableWrapper.offsetHeight) ? (resizableWrapper.offsetHeight + 'px') : '360px';
+
             if (container && typeof toastui !== 'undefined' && toastui.Editor) {
                 markdownEditor = new toastui.Editor({
                     el: container,
-                    height: '1000px',
+                    height: initialHeight,
                     initialEditType: 'markdown',
                     previewStyle: 'tab',
                     initialValue: markdownContent,
@@ -785,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         rel: 'noopener noreferrer'
                     }
                 });
-                
+
                 // Handle image loading errors gracefully in preview
                 // Set up immediately and also after editor loads
                 function setupImageErrorHandlers() {
@@ -804,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 img.style.display = 'none';
                             }
                         });
-                        
+
                         // Use MutationObserver to handle dynamically added images
                         const observer = new MutationObserver(function(mutations) {
                             mutations.forEach(function(mutation) {
@@ -826,21 +1155,36 @@ document.addEventListener('DOMContentLoaded', function() {
                                 });
                             });
                         });
-                        
+
                         observer.observe(preview, {
                             childList: true,
                             subtree: true
                         });
                     }
                 }
-                
+
                 // Set up immediately
                 setupImageErrorHandlers();
-                
+
                 // Also set up after a short delay to catch any images loaded later
                 setTimeout(setupImageErrorHandlers, 100);
                 setTimeout(setupImageErrorHandlers, 500);
                 setTimeout(setupImageErrorHandlers, 1000);
+
+                // Sync editor height when the resizable wrapper is dragged
+                if (resizableWrapper && typeof ResizeObserver !== 'undefined') {
+                    var ro = new ResizeObserver(function() {
+                        if (markdownEditor && resizableWrapper.offsetHeight) {
+                            var h = resizableWrapper.offsetHeight + 'px';
+                            if (typeof markdownEditor.setHeight === 'function') {
+                                markdownEditor.setHeight(h);
+                            } else {
+                                window.dispatchEvent(new Event('resize'));
+                            }
+                        }
+                    });
+                    ro.observe(resizableWrapper);
+                }
 
                 // Sync editor content to textarea before form submit
                 const form = markdownTextarea.closest('form');
@@ -869,11 +1213,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateContentFields() {
         const source = contentSource.value;
         const format = contentFormat.value;
+        const imageBrowserSection = document.getElementById('image-browser-section');
 
         if (source === 'file') {
             contentPathField.style.display = 'block';
             contentMarkdownField.style.display = 'none';
             contentHtmlField.style.display = 'none';
+            if (imageBrowserSection) imageBrowserSection.style.display = 'none';
             if (markdownEditor) {
                 markdownEditor.destroy();
                 markdownEditor = null;
@@ -883,6 +1229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (format === 'html') {
                 contentMarkdownField.style.display = 'none';
                 contentHtmlField.style.display = 'block';
+                if (imageBrowserSection) imageBrowserSection.style.display = 'none';
                 if (markdownEditor) {
                     markdownEditor.destroy();
                     markdownEditor = null;
@@ -890,6 +1237,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 contentMarkdownField.style.display = 'block';
                 contentHtmlField.style.display = 'none';
+                if (imageBrowserSection) imageBrowserSection.style.display = 'block';
                 // Small delay to ensure DOM is ready
                 setTimeout(initializeEditor, 100);
             }
@@ -899,20 +1247,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize on load if markdown is the active format
     const initialSource = contentSource.value;
     const initialFormat = contentFormat.value;
-    
+
     // Set initial visibility based on form values
+    const imageBrowserSection = document.getElementById('image-browser-section');
     if (initialSource === 'file') {
         contentPathField.style.display = 'block';
         contentMarkdownField.style.display = 'none';
         contentHtmlField.style.display = 'none';
+        if (imageBrowserSection) imageBrowserSection.style.display = 'none';
     } else {
         contentPathField.style.display = 'none';
         if (initialFormat === 'html') {
             contentMarkdownField.style.display = 'none';
             contentHtmlField.style.display = 'block';
+            if (imageBrowserSection) imageBrowserSection.style.display = 'none';
         } else {
             contentMarkdownField.style.display = 'block';
             contentHtmlField.style.display = 'none';
+            if (imageBrowserSection) imageBrowserSection.style.display = 'block';
             // Wait for Toast UI Editor script to be fully loaded
             function tryInitialize() {
                 if (typeof toastui !== 'undefined' && toastui.Editor) {
@@ -937,7 +1289,7 @@ function syncEditorContent() {
         // Try querySelector as fallback
         markdownTextarea = document.querySelector('textarea[name="content_markdown"]');
     }
-    
+
     if (markdownEditor && markdownTextarea) {
         const markdownContent = markdownEditor.getMarkdown();
         markdownTextarea.value = markdownContent;
@@ -994,6 +1346,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 return false;
             }
+            
+            // Log ALL form data including featured checkbox
+            console.log('=== FORM DATA BEING SUBMITTED ===');
+            const formData = new FormData(form);
+            for (let [key, value] of formData.entries()) {
+                if (key === 'featured') {
+                    console.log(`  *** FEATURED: ${key} = ${value} (type: ${typeof value}) ***`);
+                } else if (key === 'content_markdown') {
+                    console.log(`  ${key}: [${value.length} chars]`);
+                } else {
+                    console.log(`  ${key}: ${value}`);
+                }
+            }
+            console.log('================================');
+            
+            // Check featured checkbox specifically
+            const featuredCheckbox = document.querySelector('input[name="featured"]');
+            if (featuredCheckbox) {
+                console.log('Featured checkbox element found:');
+                console.log('  - checked:', featuredCheckbox.checked);
+                console.log('  - value:', featuredCheckbox.value);
+                console.log('  - name:', featuredCheckbox.name);
+                console.log('  - type:', featuredCheckbox.type);
+            } else {
+                console.error('Featured checkbox NOT FOUND in form!');
+            }
+            
             // Small delay to ensure sync completes
             const markdownTextarea = document.getElementById('content_markdown');
             if (markdownTextarea) {
@@ -1048,12 +1427,12 @@ let previewModal = null;
 async function openPreviewModal() {
     const modal = document.getElementById('preview-modal');
     const previewContent = document.getElementById('preview-content');
-    
+
     if (!modal || !previewContent) {
         console.error('Preview modal elements not found');
         return;
     }
-    
+
     // Get markdown content from editor or textarea
     let markdownContent = '';
     if (markdownEditor) {
@@ -1064,41 +1443,41 @@ async function openPreviewModal() {
             markdownContent = textarea.value;
         }
     }
-    
+
     if (!markdownContent || markdownContent.trim() === '') {
         previewContent.innerHTML = '<p class="text-slate-500 italic">No content to preview.</p>';
         modal.classList.remove('hidden');
         return;
     }
-    
+
     // Show loading state
     previewContent.innerHTML = '<div class="flex items-center justify-center p-8"><i class="fas fa-spinner fa-spin text-2xl text-slate-400"></i></div>';
     modal.classList.remove('hidden');
-    
+
     // Call backend API to get processed HTML (same as frontend rendering)
     try {
         const formData = new FormData();
         formData.append('content_markdown', markdownContent);
-        
+
         const response = await fetch('/admin/documents/preview', {
             method: 'POST',
             body: formData
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.error) {
             previewContent.innerHTML = '<p class="text-red-600">Error: ' + data.error + '</p>';
             return;
         }
-        
+
         // Set the processed HTML
         previewContent.innerHTML = data.html || '<p class="text-slate-500 italic">No content to preview.</p>';
-        
+
         // Initialize PrismJS and process embeds (same as document page)
         setTimeout(function() {
             initializePreviewPrismJS();
@@ -1139,30 +1518,30 @@ function initializePreviewPrismJS() {
             console.warn('PrismJS not loaded yet');
             return;
         }
-        
+
         const previewContent = document.getElementById('preview-content');
         if (!previewContent) return;
-        
+
         // Find all pre elements with code blocks
         const allPreElements = previewContent.querySelectorAll('pre');
         const codeBlocks = [];
-        
+
         allPreElements.forEach(function(pre) {
             if (pre.hasAttribute('data-prism-processed')) {
                 return;
             }
-            
+
             const code = pre.querySelector('code');
             if (!code) {
                 return;
             }
-            
+
             if (!pre.classList.contains('line-numbers')) {
                 pre.classList.add('line-numbers');
             }
             codeBlocks.push(pre);
         });
-        
+
         if (codeBlocks.length > 0) {
             // Remove existing line-numbers-rows
             codeBlocks.forEach(function(pre) {
@@ -1171,7 +1550,7 @@ function initializePreviewPrismJS() {
                     rows.remove();
                 });
             });
-            
+
             // Highlight each code block
             codeBlocks.forEach(function(pre) {
                 const code = pre.querySelector('code');
@@ -1183,12 +1562,12 @@ function initializePreviewPrismJS() {
                     }
                 }
             });
-            
+
             // Mark as processed
             codeBlocks.forEach(function(pre) {
                 pre.setAttribute('data-prism-processed', 'true');
             });
-            
+
             // Clean up duplicate line-numbers-rows
             setTimeout(function() {
                 previewContent.querySelectorAll('pre.line-numbers').forEach(function(pre) {
@@ -1215,78 +1594,78 @@ function initializePreviewPrismJS() {
 function processPreviewEmbedLinks() {
     const previewContent = document.getElementById('preview-content');
     if (!previewContent) return;
-    
+
     // Find all links with @embed in title attribute
     const links = previewContent.querySelectorAll('a:not([data-embed-processed])');
     links.forEach(function(link) {
         if (link.closest('.embed-block') || link.hasAttribute('data-embed-processed')) {
             return;
         }
-        
+
         const href = link.getAttribute('href') || '';
         const title = link.getAttribute('title') || '';
         const linkText = link.textContent || '';
         const isEmbed = title.includes('@embed') || title.toLowerCase().includes('embed');
-        
+
         // Check for YouTube links
         if (href.includes('youtu') || href.includes('youtube')) {
             const videoIdMatch = href.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
             if (videoIdMatch) {
                 const videoId = videoIdMatch[1];
                 const embedTitle = linkText || title.replace(/@embed/gi, '').trim();
-                
+
                 const embedWrapper = document.createElement('div');
                 embedWrapper.className = 'embed embed-youtube';
                 embedWrapper.innerHTML = `
                     <div class="embed-media">
-                        <iframe 
-                            src="https://www.youtube.com/embed/${videoId}" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        <iframe
+                            src="https://www.youtube.com/embed/${videoId}"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowfullscreen>
                         </iframe>
                     </div>
                     ${embedTitle ? `<p class="embed-caption">${embedTitle}</p>` : ''}
                 `;
-                
+
                 link.parentNode.replaceChild(embedWrapper, link);
                 link.setAttribute('data-embed-processed', 'true');
                 return;
             }
         }
-        
+
         // Check for @embed in title (generic embed)
         if (isEmbed && href) {
             try {
                 const urlObj = new URL(href);
                 const domain = urlObj.hostname.replace('www.', '');
-                
+
                 let embedTitle = linkText || title.replace(/@embed/gi, '').trim();
                 if (!embedTitle || embedTitle === href) {
                     embedTitle = domain;
                 }
-                
+
                 const embedWrapper = document.createElement('div');
                 embedWrapper.className = 'embed-block';
-                
+
                 const embedLink = document.createElement('a');
                 embedLink.className = 'embed embed-simple';
                 embedLink.href = href;
                 embedLink.target = '_blank';
                 embedLink.rel = 'noopener noreferrer';
-                
+
                 if (embedTitle) {
                     const titleSpan = document.createElement('span');
                     titleSpan.className = 'embed-simple-title';
                     titleSpan.textContent = embedTitle;
                     embedLink.appendChild(titleSpan);
                 }
-                
+
                 const domainSpan = document.createElement('span');
                 domainSpan.className = 'embed-simple-domain';
                 domainSpan.textContent = domain;
                 embedLink.appendChild(domainSpan);
-                
+
                 embedWrapper.appendChild(embedLink);
                 link.parentNode.replaceChild(embedWrapper, link);
                 link.setAttribute('data-embed-processed', 'true');
@@ -1301,7 +1680,7 @@ function processPreviewEmbedLinks() {
 function setupPreviewDetailsPanels() {
     const previewContent = document.getElementById('preview-content');
     if (!previewContent) return;
-    
+
     const detailsElements = previewContent.querySelectorAll('details, details.details-panel');
     detailsElements.forEach(function(details) {
         const summary = details.querySelector('summary');
@@ -1315,7 +1694,7 @@ function setupPreviewDetailsPanels() {
                 }
             });
         }
-        
+
         // Re-process code blocks when details are opened
         details.addEventListener('toggle', function() {
             if (details.open) {
@@ -1333,13 +1712,13 @@ function copyToClipboard(text) {
         // Show temporary success feedback
         const event = new CustomEvent('copied', { detail: { text: text } });
         document.dispatchEvent(event);
-        
+
         // Optional: Show a toast notification
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-[10002] transition-opacity';
         toast.innerHTML = '<i class="fas fa-check mr-2"></i>Copied to clipboard!';
         document.body.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.style.opacity = '0';
             setTimeout(() => toast.remove(), 300);
@@ -1370,10 +1749,10 @@ function openComponentsModal() {
     const modal = document.getElementById('components-modal');
     const content = document.getElementById('components-modal-content');
     if (!modal || !content) return;
-    
+
     // Build modal content with rendered examples
     content.innerHTML = buildComponentsModalContent();
-    
+
     // Initialize PrismJS for code blocks in the modal
     setTimeout(() => {
         if (typeof Prism !== 'undefined' && typeof Prism.highlightAll === 'function') {
@@ -1382,12 +1761,12 @@ function openComponentsModal() {
             codeBlocks.forEach(pre => {
                 // Remove any existing line-numbers-rows to prevent duplicates
                 pre.querySelectorAll('.line-numbers-rows').forEach(rows => rows.remove());
-                
+
                 // Ensure line-numbers class is present
                 if (!pre.classList.contains('line-numbers')) {
                     pre.classList.add('line-numbers');
                 }
-                
+
                 // Highlight the code
                 const code = pre.querySelector('code');
                 if (code && !code.hasAttribute('data-prism-processed')) {
@@ -1396,7 +1775,7 @@ function openComponentsModal() {
             });
         }
     }, 100);
-    
+
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
@@ -1576,23 +1955,23 @@ function buildComponentsModalContent() {
             ]
         }
     ];
-    
+
     let html = '<div class="space-y-4">';
-    
+
     components.forEach(component => {
         html += `
             <div x-data="{ expanded: false }" class="border border-slate-200 rounded-lg overflow-hidden">
-                <button type="button" 
+                <button type="button"
                         @click="expanded = !expanded"
                         class="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition">
                     <div class="flex items-center gap-3">
                         <i class="${component.icon} ${component.iconColor} text-lg"></i>
                         <span class="font-semibold text-slate-900">${component.title}</span>
                     </div>
-                    <i class="fas fa-chevron-down text-slate-400 transition-transform" 
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform"
                        :class="{ 'rotate-180': expanded }"></i>
                 </button>
-                <div x-show="expanded" 
+                <div x-show="expanded"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 max-h-0"
                      x-transition:enter-end="opacity-100 max-h-[5000px]"
@@ -1602,7 +1981,7 @@ function buildComponentsModalContent() {
                      class="overflow-hidden">
                     <div class="p-4 space-y-4 bg-white">
         `;
-        
+
         component.examples.forEach((example, idx) => {
             html += `
                         <div class="border border-slate-200 rounded-lg overflow-hidden">
@@ -1618,13 +1997,15 @@ function buildComponentsModalContent() {
                                 <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Markdown</div>
                                 <pre class="text-xs text-slate-300 whitespace-pre-wrap font-mono overflow-x-auto"><code>${escapeHtml(example.markdown)}</code></pre>
                                 <div class="flex gap-2 mt-3">
-                                    <button type="button" 
-                                            onclick="copyAndInsertComponent('${escapeJs(example.markdown)}')"
+                                    <button type="button"
+                                            data-markdown="${encodeMarkdown(example.markdown)}"
+                                            onclick="copyAndInsertComponent(decodeMarkdown(this.dataset.markdown))"
                                             class="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition">
                                         <i class="fas fa-copy mr-2"></i>Copy & Insert
                                     </button>
-                                    <button type="button" 
-                                            onclick="copyToClipboard('${escapeJs(example.markdown)}')"
+                                    <button type="button"
+                                            data-markdown="${encodeMarkdown(example.markdown)}"
+                                            onclick="copyToClipboard(decodeMarkdown(this.dataset.markdown))"
                                             class="bg-slate-700 text-white px-3 py-2 rounded text-sm hover:bg-slate-600 transition">
                                         <i class="fas fa-clipboard mr-2"></i>Copy Only
                                     </button>
@@ -1633,14 +2014,14 @@ function buildComponentsModalContent() {
                         </div>
             `;
         });
-        
+
         html += `
                     </div>
                 </div>
             </div>
         `;
     });
-    
+
     html += '</div>';
     return html;
 }
@@ -1664,10 +2045,18 @@ function escapeJs(text) {
         .replace(/\$/g, '\\$'); // Escape dollar signs (for template literals)
 }
 
+function encodeMarkdown(text) {
+    return btoa(unescape(encodeURIComponent(text)));
+}
+
+function decodeMarkdown(text) {
+    return decodeURIComponent(escape(atob(text)));
+}
+
 function copyAndInsertComponent(markdown) {
     // Copy to clipboard
     copyToClipboard(markdown);
-    
+
     // Insert into editor
     if (markdownEditor) {
         try {
@@ -1681,16 +2070,16 @@ function copyAndInsertComponent(markdown) {
                 const current = markdownEditor.getMarkdown();
                 const selection = markdownEditor.getSelection();
                 let cursorPos = current.length;
-                
+
                 if (selection && selection.startOffset !== undefined) {
                     cursorPos = selection.startOffset;
                 }
-                
+
                 const before = current.substring(0, cursorPos);
                 const after = current.substring(cursorPos);
                 const newContent = before + markdown + after;
                 markdownEditor.setMarkdown(newContent);
-                
+
                 // Try to restore cursor position after a short delay
                 setTimeout(() => {
                     const newPos = cursorPos + markdown.length;
@@ -1708,7 +2097,7 @@ function copyAndInsertComponent(markdown) {
         // Fallback to textarea if editor not available
         insertIntoTextarea(markdown);
     }
-    
+
     // Close modal after a short delay
     setTimeout(() => {
         closeComponentsModal();
@@ -1739,4 +2128,3 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 {% endblock %}
-

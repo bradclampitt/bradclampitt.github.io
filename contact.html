@@ -8,10 +8,12 @@
   <link href="assets/css/tailwind-built.css" rel="stylesheet" />
     <!-- Alpine.js -->
   <script src="assets/js/alpine.js" defer></script>
+    <!-- Sidebar Loader - Loads shared sidebar navigation -->
+    <script src="assets/js/sidebar-loader.js"></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="flex h-screen bg-gray-100" x-data="{ 
+<body class="flex h-screen bg-gray-100" x-data="{
     sidebarOpen: false,
     siteSettings: {},
     contactFields: [],
@@ -27,11 +29,11 @@
             const isLocalHost = host === 'localhost' || host === '127.0.0.1';
             const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
             const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-            
+
             const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
                 ? 'http://127.0.0.1:8000/api/cms/settings'
                 : '/api/cms/settings';
-            
+
             const response = await fetch(apiUrl);
             if (response.ok) {
                 const data = await response.json();
@@ -49,11 +51,11 @@
             const isLocalHost = host === 'localhost' || host === '127.0.0.1';
             const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
             const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-            
+
             const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
                 ? 'http://127.0.0.1:8000/api/cms/contact'
                 : '/api/cms/contact';
-            
+
             const response = await fetch(apiUrl);
             if (response.ok) {
                 const data = await response.json();
@@ -88,168 +90,32 @@
   </div>
 
     <div class="flex flex-1 h-full">
-    <!-- Desktop Sidebar -->
-    <div class="hidden lg:flex w-64 bg-gray-700 text-white flex-col h-full flex-shrink-0 desktop-sidebar">
-            <!-- Profile Header -->
+        <!-- Desktop Sidebar - Loaded dynamically -->
+        <div id="sidebar-desktop" class="hidden lg:flex w-64 bg-gray-700 text-white flex-col h-full flex-shrink-0">
+            <!-- Sidebar will be injected here by sidebar-loader.js -->
             <div class="p-6 border-b border-gray-700">
                 <h2 class="text-2xl font-semibold">Bradley C.</h2>
             </div>
-            <!-- Navigation Menu -->
             <nav class="flex-1 px-4 py-6 space-y-2">
-                <a href="index.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    About
-                </a>
-                <a href="experience.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6"></path>
-                    </svg>
-                    Experience
-                </a>
-                <a href="documents.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Documents
-                </a>
-                <a href="resume.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                  Resume
-              </a>
-              <a href="blog.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                </svg>
-                Blog
-            </a>
-                <a href="portfolio.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                    Portfolio
-                </a>
-                <a href="magento.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
-                    </svg>
-                    Magento Modules
-                </a>
-                <a href="side-projects.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
-                    </svg>
-                    Projects & Personal Work
-                </a>
-                <a href="photography.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Photography
-                </a>
-                <a href="contact.html" class="flex items-center px-3 py-2 text-sm font-medium text-blue-300 bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    Contact
-                </a>
-                <a href="personal.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                    Personal
-                </a>
+                <div class="text-gray-400 text-sm">Loading navigation...</div>
             </nav>
         </div>
 
-    <!-- Mobile Sidebar -->
-    <div x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-x-full" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-full" class="lg:hidden w-64 bg-gray-700 text-white flex flex-col h-full fixed inset-y-0 left-0 z-50">
-      <!-- Profile Header -->
-      <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-        <h2 class="text-2xl font-semibold pl-10">Bradley C.</h2>
-        <button @click="sidebarOpen = false" class="text-gray-300 hover:text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-      <!-- Navigation Menu -->
-      <nav class="flex-1 px-4 py-6 space-y-2">
-        <!-- (same links as above, with @click="sidebarOpen = false" on each) -->
-        <a href="index.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>
-          About
-        </a>
-        <!-- ... (repeat for all links, as in desktop sidebar) ... -->
-        <a href="experience.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6"></path>
-          </svg>
-          Experience
-        </a>
-        <a href="documents.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          Documents
-        </a>
-        <a href="resume.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          Resume
-      </a>
-      <a href="blog.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
-        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-        </svg>
-        Blog
-    </a>
-        <a href="portfolio.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-          </svg>
-          Portfolio
-        </a>
-        <a href="magento.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
-          </svg>
-          Magento Modules
-        </a>
-        <a href="side-projects.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
-          </svg>
-          Projects & Personal Work
-        </a>
-        <a href="photography.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-          </svg>
-          Photography
-        </a>
-        <a href="contact.html" class="flex items-center px-3 py-2 text-sm font-medium text-blue-300 bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-          </svg>
-          Contact
-        </a>
-        <a href="personal.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-          Personal
-        </a>
-      </nav>
-    </div>
+        <!-- Mobile Sidebar - Loaded dynamically -->
+        <div id="sidebar-mobile" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-x-full" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-full" class="lg:hidden w-64 bg-gray-700 text-white flex flex-col h-full fixed inset-y-0 left-0 z-50">
+            <!-- Sidebar will be injected here by sidebar-loader.js -->
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h2 class="text-2xl font-semibold pl-10">Bradley C.</h2>
+                <button @click="sidebarOpen = false" class="text-gray-300 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <div class="text-gray-400 text-sm">Loading navigation...</div>
+            </nav>
+        </div>
 
         <!-- Main Content Area -->
     <div class="flex flex-col flex-1 h-full w-full lg:ml-0 main-content">
@@ -262,7 +128,7 @@
             <h2 class="text-base mb-4" x-text="siteSettings.site_titles || 'Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect'"></h2>
             <p class="text-gray-300 mb-6 text-sm" x-text="siteSettings.site_description || 'Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.'"></p>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
-              <a href="documents.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center text-sm">
+              <a href="portfolio.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -315,7 +181,7 @@
             <h2 class="text-xl mb-4" x-text="siteSettings.site_titles || 'Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect'"></h2>
             <p class="text-gray-300 mb-6" x-text="siteSettings.site_description || 'Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.'"></p>
             <div class="flex space-x-4 mb-6">
-              <a href="documents.html" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
+              <a href="portfolio.html" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
                 <svg class="w-5 h-5 mr-2 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -341,7 +207,7 @@
         <div class="hidden lg:flex space-x-4 mt-4 mb-2 justify-end items-center">
             <template x-for="field in contactFields" :key="'desktop-social-' + field.field_name">
                 <template x-if="field.field_type === 'url' || field.field_type === 'email' || field.field_type === 'phone'">
-                    <a :href="field.field_type === 'email' ? 'mailto:' + field.value : (field.field_type === 'phone' ? 'tel:' + field.value : field.value)" 
+                    <a :href="field.field_type === 'email' ? 'mailto:' + field.value : (field.field_type === 'phone' ? 'tel:' + field.value : field.value)"
                        :target="field.field_type === 'url' ? '_blank' : ''"
                        class="text-gray-300 hover:text-white">
                         <template x-if="field.field_name === 'github'">
@@ -380,14 +246,14 @@
                     <!-- Contact Information -->
                     <div class="bg-white rounded-lg shadow-lg p-8">
                         <h2 class="text-2xl font-bold mb-6">Contact Information</h2>
-                        
+
                         <template x-if="loadingContact">
                             <div class="text-center py-8">
                                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                 <p class="mt-4 text-gray-600">Loading contact information...</p>
                             </div>
                         </template>
-                        
+
                         <div class="space-y-6" x-show="!loadingContact">
                             <template x-for="field in contactFields" :key="field.field_name">
                                 <div class="flex items-center space-x-4" x-show="field.field_name !== 'location'">
@@ -440,7 +306,7 @@
                     <!-- Quick Contact Options -->
                     <div class="bg-white rounded-lg shadow-lg p-8">
                         <h2 class="text-2xl font-bold mb-6">Get in Touch</h2>
-                        
+
                         <div class="space-y-6">
                             <template x-for="field in contactFields" :key="'quick-' + field.field_name">
                                 <template x-if="field.show_in_get_in_touch == 1 || field.show_in_get_in_touch === true">

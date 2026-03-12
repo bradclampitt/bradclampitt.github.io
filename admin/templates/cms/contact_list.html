@@ -9,7 +9,7 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h2 class="text-3xl font-semibold text-slate-900">Contact Information</h2>
-                <p class="text-sm text-slate-500 mt-1">Manage contact fields displayed on the contact page</p>
+                <p class="text-sm text-slate-500 mt-1">Manage contact fields displayed on the contact page. Fields can be reordered by dragging rows in the table below.</p>
             </div>
             <button @click="showAddForm = !showAddForm" class="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                 <i class="fas fa-plus mr-2"></i>New Field
@@ -69,6 +69,7 @@
                     <label for="new_sort_order" class="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
                     <input type="number" id="new_sort_order" name="sort_order" value="0"
                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-xs text-slate-500">Lower numbers appear first. You can also drag rows to reorder.</p>
                 </div>
                 <div class="md:col-span-2">
                     <label for="new_description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
@@ -118,6 +119,29 @@
             </form>
         </div>
 
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Contact Fields</label>
+                <input type="text" 
+                       placeholder="Type to search by field name, label, or value..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="field_name">Field Name</option>
+                    <option value="label">Label</option>
+                    <option value="sort_order">Sort Order</option>
+                </select>
+            </div>
+        </div>
+
         <div class="overflow-x-auto -mx-6 px-6">
             <table class="w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
@@ -130,9 +154,9 @@
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedFields().length">
-                    <template x-for="field in paginatedFields()" :key="field.id">
-                        <tr class="hover:bg-slate-50">
+                <tbody id="contact-fields-list" class="divide-y divide-slate-100 bg-white" x-show="filteredAndPaginatedFields().length">
+                    <template x-for="field in filteredAndPaginatedFields()" :key="field.id">
+                        <tr class="hover:bg-slate-50 cursor-move" :data-contact-id="field.id">
                             <td class="px-3 py-4 sm:px-4">
                                 <div class="text-sm font-medium text-slate-900" x-text="field.field_name"></div>
                                 <template x-if="field.icon">
@@ -164,21 +188,21 @@
                                     </span>
                                 </template>
                             </td>
-                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4" @click.stop>
                                 <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
-                                    <button @click="editField(field)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</button>
-                                    <form method="POST" action="/admin/cms/contact/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this field?');">
+                                    <button @click.stop="editField(field)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition cursor-pointer" draggable="false">Edit</button>
+                                    <form method="POST" action="/admin/cms/contact/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this field?');" @click.stop>
                                         <input type="hidden" name="contact_id" :value="field.id">
-                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition cursor-pointer" draggable="false">Delete</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     </template>
                 </tbody>
-                <tbody x-show="!paginatedFields().length">
+                <tbody x-show="!filteredAndPaginatedFields().length">
                     <tr>
-                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No contact fields yet.</td>
+                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No contact fields match your filters.</td>
                     </tr>
                 </tbody>
             </table>
@@ -277,6 +301,7 @@
                         <input type="number" name="sort_order"
                                :value="editingField?.sort_order || 0"
                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-xs text-slate-500">Lower numbers appear first. You can also drag rows to reorder.</p>
                     </div>
                 </div>
                 
@@ -339,6 +364,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 function contactTable(initial) {
     return {
@@ -346,18 +372,135 @@ function contactTable(initial) {
         perPage: 10,
         currentPage: 1,
         contact_fields: initial.contact_fields || [],
+        searchQuery: '',
+        sortBy: 'sort_order',
+        sortableInstance: null,
         showAddForm: false,
         editingField: null,
         init() {
             this.$watch('perPage', () => { this.currentPage = 1; });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
+            this.$watch('currentPage', () => {
+                // Reinitialize sortable when page changes
+                this.$nextTick(() => {
+                    this.initSortable();
+                });
+            });
+            // Initialize sortable after initial render
+            this.$nextTick(() => {
+                this.initSortable();
+            });
+        },
+        initSortable() {
+            const tbody = document.getElementById('contact-fields-list');
+            if (tbody && this.sortableInstance) {
+                this.sortableInstance.destroy();
+            }
+            if (tbody) {
+                this.sortableInstance = Sortable.create(tbody, {
+                    handle: 'tr',
+                    animation: 150,
+                    filter: 'a, button, form, input, select, textarea',
+                    preventOnFilter: false,
+                    onEnd: (evt) => {
+                        // Get all rows in current page after reorder
+                        const rows = Array.from(tbody.querySelectorAll('tr[data-contact-id]'));
+                        const pageStart = (this.currentPage - 1) * this.perPage;
+                        const orders = {};
+
+                        // Update sort_order for contact fields on this page based on their new positions
+                        rows.forEach((row, index) => {
+                            const contactId = parseInt(row.getAttribute('data-contact-id'));
+                            // Calculate new sort_order: position in full list = pageStart + position in page
+                            orders[contactId] = pageStart + index + 1;
+                        });
+
+                        // Update sort_order in database
+                        fetch('/admin/cms/contact/reorder', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: 'contact_orders=' + encodeURIComponent(JSON.stringify(orders))
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Reload page to get updated order from server
+                                location.reload();
+                            } else {
+                                alert('Error reordering contact fields: ' + (data.error || 'Unknown error'));
+                                location.reload();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error reordering contact fields');
+                            location.reload();
+                        });
+                    }
+                });
+            }
+        },
+        filteredFields() {
+            let filtered = [...this.contact_fields];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(field => 
+                    (field.field_name || '').toLowerCase().includes(query) ||
+                    (field.label || '').toLowerCase().includes(query) ||
+                    (field.value || '').toLowerCase().includes(query)
+                );
+            }
+            
+            // Apply sorting - always sort by sort_order first when not searching
+            if (!this.searchQuery || !this.searchQuery.trim()) {
+                // When not searching, always use sort_order
+                filtered.sort((a, b) => {
+                    const aVal = a.sort_order || 0;
+                    const bVal = b.sort_order || 0;
+                    return aVal - bVal;
+                });
+            } else {
+                // When searching, allow other sort options
+                filtered.sort((a, b) => {
+                    let aVal, bVal;
+                    
+                    switch(this.sortBy) {
+                        case 'label':
+                            aVal = (a.label || '').toLowerCase();
+                            bVal = (b.label || '').toLowerCase();
+                            break;
+                        case 'sort_order':
+                            aVal = a.sort_order || 0;
+                            bVal = b.sort_order || 0;
+                            return aVal - bVal;
+                        case 'field_name':
+                        default:
+                            aVal = (a.field_name || '').toLowerCase();
+                            bVal = (b.field_name || '').toLowerCase();
+                            break;
+                    }
+                    
+                    if (aVal < bVal) return -1;
+                    if (aVal > bVal) return 1;
+                    return 0;
+                });
+            }
+            
+            return filtered;
         },
         totalPages() {
-            const total = this.contact_fields.length;
+            const total = this.filteredFields().length;
             return Math.max(1, Math.ceil(total / this.perPage));
         },
-        paginatedFields() {
+        filteredAndPaginatedFields() {
+            const filtered = this.filteredFields();
             const start = (this.currentPage - 1) * this.perPage;
-            return this.contact_fields.slice(start, start + this.perPage);
+            return filtered.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -387,12 +530,13 @@ function contactTable(initial) {
             return pages;
         },
         rangeSummary() {
-            if (!this.contact_fields.length) {
+            const filtered = this.filteredFields();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.contact_fields.length);
-            return `Showing ${start}-${end} of ${this.contact_fields.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
         },
         editField(field) {
             this.editingField = { ...field };

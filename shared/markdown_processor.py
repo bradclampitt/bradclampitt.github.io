@@ -36,7 +36,7 @@ class SharedMarkdownProcessor:
     Wrapper around BlogManager's markdown processing functionality.
     This allows both blog and documents systems to use the same markdown processor.
     """
-    
+
     def __init__(self):
         # Create a BlogManager instance just for markdown processing
         # Pass the correct blog root path from config
@@ -46,23 +46,23 @@ class SharedMarkdownProcessor:
         except ImportError:
             # Fallback to old path if config not available
             blog_root = str(Path(__file__).resolve().parents[1] / "admin" / "resources" / "blog")
-        
+
         self._processor = BlogManager(blog_root=blog_root)
         # Reset tab counter for each document
         self._processor._tab_counter = 0
-    
+
     def markdown_to_html(self, markdown_text: str) -> str:
         """
         Convert markdown text to HTML with all Confluence-style extensions.
-        
+
         Args:
             markdown_text: Raw markdown content
-            
+
         Returns:
             HTML string with all custom components rendered
         """
         return self._processor.markdown_to_html(markdown_text)
-    
+
     def process_markdown(self, markdown_text: str) -> str:
         """
         Alias for markdown_to_html for consistency.
@@ -74,7 +74,7 @@ class SharedMarkdownProcessor:
 def process_markdown(markdown_text: str) -> str:
     """
     Process markdown text with all Confluence-style extensions.
-    
+
     Usage:
         from shared.markdown_processor import process_markdown
         html = process_markdown("# Hello World")

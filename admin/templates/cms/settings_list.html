@@ -55,28 +55,57 @@
             </form>
         </div>
 
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Settings</label>
+                <input type="text" 
+                       placeholder="Type to search by setting key or description..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="setting_key">Setting Key</option>
+                    <option value="updated_at">Updated Date</option>
+                </select>
+            </div>
+        </div>
+
         <div class="overflow-x-auto -mx-6 px-6">
-            <table class="w-full divide-y divide-slate-200 text-sm">
+            <table class="w-full divide-y divide-slate-200 text-sm table-fixed" style="min-width: 280px;">
+                <colgroup>
+                    <col style="width: 18%;">
+                    <col style="width: 35%;">
+                    <col style="width: 10%;">
+                    <col style="width: 12%;">
+                    <col style="width: 1%; min-width: 8rem;">
+                </colgroup>
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
                     <tr>
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Setting Key</th>
                         <th class="px-3 py-3 text-left hidden md:table-cell sm:px-4 sm:py-3">Value</th>
                         <th class="px-3 py-3 text-left hidden lg:table-cell sm:px-4 sm:py-3">Type</th>
                         <th class="px-3 py-3 text-left hidden xl:table-cell sm:px-4 sm:py-3">Updated</th>
-                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
+                        <th class="px-3 py-3 text-right sm:px-4 sm:py-3 sticky right-0 z-10 bg-slate-50 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedSettings().length">
-                    <template x-for="setting in paginatedSettings()" :key="setting.id">
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-3 py-4 sm:px-4">
-                                <div class="text-sm font-medium text-slate-900" x-text="setting.setting_key"></div>
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="filteredAndPaginatedSettings().length">
+                    <template x-for="setting in filteredAndPaginatedSettings()" :key="setting.id">
+                        <tr class="group hover:bg-slate-50">
+                            <td class="px-3 py-4 sm:px-4 min-w-0">
+                                <div class="text-sm font-medium text-slate-900 truncate" x-text="setting.setting_key"></div>
                                 <template x-if="setting.description">
-                                    <div class="text-xs text-slate-500 mt-1" x-text="setting.description"></div>
+                                    <div class="text-xs text-slate-500 mt-1 truncate" x-text="setting.description"></div>
                                 </template>
                             </td>
-                            <td class="px-3 py-4 text-sm text-slate-500 hidden md:table-cell sm:px-4">
-                                <div class="max-w-md truncate" x-text="setting.setting_value"></div>
+                            <td class="px-3 py-4 text-sm text-slate-500 hidden md:table-cell sm:px-4 min-w-0 max-w-0">
+                                <div class="truncate" x-text="setting.setting_value"></div>
                             </td>
                             <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-500 hidden lg:table-cell sm:px-4">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -85,8 +114,8 @@
                             <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-500 hidden xl:table-cell sm:px-4">
                                 <span x-text="setting.updated_at || '-'"></span>
                             </td>
-                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
-                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4 sticky right-0 z-10 bg-white group-hover:bg-slate-50 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] text-right">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2 justify-end w-full">
                                     <button @click="editSetting(setting)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</button>
                                     <form method="POST" action="/admin/cms/settings/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this setting?');">
                                         <input type="hidden" name="setting_id" :value="setting.id">
@@ -97,9 +126,9 @@
                         </tr>
                     </template>
                 </tbody>
-                <tbody x-show="!paginatedSettings().length">
+                <tbody x-show="!filteredAndPaginatedSettings().length">
                     <tr>
-                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No settings yet.</td>
+                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No settings match your filters.</td>
                     </tr>
                 </tbody>
             </table>
@@ -239,18 +268,59 @@ function settingsTable(initial) {
         currentPage: 1,
         settings: initial.settings || [],
         frontendUsage: initial.frontendUsage || {},
+        searchQuery: '',
+        sortBy: 'setting_key',
         showAddForm: false,
         editingSetting: null,
         init() {
             this.$watch('perPage', () => { this.currentPage = 1; });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
+        },
+        filteredSettings() {
+            let filtered = [...this.settings];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(setting => 
+                    (setting.setting_key || '').toLowerCase().includes(query) ||
+                    (setting.description || '').toLowerCase().includes(query) ||
+                    (setting.setting_value || '').toLowerCase().includes(query)
+                );
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(this.sortBy) {
+                    case 'updated_at':
+                        aVal = (a.updated_at || '').toLowerCase();
+                        bVal = (b.updated_at || '').toLowerCase();
+                        return bVal.localeCompare(aVal); // Descending
+                    case 'setting_key':
+                    default:
+                        aVal = (a.setting_key || '').toLowerCase();
+                        bVal = (b.setting_key || '').toLowerCase();
+                        break;
+                }
+                
+                if (aVal < bVal) return -1;
+                if (aVal > bVal) return 1;
+                return 0;
+            });
+            
+            return filtered;
         },
         totalPages() {
-            const total = this.settings.length;
+            const total = this.filteredSettings().length;
             return Math.max(1, Math.ceil(total / this.perPage));
         },
-        paginatedSettings() {
+        filteredAndPaginatedSettings() {
+            const filtered = this.filteredSettings();
             const start = (this.currentPage - 1) * this.perPage;
-            return this.settings.slice(start, start + this.perPage);
+            return filtered.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -280,12 +350,13 @@ function settingsTable(initial) {
             return pages;
         },
         rangeSummary() {
-            if (!this.settings.length) {
+            const filtered = this.filteredSettings();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.settings.length);
-            return `Showing ${start}-${end} of ${this.settings.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
         },
         editSetting(setting) {
             this.editingSetting = { ...setting };

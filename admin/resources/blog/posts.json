@@ -1,61 +1,39 @@
 {
   "posts": [
     {
-      "id": 12,
-      "slug": "handling-a-full-house-of-different-forms-of-adhd",
-      "title": "Handling a full house of different forms of ADHD",
-      "excerpt": "",
+      "id": 10,
+      "slug": "cloudflare-edge-security",
+      "title": "Implementing Cloudflare Edge Security for Better Performance and Protection",
+      "excerpt": "Example Blog Post: Comprehensive guide to configuring Cloudflare edge security features including WAF, DDoS protection, and global edge computing to enhance your website's performance and security.",
       "author": "Bradley R. Clampitt",
-      "date": "2025-12-05",
-      "category": "Personal",
-      "tags": [],
-      "featured": false,
-      "readTime": "1 min read",
-      "coverImage": ""
-    },
-    {
-      "id": 11,
-      "slug": "defining-the-process",
-      "title": "Defining the Process",
-      "excerpt": "",
-      "author": "Bradley R. Clampitt",
-      "date": "2025-11-20",
+      "date": "2025-09-10",
       "category": "devops",
-      "tags": [],
+      "tags": [
+        "Cloudflare",
+        "Security",
+        "Performance",
+        "CDN",
+        "Example"
+      ],
       "featured": false,
-      "readTime": "1 min read",
+      "readTime": "3 min read",
       "coverImage": ""
     },
     {
-      "id": 9,
-      "slug": "this-is-a-test",
-      "title": "This is a test",
-      "excerpt": "A lightweight, Markdown-driven blog engine for GitHub with Confluence-style formatting and Python automation.",
+      "id": 1,
+      "slug": "confluence-style-features",
+      "title": "Additional features and examples for the Blog Management System",
+      "excerpt": "Discover the new Confluence-style markdown features in our blog system, including info boxes, enhanced image handling, and professional content formatting.",
       "author": "Bradley R. Clampitt",
-      "date": "2025-11-09",
-      "category": "tests",
+      "date": "2025-09-01",
+      "category": "announcements",
       "tags": [
         "Markdown",
-        "Development",
-        "Automation",
-        "Python",
-        "GitHub Pages"
+        "Content",
+        "Features"
       ],
       "featured": false,
       "readTime": "8 min read",
-      "coverImage": ""
-    },
-    {
-      "id": 13,
-      "slug": "lose-a-job-and-the-issues-as-a-family",
-      "title": "Lose a Job and the issues as a family",
-      "excerpt": "",
-      "author": "Bradley R. Clampitt",
-      "date": "2025-09-12",
-      "category": "Personal",
-      "tags": [],
-      "featured": false,
-      "readTime": "1 min read",
       "coverImage": ""
     },
     {
@@ -64,7 +42,7 @@
       "title": "Introducing My New Custom Blog Management System",
       "excerpt": "A lightweight, Markdown-driven blog engine for GitHub with Confluence-style formatting and Python automation.",
       "author": "Bradley R. Clampitt",
-      "date": "2025-06-10",
+      "date": "2025-08-10",
       "category": "announcements",
       "tags": [
         "Markdown",
@@ -74,42 +52,7 @@
         "GitHub Pages"
       ],
       "featured": true,
-      "readTime": "7 min read",
-      "coverImage": ""
-    },
-    {
-      "id": 1,
-      "slug": "confluence-style-features",
-      "title": "Enhanced Blog with Confluence-Style Markdown Elements",
-      "excerpt": "Discover the new Confluence-style markdown features in our blog system, including info boxes, enhanced image handling, and professional content formatting.",
-      "author": "Bradley R. Clampitt",
-      "date": "2025-01-01",
-      "category": "tutorials",
-      "tags": [
-        "Markdown",
-        "Content",
-        "Features"
-      ],
-      "featured": true,
-      "readTime": "8 min read",
-      "coverImage": ""
-    },
-    {
-      "id": 10,
-      "slug": "cloudflare-edge-security",
-      "title": "Implementing Cloudflare Edge Security for Better Performance and Protection",
-      "excerpt": "Comprehensive guide to configuring Cloudflare edge security features including WAF, DDoS protection, and global edge computing to enhance your website's performance and security.",
-      "author": "Bradley R. Clampitt",
-      "date": "2024-12-20",
-      "category": "devops",
-      "tags": [
-        "Cloudflare",
-        "Security",
-        "Performance",
-        "CDN"
-      ],
-      "featured": false,
-      "readTime": "10 min read",
+      "readTime": "6 min read",
       "coverImage": ""
     },
     {
@@ -127,7 +70,7 @@
         "CI/CD"
       ],
       "featured": false,
-      "readTime": "14 min read",
+      "readTime": "4 min read",
       "coverImage": ""
     },
     {
@@ -145,7 +88,7 @@
         "CSS"
       ],
       "featured": false,
-      "readTime": "12 min read",
+      "readTime": "5 min read",
       "coverImage": ""
     },
     {
@@ -162,8 +105,8 @@
         "Docker",
         "DevOps"
       ],
-      "featured": true,
-      "readTime": "12 min read",
+      "featured": false,
+      "readTime": "2 min read",
       "coverImage": ""
     },
     {
@@ -181,7 +124,7 @@
         "State Management"
       ],
       "featured": false,
-      "readTime": "11 min read",
+      "readTime": "8 min read",
       "coverImage": ""
     },
     {
@@ -199,7 +142,7 @@
         "DevOps"
       ],
       "featured": false,
-      "readTime": "13 min read",
+      "readTime": "12 min read",
       "coverImage": ""
     },
     {
@@ -216,7 +159,7 @@
         "Development"
       ],
       "featured": false,
-      "readTime": "8 min read",
+      "readTime": "2 min read",
       "coverImage": ""
     }
   ]

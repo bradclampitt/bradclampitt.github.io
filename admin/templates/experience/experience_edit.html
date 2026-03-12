@@ -233,7 +233,7 @@ function experienceForm() {
 }
 </script>
 
-<div class="max-w-5xl mx-auto" x-data="experienceForm()" x-init="init()">
+<div class="w-full" x-data="experienceForm()" x-init="init()">
     <form method="POST" action="/admin/experience/save" class="space-y-8">
         {% if job %}
         <input type="hidden" name="job_id" value="{{ job.id }}">
@@ -244,12 +244,12 @@ function experienceForm() {
         <input type="hidden" id="key_achievements" name="key_achievements" value="">
         <input type="hidden" id="key_responsibilities" name="key_responsibilities" value="">
 
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-900">{{ job.job_title if job else 'New Job Experience' }}</h1>
+        <div class="flex items-center gap-4 mb-6">
+            <div class="flex-1 min-w-0">
+                <h1 class="text-3xl font-bold text-slate-900 break-words">{{ job.job_title if job else 'New Job Experience' }}</h1>
                 <p class="mt-2 text-slate-600">Fill in the job experience details below</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-3 flex-shrink-0 whitespace-nowrap">
                 <a href="/admin/experience" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
                     <i class="fas fa-arrow-left mr-2"></i>Back
                 </a>
@@ -502,4 +502,3 @@ function experienceForm() {
     </form>
 </div>
 {% endblock %}
-

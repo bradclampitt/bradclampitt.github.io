@@ -11,9 +11,39 @@
                 <h2 class="text-3xl font-semibold text-slate-900">Documents</h2>
                 <p class="text-sm text-slate-500 mt-1">Manage your documents</p>
             </div>
-            <a href="/admin/documents/new" class="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                <i class="fas fa-plus mr-2"></i>New Document
-            </a>
+            <div class="flex flex-wrap gap-3">
+                <form method="POST" action="/admin/documents/regenerate" onsubmit="return confirm('Re-generate all published document pages?');">
+                    <button type="submit" class="inline-flex items-center justify-center bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition">
+                        <i class="fas fa-sync-alt mr-2"></i>Regenerate Pages
+                    </button>
+                </form>
+                <a href="/admin/documents/new" class="inline-flex items-center justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-plus mr-2"></i>New Document
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Documents</label>
+                <input type="text" 
+                       placeholder="Type to search by title, category, or type..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="title">Title</option>
+                    <option value="updated">Updated Date</option>
+                    <option value="category">Category</option>
+                </select>
+            </div>
         </div>
 
         <div class="overflow-x-auto -mx-6 px-6">
@@ -29,8 +59,8 @@
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedDocuments().length">
-                    <template x-for="doc in paginatedDocuments()" :key="doc.id">
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="filteredAndPaginatedDocuments().length">
+                    <template x-for="doc in filteredAndPaginatedDocuments()" :key="doc.id">
                         <tr class="hover:bg-slate-50">
                             <td class="px-3 py-4 sm:px-4">
                                 <div class="text-sm font-medium text-slate-900" x-text="doc.title"></div>
@@ -86,9 +116,9 @@
                         </tr>
                     </template>
                 </tbody>
-                <tbody x-show="!paginatedDocuments().length">
+                <tbody x-show="!filteredAndPaginatedDocuments().length">
                     <tr>
-                        <td colspan="7" class="px-6 py-6 text-center text-slate-500">No documents yet.</td>
+                        <td colspan="7" class="px-6 py-6 text-center text-slate-500">No documents match your filters.</td>
                     </tr>
                 </tbody>
             </table>
@@ -101,21 +131,21 @@
                 <span>Per page</span>
                 <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
                     <template x-for="size in perPageOptions" :key="'doc-size-' + size">
-                        <option :value="size" x-text="size"></option>
+                        <option :value="size" :selected="perPage === size" x-text="size"></option>
                     </template>
                 </select>
             </div>
-            
+
             <!-- Middle: Showing count -->
             <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
-            
+
             <!-- Right: Page navigation -->
             <div class="flex items-center gap-2">
                 <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
                 <template x-for="page in pageNumbers()" :key="'doc-page-' + page">
-                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
-                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
-                            @click="goToPage(page)" 
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold"
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            @click="goToPage(page)"
                             x-text="page"></button>
                 </template>
                 <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
@@ -131,16 +161,103 @@ function documentsTable(initial) {
         perPage: 10,
         currentPage: 1,
         documents: initial.documents || [],
+        searchQuery: '',
+        sortBy: 'title',
         init() {
-            this.$watch('perPage', () => { this.currentPage = 1; });
+            const savedPerPage = parseInt(localStorage.getItem('documents.perPage'), 10);
+            if (this.perPageOptions.includes(savedPerPage)) {
+                this.perPage = savedPerPage;
+            }
+            this.$watch('perPage', (value) => {
+                this.currentPage = 1;
+                localStorage.setItem('documents.perPage', value);
+            });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
+            this.checkUrlParams();
+        },
+        filteredDocuments() {
+            let filtered = [...this.documents];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(doc => 
+                    (doc.title || '').toLowerCase().includes(query) ||
+                    (doc.category_label || '').toLowerCase().includes(query) ||
+                    (doc.type_label || '').toLowerCase().includes(query) ||
+                    (doc.summary || '').toLowerCase().includes(query)
+                );
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(this.sortBy) {
+                    case 'updated':
+                        aVal = (a.updated_at || '').toLowerCase();
+                        bVal = (b.updated_at || '').toLowerCase();
+                        return bVal.localeCompare(aVal); // Descending
+                    case 'category':
+                        aVal = (a.category_label || '').toLowerCase();
+                        bVal = (b.category_label || '').toLowerCase();
+                        break;
+                    case 'title':
+                    default:
+                        aVal = (a.title || '').toLowerCase();
+                        bVal = (b.title || '').toLowerCase();
+                        break;
+                }
+                
+                if (aVal < bVal) return -1;
+                if (aVal > bVal) return 1;
+                return 0;
+            });
+            
+            return filtered;
+        },
+        filteredAndPaginatedDocuments() {
+            const filtered = this.filteredDocuments();
+            const start = (this.currentPage - 1) * this.perPage;
+            return filtered.slice(start, start + this.perPage);
+        },
+        
+        checkUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const success = params.get('success');
+            const title = params.get('title');
+            
+            if (success === 'saved' && title) {
+                const decodedTitle = decodeURIComponent(title);
+                this.showToast('success', `"${decodedTitle}" document was saved successfully`);
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        },
+        
+        showToast(type, message) {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 z-[10002] px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 transition-all duration-300 ${
+                type === 'success' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-red-600 text-white'
+            }`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
         },
         totalPages() {
-            const total = this.documents.length;
+            const total = this.filteredDocuments().length;
             return Math.max(1, Math.ceil(total / this.perPage));
-        },
-        paginatedDocuments() {
-            const start = (this.currentPage - 1) * this.perPage;
-            return this.documents.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -156,27 +273,28 @@ function documentsTable(initial) {
             const total = this.totalPages();
             if (total === 0) return [];
             if (total === 1) return [1];
-            
+
             const current = this.currentPage;
             const pages = [];
-            
+
             // Show current page and 1 page on each side
             const start = Math.max(1, current - 1);
             const end = Math.min(total, current + 1);
-            
+
             for (let i = start; i <= end; i++) {
                 pages.push(i);
             }
-            
+
             return pages;
         },
         rangeSummary() {
-            if (!this.documents.length) {
+            const filtered = this.filteredDocuments();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.documents.length);
-            return `Showing ${start}-${end} of ${this.documents.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
         },
     };
 }

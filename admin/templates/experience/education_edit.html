@@ -4,19 +4,19 @@
 {% block header_title %}{{ 'Edit Education' if edu else 'New Education' }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="w-full">
     <form method="POST" action="/admin/experience/education/save" class="space-y-6">
         {% if edu %}
         <input type="hidden" name="edu_id" value="{{ edu.id }}">
         {% endif %}
 
         <div class="bg-white rounded-lg shadow p-6 space-y-6">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900">{{ edu.certificate_name if edu else 'New Education Entry' }}</h1>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-3xl font-bold text-slate-900 break-words">{{ edu.certificate_name if edu else 'New Education Entry' }}</h1>
                     <p class="mt-2 text-slate-600">Fill in the education details below</p>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 flex-shrink-0 whitespace-nowrap">
                     <a href="/admin/experience/education" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
                         <i class="fas fa-arrow-left mr-2"></i>Back
                     </a>

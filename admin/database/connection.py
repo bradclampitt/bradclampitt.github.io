@@ -23,7 +23,7 @@ def ensure_database() -> None:
     Creates database and applies schema if it doesn't exist.
     """
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    
+
     if not DATABASE_PATH.exists():
         if SCHEMA_PATH.exists():
             with sqlite3.connect(DATABASE_PATH) as conn, \
@@ -32,4 +32,18 @@ def ensure_database() -> None:
         else:
             # Create empty database if schema doesn't exist
             sqlite3.connect(DATABASE_PATH).close()
+    else:
+        # Migrate existing database: add featured column to documents table if missing
+        try:
+            with sqlite3.connect(DATABASE_PATH) as conn:
+                cursor = conn.cursor()
+                # Check if featured column exists
+                cursor.execute("PRAGMA table_info(documents)")
+                columns = [row[1] for row in cursor.fetchall()]
+                if 'featured' not in columns:
+                    cursor.execute("ALTER TABLE documents ADD COLUMN featured INTEGER DEFAULT 0")
+                    conn.commit()
+        except Exception as e:
+            # If table doesn't exist or other error, schema will be applied on next startup
+            pass
 

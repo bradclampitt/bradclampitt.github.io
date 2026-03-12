@@ -15,7 +15,7 @@ yarn-error.log*
 
 # Optional: if you create build folders later
 dist/
- 
+
 # Python virtualenvs and caches
 venv/
 venv3/
@@ -23,10 +23,9 @@ admin/venv/
 __pycache__/
 *.py[cod]
 
-# Production databases (contain real data - NOT for GitHub)
-admin/database/unified.sqlite
+# SQLite: ignore all by default; allow unified for GitHub Pages (sql.js loads it client-side)
 *.sqlite
-!admin/database/demo.sqlite  # Allow demo database for GitHub
+!admin/database/unified.sqlite
 
 # Log files
 *.log
@@ -43,3 +42,11 @@ assets/css/tailwind-built.css
 # Archive folder contains old generator attempts and is not needed on GitHub Pages.
 # We keep it local-only to reduce repository noise and size.
 blog/archive/
+
+# Archived Items that we do not need to push to Github.
+_archived/
+
+# Development files
+.specstory/*
+admin/document_save_debug.txt
+admin/admin.pid

@@ -62,19 +62,19 @@ function companyForm() {
 }
 </script>
 
-<div class="max-w-3xl mx-auto" x-data="companyForm()">
+<div class="w-full" x-data="companyForm()">
     <form method="POST" action="/admin/experience/companies/save" class="space-y-6">
         {% if company %}
         <input type="hidden" name="company_id" value="{{ company.id }}">
         {% endif %}
 
         <div class="bg-white rounded-lg shadow p-6 space-y-6">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900">{{ company.name if company else 'New Company' }}</h1>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-3xl font-bold text-slate-900 break-words">{{ company.name if company else 'New Company' }}</h1>
                     <p class="mt-2 text-slate-600">Fill in the company details below</p>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 flex-shrink-0 whitespace-nowrap">
                     <a href="/admin/experience/companies" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
                         <i class="fas fa-arrow-left mr-2"></i>Back
                     </a>

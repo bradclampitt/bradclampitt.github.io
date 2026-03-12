@@ -4,7 +4,7 @@
 {% block header_title %}{{ 'Edit Magento Module' if module else 'New Magento Module' }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="w-full">
     <form method="POST" action="/admin/magento/save" class="space-y-8" x-data="magentoModuleForm()" @submit="syncFormData($event)">
         {% if module %}
         <input type="hidden" name="module_id" value="{{ module.id }}">
@@ -148,20 +148,26 @@
             <h2 class="text-xl font-semibold text-slate-900 mb-4">Technologies</h2>
             <div x-ref="technologiesContainer">
                 <template x-for="(item, index) in technologies" :key="index">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-center">
-                        <div class="md:col-span-5">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
                             <input type="text" x-model="item.name"
                                    placeholder="Technology name"
                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                        <div class="md:col-span-6">
+                        <div class="flex items-center gap-2 flex-1">
                             <input type="text" x-model="item.icon"
                                    placeholder="Icon class (e.g., fas fa-code)"
-                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                   class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div x-show="item.icon && item.icon.trim()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg bg-slate-50">
+                                <i :class="item.icon.trim()" class="text-xl text-slate-700"></i>
+                            </div>
+                            <div x-show="!item.icon || !item.icon.trim()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg bg-slate-100">
+                                <i class="fas fa-image text-slate-400 text-sm"></i>
+                            </div>
                         </div>
-                        <div class="md:col-span-1">
+                        <div class="flex-shrink-0">
                             <button type="button" @click="removeTechnology(index)" 
-                                    class="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition" 
+                                    class="w-10 h-10 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center justify-center" 
                                     title="Remove this technology">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -179,25 +185,31 @@
             <h2 class="text-xl font-semibold text-slate-900 mb-4">Features</h2>
             <div x-ref="featuresContainer">
                 <template x-for="(item, index) in features" :key="index">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-center">
-                        <div class="md:col-span-3">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
                             <input type="text" x-model="item.name"
                                    placeholder="Feature name"
                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                        <div class="md:col-span-3">
+                        <div class="flex items-center gap-2 flex-1">
                             <input type="text" x-model="item.icon"
-                                   placeholder="Icon class"
-                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                   placeholder="Icon class (e.g., fas fa-code)"
+                                   class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div x-show="item.icon && item.icon.trim()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg bg-slate-50">
+                                <i :class="item.icon.trim()" class="text-xl text-slate-700"></i>
+                            </div>
+                            <div x-show="!item.icon || !item.icon.trim()" class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg bg-slate-100">
+                                <i class="fas fa-image text-slate-400 text-sm"></i>
+                            </div>
                         </div>
-                        <div class="md:col-span-5">
+                        <div class="flex-1">
                             <input type="text" x-model="item.description"
                                    placeholder="Description (optional)"
                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
-                        <div class="md:col-span-1">
+                        <div class="flex-shrink-0">
                             <button type="button" @click="removeFeature(index)" 
-                                    class="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition" 
+                                    class="w-10 h-10 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center justify-center" 
                                     title="Remove this feature">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -257,19 +269,42 @@
             
             <!-- Upload Form -->
             <div class="mb-6 space-y-4">
-                <form method="POST" action="/admin/magento/images/upload" enctype="multipart/form-data" novalidate @submit.prevent="uploadImage($event)">
+                <!-- Error/Success Messages -->
+                <div x-show="getUrlParameter('error') || getUrlParameter('success')" 
+                     x-cloak
+                     x-init="setTimeout(() => { const url = new URL(window.location); url.searchParams.delete('error'); url.searchParams.delete('success'); window.history.replaceState({}, '', url); }, 5000)"
+                     class="p-4 rounded-lg"
+                     :class="getUrlParameter('error') ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-green-50 border border-green-200 text-green-800'">
+                    <div class="flex items-center">
+                        <i :class="getUrlParameter('error') ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'" class="mr-2"></i>
+                        <span x-text="decodeURIComponent(getUrlParameter('error') || getUrlParameter('success') || '')"></span>
+                    </div>
+                </div>
+                
+                <form method="POST" action="/admin/magento/images/upload" enctype="multipart/form-data" novalidate @submit.prevent="if (hasFile) { uploadImage($event); } else { alert('Please select an image file to upload.'); return false; }">
                     <input type="hidden" name="module_id" value="{{ module.id }}">
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <input type="file" name="file" accept="image/*" x-ref="fileInput"
+                        <input type="file" name="file" accept="image/*" required
+                               @change="hasFile = $event.target.files.length > 0; fileName = hasFile ? $event.target.files[0].name : '';"
+                               x-ref="fileInput"
                                class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <label class="flex items-center px-4 py-2 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
                             <input type="checkbox" name="is_cover" x-model="uploadAsCover" class="mr-2">
                             <span class="text-sm text-slate-700">Set as Cover Image</span>
                         </label>
-                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <button type="submit" 
+                                :disabled="!hasFile"
+                                :class="hasFile ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                                class="text-white px-6 py-2 rounded-lg transition">
                             <i class="fas fa-upload mr-2"></i>Upload
                         </button>
                     </div>
+                    <p class="text-xs text-slate-500 mt-2" x-show="hasFile">
+                        Selected: <span x-text="fileName" class="font-medium"></span>
+                    </p>
+                    <p class="text-xs text-slate-500 mt-2" x-show="!hasFile">
+                        Please select an image file (PNG, JPG, JPEG, GIF, WEBP, SVG)
+                    </p>
                 </form>
                 
                 <!-- Browse Existing Images Button -->
@@ -295,7 +330,7 @@
                 <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
                     <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-slate-900">Select Existing Image</h3>
-                        <button @click="closeImageBrowser()" class="text-gray-400 hover:text-gray-600">
+                        <button type="button" @click="closeImageBrowser()" class="text-gray-400 hover:text-gray-600">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
@@ -303,15 +338,18 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-show="!browserLoading && availableImages.length > 0">
                             <template x-for="img in availableImages" :key="img.url">
                                 <div class="relative group border-2 rounded-lg overflow-hidden cursor-pointer transition-all"
-                                     :class="selectedBrowserImage === img.url ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'"
-                                     @click="selectedBrowserImage = img.url">
+                                     :class="isImageSelected(img.url) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'"
+                                     @click="toggleImageSelection(img.url)">
                                     <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
                                         <img :src="img.url" :alt="img.filename" class="w-full h-full object-cover">
                                     </div>
                                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity"></div>
                                     <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-2 truncate" x-text="img.filename"></div>
-                                    <div x-show="selectedBrowserImage === img.url" class="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1">
+                                    <div x-show="isImageSelected(img.url)" class="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1.5">
                                         <i class="fas fa-check text-xs"></i>
+                                    </div>
+                                    <div x-show="isImageSelected(img.url) && selectedBrowserImages.indexOf(img.url) === 0" class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                                        Main
                                     </div>
                                 </div>
                             </template>
@@ -325,8 +363,27 @@
                             <p class="text-gray-500">Loading images...</p>
                         </div>
                     </div>
-                    <div class="px-6 py-4 border-t border-gray-200 space-y-4">
-                        <div x-show="selectedBrowserImage" class="space-y-3">
+                    <div class="px-6 py-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="text-sm text-gray-600">
+                                <span x-text="availableImages.length"></span> images found
+                                <span x-show="selectedBrowserImages.length > 0" class="ml-2 text-blue-600 font-semibold">
+                                    (<span x-text="selectedBrowserImages.length"></span> selected)
+                                </span>
+                            </div>
+                            <div class="flex gap-3">
+                                <button type="button" @click="closeImageBrowser()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button @click="addSelectedImage()" 
+                                        :disabled="selectedBrowserImages.length === 0"
+                                        :class="selectedBrowserImages.length > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                                        class="px-4 py-2 text-white rounded-lg transition">
+                                    <i class="fas fa-check mr-2"></i>Select <span x-show="selectedBrowserImages.length > 0" x-text="selectedBrowserImages.length"></span> Image<span x-show="selectedBrowserImages.length !== 1">s</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div x-show="selectedBrowserImages.length > 0" class="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Image Description (Optional)</label>
                                 <input type="text" x-model="browserImageAlt" 
@@ -335,24 +392,12 @@
                             </div>
                             <label class="flex items-center">
                                 <input type="checkbox" x-model="browserImageAsCover" class="mr-2">
-                                <span class="text-sm text-slate-700">Set as Cover Image</span>
+                                <span class="text-sm text-slate-700">Set First Selected as Cover Image</span>
                             </label>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-600">
-                                <span x-text="availableImages.length"></span> images found
-                            </div>
-                            <div class="flex gap-3">
-                                <button @click="closeImageBrowser()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    Cancel
-                                </button>
-                                <button @click="addSelectedImage()" 
-                                        :disabled="!selectedBrowserImage"
-                                        :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
-                                        class="px-4 py-2 text-white rounded-lg transition">
-                                    <i class="fas fa-plus mr-2"></i>Add Selected Image
-                                </button>
-                            </div>
+                            <p class="text-xs text-blue-800">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <strong>Note:</strong> The first selected image will be used as the main image. You can reorder by clicking images in your desired order.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -378,14 +423,16 @@
                             </template>
                         </div>
                         <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button @click.stop="setCover(index)" 
+                            <button @click.stop="toggleCover(index)" 
                                     :class="img.is_cover ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-blue-50'"
-                                    class="p-1.5 rounded shadow-sm" title="Set as cover">
+                                    class="p-1.5 rounded shadow-sm" 
+                                    :title="img.is_cover ? 'Unset cover image' : 'Set as cover image'">
                                 <i class="fas fa-star text-xs"></i>
                             </button>
-                            <button @click.stop="deleteImage(img.id, index)" 
-                                    class="bg-red-600 text-white p-1.5 rounded shadow-sm hover:bg-red-700" title="Delete image">
-                                <i class="fas fa-trash text-xs"></i>
+                            <button @click.stop="removeImage(img.id, index)" 
+                                    class="bg-red-600 text-white p-1.5 rounded shadow-sm hover:bg-red-700" 
+                                    title="Remove from module (keeps file in system)">
+                                <i class="fas fa-times text-xs"></i>
                             </button>
                         </div>
                         <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1" x-show="img.is_cover">
@@ -452,20 +499,31 @@
                     
                     <!-- Image Info -->
                     <div class="p-4 border-t border-gray-200" x-show="currentImage">
-                        <div class="mb-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Image Description</label>
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Image Caption</label>
                             <input type="text" 
                                    :value="currentImage ? currentImage.alt : ''"
                                    @input="if (currentImage) currentImage.alt = $event.target.value"
                                    @blur="if (currentImage && currentImage.id) updateImageDescription(currentImage.id, currentImage.alt)"
-                                   placeholder="Enter image description..."
+                                   placeholder="Enter image caption/description..."
                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p class="text-xs text-slate-500 mt-1">Caption will be saved automatically when you click away from this field.</p>
                         </div>
-                        <div class="flex items-center justify-between text-sm text-slate-500">
-                            <span x-text="`Image ${currentIndex + 1} of ${images.length}`"></span>
-                            <span x-show="currentImage && currentImage.is_cover" class="text-blue-600">
-                                <i class="fas fa-star mr-1"></i>Cover Image
-                            </span>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4 text-sm">
+                                <span class="text-slate-500" x-text="`Image ${currentIndex + 1} of ${images.length}`"></span>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" 
+                                           :checked="currentImage && currentImage.is_cover"
+                                           @change="if (currentImage) toggleCover(currentIndex)"
+                                           class="mr-2 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-slate-700">Set as Cover Image</span>
+                                </label>
+                            </div>
+                            <button @click="if (currentImage && currentImage.id) removeImage(currentImage.id, currentIndex)" 
+                                    class="text-sm text-red-600 hover:text-red-800 px-3 py-1 rounded hover:bg-red-50 transition">
+                                <i class="fas fa-times mr-1"></i>Remove from Module
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -619,11 +677,17 @@ function imageGallery(initialImages, moduleId) {
         showModal: false,
         currentIndex: 0,
         uploadAsCover: false,
+        hasFile: false,
+        fileName: '',
+        getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        },
         moduleId: moduleId,
         showBrowserModal: false,
         browserLoading: false,
         availableImages: [],
-        selectedBrowserImage: null,
+        selectedBrowserImages: [],
         browserImageAlt: '',
         browserImageAsCover: false,
         get currentImage() {
@@ -680,14 +744,16 @@ function imageGallery(initialImages, moduleId) {
                 alert('Error uploading image');
             }
         },
-        async setCover(index) {
+        async toggleCover(index) {
             const image = this.images[index];
             if (!image) return;
             
+            // Toggle cover status
+            const newCoverStatus = !image.is_cover;
+            
             try {
                 const formData = new FormData();
-                formData.append('image_id', image.id);
-                formData.append('is_cover', 'true');
+                formData.append('is_cover', newCoverStatus ? 'true' : 'false');
                 
                 const response = await fetch(`/admin/magento/images/${image.id}/set-cover`, {
                     method: 'POST',
@@ -695,23 +761,27 @@ function imageGallery(initialImages, moduleId) {
                 });
                 
                 if (response.ok) {
-                    // Unset all other cover images
-                    this.images.forEach(img => {
-                        if (img.id !== image.id) {
-                            img.is_cover = false;
-                        }
-                    });
-                    image.is_cover = true;
+                    const result = await response.json();
+                    // Update all images based on response
+                    if (newCoverStatus) {
+                        // Unset all other cover images
+                        this.images.forEach(img => {
+                            if (img.id !== image.id) {
+                                img.is_cover = false;
+                            }
+                        });
+                    }
+                    image.is_cover = result.is_cover;
                 } else {
-                    alert('Failed to set cover image');
+                    alert('Failed to update cover image');
                 }
             } catch (error) {
-                console.error('Set cover error:', error);
-                alert('Error setting cover image');
+                console.error('Toggle cover error:', error);
+                alert('Error updating cover image');
             }
         },
-        async deleteImage(imageId, index) {
-            if (!confirm('Are you sure you want to delete this image?')) {
+        async removeImage(imageId, index) {
+            if (!confirm('Are you sure you want to remove this image from the module? The image file will remain in the system.')) {
                 return;
             }
             
@@ -729,11 +799,11 @@ function imageGallery(initialImages, moduleId) {
                         this.closeModal();
                     }
                 } else {
-                    alert('Failed to delete image');
+                    alert('Failed to remove image');
                 }
             } catch (error) {
-                console.error('Delete error:', error);
-                alert('Error deleting image');
+                console.error('Remove image error:', error);
+                alert('Error removing image');
             }
         },
         async updateImageDescription(imageId, description) {
@@ -757,7 +827,7 @@ function imageGallery(initialImages, moduleId) {
         async openImageBrowser() {
             this.showBrowserModal = true;
             this.browserLoading = true;
-            this.selectedBrowserImage = null;
+            this.selectedBrowserImages = [];
             this.browserImageAlt = '';
             this.browserImageAsCover = false;
             
@@ -774,39 +844,59 @@ function imageGallery(initialImages, moduleId) {
         },
         closeImageBrowser() {
             this.showBrowserModal = false;
-            this.selectedBrowserImage = null;
+            this.selectedBrowserImages = [];
             this.browserImageAlt = '';
             this.browserImageAsCover = false;
         },
+        toggleImageSelection(imgUrl) {
+            const index = this.selectedBrowserImages.indexOf(imgUrl);
+            if (index > -1) {
+                // If already selected, move it to the front (make it the main image)
+                this.selectedBrowserImages.splice(index, 1);
+                this.selectedBrowserImages.unshift(imgUrl);
+            } else {
+                // If not selected, add it to the end
+                this.selectedBrowserImages.push(imgUrl);
+            }
+        },
+        isImageSelected(imgUrl) {
+            return this.selectedBrowserImages.includes(imgUrl);
+        },
         async addSelectedImage() {
-            if (!this.selectedBrowserImage) return;
+            if (!this.selectedBrowserImages || this.selectedBrowserImages.length === 0) return;
             
             try {
-                const formData = new FormData();
-                formData.append('module_id', this.moduleId);
-                formData.append('url', this.selectedBrowserImage);
-                formData.append('alt', this.browserImageAlt || '');
-                formData.append('is_cover', this.browserImageAsCover ? 'true' : 'false');
-                
-                const response = await fetch('/admin/magento/images/add-existing', {
-                    method: 'POST',
-                    body: formData,
-                    redirect: 'follow'
-                });
-                
-                // Check for successful response (200-399 includes redirects like 303)
-                // When fetch follows a redirect, it returns the final response (usually 200)
-                if (response.status >= 200 && response.status < 400) {
-                    window.location.reload();
-                } else {
-                    const errorText = await response.text().catch(() => 'Unknown error');
-                    console.error('Failed to add image:', response.status, errorText);
-                    alert('Failed to add image. Status: ' + response.status);
+                // Add all selected images
+                for (let i = 0; i < this.selectedBrowserImages.length; i++) {
+                    const imgUrl = this.selectedBrowserImages[i];
+                    const formData = new FormData();
+                    formData.append('module_id', this.moduleId);
+                    formData.append('url', imgUrl);
+                    formData.append('alt', this.browserImageAlt || '');
+                    // Only set the first image as cover if the checkbox is checked
+                    formData.append('is_cover', (this.browserImageAsCover && i === 0) ? 'true' : 'false');
+                    
+                    const response = await fetch('/admin/magento/images/add-existing', {
+                        method: 'POST',
+                        body: formData,
+                        redirect: 'follow'
+                    });
+                    
+                    if (response.status < 200 || response.status >= 400) {
+                        const errorText = await response.text().catch(() => 'Unknown error');
+                        console.error('Failed to add image:', response.status, errorText);
+                        if (i === 0) {
+                            alert('Failed to add image. Status: ' + response.status);
+                            return;
+                        }
+                    }
                 }
+                
+                // Reload after all images are added
+                window.location.reload();
             } catch (error) {
                 console.error('Add image error:', error);
-                // Even if there's an error, reload to see if the image was actually added
-                // (the backend might have succeeded even if the response handling failed)
+                // Even if there's an error, reload to see if the images were actually added
                 setTimeout(() => window.location.reload(), 500);
             }
         }
@@ -862,4 +952,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

@@ -19,14 +19,6 @@
                     </svg>
                     <input type="search" placeholder="Filter tags" class="w-full border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:ring-0" x-model="query">
                 </label>
-                <div class="flex items-center gap-4 text-sm text-slate-500">
-                    <span>Per page</span>
-                    <select class="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" x-model.number="perPage" style="padding-left: 20px; padding-right: 30px;">
-                        <template x-for="size in perPageOptions" :key="'page-' + size">
-                            <option :value="size" x-text="size"></option>
-                        </template>
-                    </select>
-                </div>
             </div>
         </div>
 
@@ -76,13 +68,26 @@
 
         <!-- Pagination -->
         <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-sm text-slate-500" x-text="rangeSummary()"></p>
+            <!-- Left: Per Page Dropdown -->
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span>Per page</span>
+                <select class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 focus:border-blue-500 focus:ring-blue-500" style="padding-right: 2rem" x-model.number="perPage">
+                    <template x-for="size in perPageOptions" :key="'page-' + size">
+                        <option :value="size" x-text="size"></option>
+                    </template>
+                </select>
+            </div>
+
+            <!-- Middle: Showing count -->
+            <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
+
+            <!-- Right: Page navigation -->
             <div class="flex items-center gap-2">
-                <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
                 <template x-for="page in pageWindow()" :key="'tag-page-' + page">
-                    <button type="button" class="rounded-2xl border px-3 py-1 text-xs font-semibold" :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" @click="goToPage(page)" x-text="page"></button>
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" @click="goToPage(page)" x-text="page"></button>
                 </template>
-                <button type="button" class="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
+                <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
             </div>
         </div>
     </section>

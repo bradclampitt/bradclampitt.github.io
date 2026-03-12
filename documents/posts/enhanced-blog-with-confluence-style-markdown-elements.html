@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Blog with Confluence Style Markdown Elements - Bradley R. Clampitt</title>
+    <!-- Tailwind CSS -->
+    <link href="../../assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- Alpine.js -->
+    <script src="../../assets/js/alpine.js" defer></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- PrismJS for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+        .main-content {
+            overflow-x: hidden;
+        }
+        .main-content,
+        .markdown-content,
+        #document-content,
+        article {
+            width: 100%;
+            max-width: none;
+        }
+
+        /* Universal code block styling - Confluence-like */
+        .code-block pre,
+        .code-block pre[class*=language-],
+        pre[class*=language-],
+        pre.line-numbers {
+            background: #F0F1F2 !important; /* pale blue */
+            color: #0b1220 !important; /* dark code text */
+            text-shadow: none !important;
+            border: 1px solid rgba(12,40,72,0.06) !important;
+            border-radius: 10px !important;
+            /* push code content to the right of the gutter (gutter width ~40px + inset) */
+            padding: 0.25rem 0.75rem 0.25rem 4.5rem !important;
+            margin: 1.25rem 0 !important;
+            font-family: 'Fira Code', 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, monospace !important;
+            font-size: 0.95rem !important;
+            line-height: 1.7 !important;
+            box-shadow: none !important;
+            overflow: auto !important;
+            position: relative !important; /* For absolute positioning of gutter */
+        }
+
+        /* Code element styling (transparent background inside pre) */
+        .code-block code,
+        .code-block pre code,
+        pre[class*=language-] code,
+        pre code[class*=language-] {
+            color: inherit !important;
+            background: transparent !important;
+            font-family: inherit !important;
+            font-size: inherit !important;
+            line-height: inherit !important;
+            margin-left: 0 !important;                      /* Prevent overlap into gutter */
+            padding-left: 0 !important;
+            display: block !important;
+        }
+
+        /* Line numbers gutter: rounded dark box on the left with centered numbers */
+        .line-numbers, pre.line-numbers {
+            position: relative !important;
+            padding-left: 3.5rem !important;                /* Consistent space for gutter (56px); matches pre padding */
+        }
+
+        /* Gutter uses block flow so each span lines up with a code line. Avoid flex+gap which breaks alignment. */
+        .line-numbers .line-numbers-rows {
+            position: absolute !important;
+            left: 0px !important;
+            top: 0rem !important;                           /* match <pre> padding-top */
+            bottom: 0rem !important;                        /* match <pre> padding-bottom */
+            width: 55px !important;
+            box-sizing: border-box !important;
+            background: #E3E5E7 !important;
+            border-radius: 0px 0 0 0px !important;
+            padding: 0 !important;                          /* let spans define the height */
+            display: block !important;
+            overflow: hidden !important;                    /* no vertical scrollbar */
+            border-right: 0;
+        }
+
+        /* Each line number occupies the same height as a code line (use em to tie to font size).
+           This ensures numbers vertically align with code lines. Avoid gaps between items. */
+        .line-numbers-rows > span {
+            display: block !important;
+            height: 1.7em !important;                       /* match the <pre> line-height */
+            line-height: 1.7em !important;
+            text-align: center !important;
+            font-family: 'Fira Code','JetBrains Mono','SFMono-Regular',Menlo,Monaco,monospace !important;
+            font-size: 0.95rem !important;
+            color: #000000 !important;                      /* readable in light gutter */
+        }
+
+        /* Ensure the code block content itself doesn't add extra left padding/margin */
+        .line-numbers > code,
+        pre.line-numbers > code {
+            display: block !important;
+            margin: 0 !important;
+            padding-left: 0 !important;
+            white-space: pre !important;
+            margin-left: 0 !important;                          /* Extra safeguard against overlap */
+        }
+
+        .line-numbers-rows>span:before {
+            color: #000000 !important;                      /* dark line numbers */
+            padding-top: 3px;
+        }
+
+        /* Ensure code text doesn't overlap the left gutter */
+        .line-numbers code { 
+            display: block; 
+            padding-left: 0 !important; 
+            margin-left: 0 !important;
+        }
+
+        /* Override any other potential conflicts */
+        .code-block *,
+        .code-block pre *,
+        .code-block code * {
+            background: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Inline code chip */
+        code {
+            background: #e7f8ff;
+            border: 1px solid #c4c4c4;
+            padding: 0.25rem 0.25rem;
+            border-radius: 5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 0.95em;
+            white-space: nowrap;
+            margin: 0px 3px 0px 3px;
+        }
+        pre code { background: transparent; border: 0; padding: 0; }
+        .cust-rounded-lg { border-radius: 0.9rem !important; }
+        .cust-border-lg { border-left-width: 6px !important; }
+
+        /* Copy button for code blocks */
+        .code-block { position: relative; }
+        .code-copy-btn { position: absolute; right: 14px; top: 1px; background: rgba(255,255,255,0.98); border: 1px solid rgba(12,40,72,0.08); padding: 4px 7px; height: auto; border-radius: 8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; color:#0f1722; }
+        .code-copy-btn:hover { background: #f1f7ff; }
+        .code-copy-btn:active { transform: translateY(1px); }
+        .code-copy-toast { position: absolute; right: 16px; top: 56px; background: rgba(12,40,72,0.95); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; display: none; box-shadow: 0 4px 12px rgba(2,6,23,0.12); }
+
+        /* Clearfix for article content to contain floats */
+        article::after { content: ""; display: table; clear: both; }
+        article { overflow: auto; }
+
+        /* Ensure callout boxes are full-width and never allow floated images to intrude */
+        .info-box, .warning-box, .success-box, .error-box, .tip-box { clear: both; width: 100%; }
+
+        /* Horizontal paragraph padding applied by generator */
+        .px-10 { padding-left: 10px; padding-right: 10px; }
+
+        /* Inner padding used around img tags so surrounding text doesn't sit flush against image borders */
+        .fig-inner-pad { padding: 10px; box-sizing: border-box; }
+
+        /* Placeholder visual box used by the generator */
+        .placeholder-inner { border: 2px dashed #d1d5db; background-color: #f8fafc; padding: 10px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-weight: 500; }
+        .placeholder-inner.small { min-height: 120px; }
+        .placeholder-inner.default { min-height: 234px; }
+
+        /* Clearing helpers used before floated figures/sections */
+        .clear-left { clear: left; }
+        /* Use clear:both for right floats to ensure they drop below previous floats and block content when desired */
+        .clear-right { clear: both; margin-top: 56px; }
+        .clear-both { clear: both; margin-top: 12px; }
+
+        /* Placeholder spacing helpers: push text away from placeholder boxes */
+        .placeholder-mr { margin-right: 20px; }
+        .placeholder-ml { margin-left: 20px; }
+
+        /* Force-float helpers: apply both float and !important inline-like behavior
+        to ensure Safari honors the intended float direction in tricky layouts. */
+        .float-left-force { float: left !important; }
+        .float-right-force { float: right !important; }
+
+        /* HR spacing helper (used in generator to preserve separation) */
+        .hr-spaced { padding-top: 15px; padding-bottom: 15px; }
+
+        /* Constrain figure widths emitted by generator */
+        .figure-max-600 { max-width: 600px; }
+        .figure-max-300 { max-width: 300px; }
+
+        /* Figure alignment helpers: block-level figures that do NOT allow text wrapping
+        Use these for 'real' images so surrounding blog text appears only above or below. */
+        .figure-left { display: block; margin-left: 0; margin-right: auto; }
+        .figure-right { display: block; margin-left: auto; margin-right: 0; }
+        .figure-center { display: block; margin-left: auto; margin-right: auto; }
+
+        /* Default figcaption styling (below the image) */
+        figure figcaption { display: block; font-size: 0.875rem; color: #6b7280; margin-top: 8px; }
+
+        /* Callout padding wrapper (replaces inline padding on callout boxes) */
+        .callout-padding { padding: 18px; clear: both; width: 100%; }
+
+        /* Themed callouts (pastel backgrounds + padding) */
+        .callout { border-radius: 10px; padding: 14px 16px; margin: 16px 0; border: 1px solid #e6edf6; }
+        .callout .title { font-weight: 700; margin-bottom: 4px; display: inline-block; }
+        .callout.info    { background: #f0f7ff; }   /* light blue */
+        .callout.warning { background: #fff8db; }   /* light yellow */
+        .callout.success { background: #edfdf5; }   /* light green */
+        .callout.tip     { background: #f5f0ff; }   /* light indigo/purple */
+        .callout.error   { background: #ffe8e8; }   /* light red */
+
+        /* Keep full-width behavior and separation from floats */
+        .callout { clear: both; width: 100%; }
+
+        .callout { 
+            border-radius: 12px; 
+            padding: 14px 16px; 
+            margin: 16px 0; 
+            border: 1px solid #e6edf6; 
+            clear: both; 
+            width: 100%;
+            box-shadow: 0 1px 2px rgba(2,6,23,0.04);
+        }
+        .callout .row { display:flex; gap:12px; align-items:flex-start; }
+        .callout .icon { 
+            width: 28px;
+            height: 28px;
+            border-radius: 8px; 
+            display:inline-flex;
+            align-items:center;
+            justify-content:center; 
+            /*background:#ffffff;
+            border:1px solid rgba(12,40,72,0.08); */
+            flex: 0 0 28px;
+        }
+        .callout .title { font-weight: 700; margin-right: 6px; }
+
+        /* Pastel backgrounds per type + icon color */
+        .callout.info    { background:#f0f7ff; border-color:#dbeafe; }
+        .callout.info .icon i    { color:#1e40af; }  /* info */
+        .callout.warning { background:#fff7d6; border-color:#fde68a; }
+        .callout.warning .icon i { color:#b45309; }  /* warning */
+        .callout.success { background:#ecfdf5; border-color:#86efac; }
+        .callout.success .icon i { color:#15803d; }  /* success */
+        .callout.tip     { background:#f5f0ff; border-color:#d8b4fe; }
+        .callout.tip .icon i     { color:#6d28d9; }  /* tip */
+        .callout.error   { background:#ffe4e6; border-color:#fca5a5; }
+        .callout.error .icon i   { color:#b91c1c; }  /* error */
+
+        .fa-circle-info:before,
+        triangle-exclamation:before,
+        .fa-circle-check:before,
+        .fa-lightbulb:before,
+        .fa-circle-xmark:before { font-size: 22px; }
+
+        details summary .summary-icon, details.details-panel summary .summary-icon { font-size: 18px; }
+
+        /* Info panel (Confluence-like) */
+        .info-panel { background: #f8fbff; border-left: 4px solid #2b6cb0; padding: 14px; border-radius: 8px; display:flex; gap:12px; align-items:flex-start; }
+        .info-panel .icon { font-size: 18px; color: #ffffff; background: #1e40af; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; flex:0 0 28px; }
+        .info-panel .panel-body { color: #0f172a; line-height:1.5; }
+
+        /* Collapsible details styling (applies to plain <details> and .details-panel) */
+        details, details.details-panel { background: #ffffff; border: 1px solid #e6edf6; border-radius: 8px; padding: 0; overflow: hidden; box-shadow: 0 1px 2px rgba(2,6,23,0.04); }
+        details summary, details.details-panel summary { list-style: none; cursor: pointer; padding: 12px 14px; display:flex; align-items:center; gap:12px; font-weight:600; background: #f9fbfc; }
+        details summary::-webkit-details-marker, details.details-panel summary::-webkit-details-marker { display: none; }
+        details summary .summary-icon, details.details-panel summary .summary-icon { width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; background:#eef2ff; color:#1e40af; border-radius:6px; font-size:14px; transition: transform .18s ease; }
+        details[open] summary .summary-icon, details[open].details-panel summary .summary-icon { transform: rotate(90deg); }
+        details .details-content, details.details-panel .details-content { padding: 18px; border-top: 1px solid #eef3f8; background: #ffffff; }
+
+            /* Make nested details visually distinct and padded */
+        /* Nested details */
+        details details, details.details-panel details.details-panel { margin: 10px 0 0 0; border: 1px solid #eef3f8; box-shadow: none; border-radius: 6px; }
+        details details .details-content, details.details-panel details.details-panel .details-content { padding: 12px; background: #fbfdff; }
+
+        /* Ensure code blocks inside details are padded and scrollable */
+        details .code-block pre,
+        details pre[class*=language-],
+        details pre.line-numbers,
+        details.details-panel .code-block pre,
+        details.details-panel pre[class*=language-],
+        details.details-panel pre.line-numbers {
+            margin: 0 0 12px 0 !important;
+            padding: 12px !important;
+            border-radius: 6px !important;
+            box-shadow: none !important;
+            overflow: auto !important;
+            background: #F0F1F2 !important; /* readable light blue inside details */
+            color: #000000 !important;
+            text-shadow: none !important;
+            padding: 0.25rem 0.75rem 0.25rem 4.5rem !important;
+        }
+
+        /* Tables inside details should retain confluence-table styling with inner spacing */
+        details .confluence-table, details.details-panel .confluence-table { margin: 0 0 12px 0; border-radius:6px; overflow:hidden; }
+        details .confluence-table th, details .confluence-table td, details.details-panel .confluence-table th, details.details-panel .confluence-table td { padding: 8px 10px; }
+
+        /* Table styling to mimic Confluence-like clean tables */
+        .confluence-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .confluence-table th, .confluence-table td { border: 1px solid #e6eef5; padding: 10px 12px; text-align: left; }
+        .confluence-table thead th { background: #f8fafc; font-weight: 700; color: #0f172a; }
+        .confluence-table tbody tr:nth-child(even) td { background: #fbfdff; }
+        .confluence-table tfoot td { background: #f8fafc; font-weight: 600; }
+        .embed-block { margin: 20px 0; }
+        .embed { display: block; margin: 0; font-family: inherit; }
+        .embed-card { display: flex; align-items: stretch; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; overflow: hidden; text-decoration: none; color: inherit; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06); transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease; min-height: 120px; position: relative; }
+        .embed-card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12); border-color: #cbd5f5; }
+        .embed-card-media, .embed-card-placeholder { width: 160px; max-width: 35%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .embed-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .embed-card-placeholder { color: #334155; font-size: 24px; font-weight: 700; letter-spacing: 0.04em; }
+        .embed-card-body { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+        .embed-card-site { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+        .embed-card-title { font-size: 18px; font-weight: 600; color: #0f172a; line-height: 1.35; }
+        .embed-card-description { font-size: 15px; color: #475569; line-height: 1.55; }
+        .embed-card-placeholder + .embed-card-body { align-items: flex-start; }
+        .embed-simple { display: block; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; background: #ffffff; text-decoration: none; color: inherit; transition: border-color 0.2s ease, box-shadow 0.2s ease; min-height: 72px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+        .embed-simple:hover { border-color: #cbd5f5; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10); }
+        .embed-simple-title { display: block; font-weight: 600; font-size: 17px; color: #0f172a; margin-bottom: 6px; }
+        .embed-simple-description { display: block; font-size: 14px; color: #475569; line-height: 1.55; margin-bottom: 6px; }
+        .embed-simple-domain { display: block; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; }
+        .embed-youtube { margin: 24px 0; border-radius: 14px; overflow: hidden; background: #000000; }
+        .embed-youtube .embed-media { position: relative; padding-bottom: 56.25%; height: 0; }
+        .embed-youtube .embed-media iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .embed-caption { margin-top: 8px; font-size: 14px; color: #475569; text-align: center; }
+        .tab-set { margin: 26px 0; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08); display: flex; flex-wrap: wrap; overflow: hidden; }
+        .tab-set > input { display: none; }
+        .tab-set > label.tab-trigger { order: 1; display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex: 1 1 auto; padding: 14px 20px; font-weight: 600; font-size: 15px; text-transform: none; letter-spacing: 0.01em; cursor: pointer; color: #475569; background: #f8fafc; border-bottom: 1px solid #e2e8f0; transition: all 0.2s ease; }
+        .tab-set > label.tab-trigger:not(:last-of-type) { border-right: 1px solid #e2e8f0; }
+        .tab-set > input:checked + label.tab-trigger { background: #ffffff; color: #1d4ed8; border-bottom-color: transparent; box-shadow: inset 0 -3px 0 #1d4ed8; }
+        .tab-set > input:checked + label.tab-trigger .tab-badge { background: #1d4ed8; color: #ffffff; }
+        .tab-set > label.tab-trigger:hover { color: #1d4ed8; }
+        .tab-set > label.tab-trigger .tab-icon { font-size: 18px; }
+        .tab-set > label.tab-trigger .tab-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 999px; background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+        .tab-set > .tab-panel { order: 2; width: 100%; padding: 22px 24px; display: none; border-top: 1px solid #e2e8f0; background: #ffffff; }
+        .tab-set > .tab-panel > :last-child { margin-bottom: 0; }
+        .tab-set > input:checked + label + .tab-panel { display: block; animation: tabFade 0.24s ease; }
+        @keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .column-set { margin: 24px 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .column-item { border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; padding: 20px 22px; box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; gap: 12px; }
+        .column-item .column-title { font-weight: 600; font-size: 16px; color: #0f172a; }
+        .column-item .column-body > :last-child { margin-bottom: 0; }
+        .column-span-2 { grid-column: span 2; }
+        .column-span-3 { grid-column: span 3; }
+        .card-grid { margin: 26px 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .card-item { display: flex; flex-direction: column; gap: 14px; border: 1px solid #e2e8f0; border-radius: 18px; padding: 22px 24px; background: #ffffff; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08); text-decoration: none; color: inherit; transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; position: relative; overflow: hidden; }
+        .card-item:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(15, 23, 42, 0.16); border-color: #cbd5f5; }
+        .card-icon { font-size: 28px; line-height: 1; color: #1d4ed8; }
+        .card-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+        .card-title > p { margin: 0; }
+        .card-body { color: #475569; font-size: 15px; line-height: 1.6; }
+        .card-body > :last-child { margin-bottom: 0; }
+        .card-cta { margin-top: auto; font-weight: 600; color: #1d4ed8; font-size: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+        .card-accent-blue { border-color: #bfdbfe; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); }
+        .card-accent-green { border-color: #bbf7d0; background: linear-gradient(180deg, #ecfdf3 0%, #ffffff 100%); }
+        .card-accent-purple { border-color: #ddd6fe; background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%); }
+        .card-accent-amber { border-color: #fcd34d; background: linear-gradient(180deg, #fef3c7 0%, #ffffff 100%); }
+        .quote-block { margin: 28px 0; padding: 26px 28px; border-radius: 18px; border: 1px solid #cbd5f5; background: linear-gradient(135deg, rgba(226, 232, 240, 0.32), rgba(248, 250, 252, 0.9)); box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18), 0 8px 24px rgba(15, 23, 42, 0.1); position: relative; overflow: hidden; }
+        .quote-block::before { content: "“"; position: absolute; top: -26px; left: 16px; font-size: 96px; font-family: Georgia, serif; color: rgba(148, 163, 184, 0.18); }
+        .quote-block blockquote { margin: 0; font-size: 20px; line-height: 1.65; color: #0f172a; font-weight: 500; }
+        .quote-block blockquote > :last-child { margin-bottom: 0; }
+        .quote-block figcaption { margin-top: 16px; font-size: 14px; font-weight: 600; color: #1d4ed8; letter-spacing: 0.06em; text-transform: uppercase; display: flex; gap: 10px; align-items: center; }
+        .quote-cite-title { font-weight: 700; color: #0f172a; text-transform: none; letter-spacing: 0.02em; }
+        .quote-cite-author { opacity: 0.85; }
+        .note-block { margin: 24px 0; border: 1px solid #bfdbfe; border-radius: 16px; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12); overflow: hidden; }
+        .note-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: rgba(191, 219, 254, 0.35); border-bottom: 1px solid #bfdbfe; }
+        .note-badge { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 999px; background: #1d4ed8; color: #ffffff; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+        .note-text { font-weight: 600; color: #1e3a8a; font-size: 15px; }
+        .note-body { padding: 18px 22px; color: #0f172a; font-size: 15px; line-height: 1.6; }
+        .note-body > :last-child { margin-bottom: 0; }
+        .note-body ul { padding-left: 1.2rem; margin: 0.5rem 0 0; }
+        .task-list { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 12px; }
+        .task-list-item { list-style: none; margin: 0; padding: 0; }
+        .task-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08); position: relative; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+        .task-item:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(15, 23, 42, 0.12); border-color: #cbd5f5; }
+        .task-item.task-open { background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); border-color: #dbeafe; }
+        .task-item.task-complete { background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%); border-color: #bbf7d0; }
+        .task-item.task-complete::after { content: "Completed"; position: absolute; top: 12px; right: 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #16a34a; opacity: 0.8; }
+        .task-checkbox { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #94a3b8; background: #ffffff; flex-shrink: 0; margin-top: 2px; position: relative; transition: all 0.2s ease; }
+        .task-item.task-open .task-checkbox { border-color: #94a3b8; background: #ffffff; }
+        .task-item.task-open .task-checkbox::after { content: ""; position: absolute; inset: 4px; border-radius: 4px; background: rgba(148, 163, 184, 0.18); opacity: 0; transition: opacity 0.2s ease; }
+        .task-item.task-open:hover .task-checkbox::after { opacity: 1; }
+        .task-item.task-complete .task-checkbox { background: #22c55e; border-color: #22c55e; }
+        .task-item.task-complete .task-checkbox::after { content: ""; position: absolute; top: 3px; left: 6px; width: 6px; height: 11px; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff; transform: rotate(45deg); }
+        .task-text { flex: 1; color: #0f172a; font-size: 15px; line-height: 1.55; }
+        .task-item.task-complete .task-text { color: #166534; }
+        .task-list .task-list { margin: 12px 0 0 36px; padding-left: 0; gap: 10px; border-left: 1px dashed #cbd5f5; padding-left: 18px; }
+        .task-list .task-list .task-item { box-shadow: none; }
+        .task-list .task-list .task-item:hover { transform: none; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08); }
+        .task-list .task-list .task-item::after { top: 10px; }
+        @media (max-width: 768px) {
+            .embed-card { flex-direction: column; }
+            .embed-card-media, .embed-card-placeholder { width: 100%; max-width: 100%; height: 180px; }
+            .embed-card-body { padding: 18px; }
+            .task-item { flex-direction: row; align-items: flex-start; padding: 12px 14px; }
+            .task-item::after { display: none; }
+            .tab-set { border-radius: 14px; }
+            .tab-set > label.tab-trigger { flex: 1 1 100%; border-right: none; }
+            .tab-set > label.tab-trigger + .tab-panel { border-top: 1px solid #e2e8f0; }
+            .column-set { grid-template-columns: 1fr; }
+            .card-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Ensure bullets/numbers show up and have spacing in #blog-content */
+        #document-content ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+        #document-content ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0 1rem; }
+        #document-content li { margin: 0.25rem 0; }
+
+        /* Match paragraph left padding (px-10 => 2.5rem) */
+        #document-content > ul,
+        #document-content > ol {
+            padding-left: 2.5rem;   /* line up with paragraphs */
+            margin-left: 0;
+            list-style-position: outside; /* keep hanging bullets, text aligns with paragraph edge */
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Optional: nested lists slightly indented, not as much as top-level */
+        #document-content ul ul,
+        #document-content ol ol {
+            padding-left: 1.5rem;
+        }
+
+        /* Keep nice spacing for items */
+        #document-content li { margin: 0.25rem 0; }
+
+        #document-content h1 { @apply text-xl lg:text-2xl font-bold text-gray-900 mt-8 lg:mt-10 mb-4 lg:mb-6; }
+        #document-content h2 { @apply text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4; }
+        #document-content h3 { @apply text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3; }
+        #document-content h4 { @apply text-sm lg:text-sm font-semibold mt-3 mb-2 text-gray-800; }
+
+        /* Keep code blocks plain: no bold/italic added by Prism */
+        pre[class*="language-"] code,
+        pre[class*="language-"] { font-weight: 400; font-style: normal; }
+
+        /* Specifically neutralize Prism's markdown tokens */
+        pre[class*="language-markdown"] .token.bold,
+        pre[class*="language-markdown"] .token.important { font-weight: 400; }
+        pre[class*="language-markdown"] .token.italic { font-style: normal; }
+
+        /* If you want NO special token weights for ANY language */
+        pre[class*="language-"] .token.bold,
+        pre[class*="language-"] .token.important { font-weight: 400; }
+        pre[class*="language-"] .token.italic { font-style: normal; }
+    </style>
+</head>
+<body class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: false, showImageModal: false, currentImage: '', currentImageAlt: '', darkMode: false }">
+    <!-- Mobile Hamburger Menu -->
+    <div class="lg:hidden fixed top-4 left-4 z-50 hamburger-menu">
+        <button @click="sidebarOpen = !sidebarOpen" class="bg-gray-800 text-white p-2 rounded-md shadow-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Small script to enhance details panels (rotate icon and ensure keyboard accessibility) -->
+    <script>
+        document.addEventListener('click', function(e){
+            // handle summary click to focus and toggle
+            if(e.target.closest && e.target.closest('details.details-panel summary')){
+                const sum = e.target.closest('details.details-panel summary');
+                const details = sum.closest('details');
+                // allow default toggle; ensure focus
+                setTimeout(()=> sum.focus(), 60);
+            }
+        });
+
+        // keyboard support for summary elements
+        document.querySelectorAll('details.details-panel summary').forEach(function(sum){
+            sum.setAttribute('tabindex','0');
+            sum.addEventListener('keydown', function(e){
+                if(e.key === 'Enter' || e.key === ' '){
+                    e.preventDefault();
+                    const details = sum.closest('details');
+                    details.open = !details.open;
+                }
+            });
+        });
+    </script>
+<script>
+    // Attach copy buttons to code blocks (updated: safe clipboard API check + robust fallback)
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('.code-block pre').forEach(function(pre){
+            const wrapper = pre.closest('.code-block');
+            if(!wrapper) return;
+            // set a data attribute with approximate line count from <code> (more accurate after Prism)
+            const codeEl = pre.querySelector('code');
+            const lines = codeEl ? codeEl.innerText.split('\n').length : 1;
+            pre.setAttribute('data-line-count', String(lines));
+            pre.setAttribute('tabindex', '0'); // Accessibility
+            // Ensure line-numbers-rows is first child (defensive post-Prism)
+            const rows = pre.querySelector('.line-numbers-rows');
+            if (rows && rows.parentNode === pre && pre.firstChild !== rows) {
+                pre.insertBefore(rows, pre.firstChild);
+            }
+            // avoid double-inserting
+            if(wrapper.querySelector('.code-copy-btn')) return;
+            // create button
+            const btn = document.createElement('button');
+            btn.className = 'code-copy-btn';
+            btn.type = 'button';
+            btn.setAttribute('aria-label', 'Copy code');
+            btn.innerText = 'Copy';
+            const toast = document.createElement('div');
+            toast.className = 'code-copy-toast';
+            toast.innerText = 'Copied!';
+            wrapper.appendChild(btn);
+            wrapper.appendChild(toast);
+            btn.addEventListener('click', function(){
+                if(!codeEl) return;
+                // Use textContent to get clean text without any formatting, and remove any line numbers
+                let text = codeEl.textContent || codeEl.innerText;
+                // Remove line numbers that might have been inserted (pattern: number followed by space at start of line)
+                text = text.replace(/^\s*\d+\s+/gm, '');
+                const showSuccess = function() {
+                    // show toast and transient check inside button
+                    const prev = btn.innerText;
+                    btn.innerText = '✓';
+                    toast.style.display = 'block';
+                    setTimeout(()=> { toast.style.display = 'none'; btn.innerText = prev; }, 1200);
+                };
+                // Check for modern Clipboard API (requires secure context: HTTPS/localhost)
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function(){
+                        showSuccess();
+                    }).catch(function(err) {
+                        console.warn('Clipboard API failed, falling back to execCommand:', err);
+                        // Fallback
+                        const ta = document.createElement('textarea');
+                        ta.value = text;
+                        ta.style.position = 'fixed'; // Avoid scrolling to bottom
+                        ta.style.left = '-999999px';
+                        ta.style.top = '-999999px';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        try {
+                            document.execCommand('copy');
+                            showSuccess();
+                        } catch(e) {
+                            console.error('Fallback copy failed:', e);
+                            // Last resort: Alert user (or you could select text for manual copy)
+                            alert('Copy failed. Please select and copy the code manually.');
+                        }
+                        document.body.removeChild(ta);
+                    });
+                } else {
+                    // Direct fallback for non-secure/older browsers
+                    console.warn('Clipboard API unavailable, using execCommand fallback');
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed'; // Avoid scrolling to bottom
+                    ta.style.left = '-999999px';
+                    ta.style.top = '-999999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy');
+                        showSuccess();
+                    } catch(e) {
+                        console.error('Fallback copy failed:', e);
+                        // Last resort: Alert user (or you could select text for manual copy)
+                        alert('Copy failed. Please select and copy the code manually.');
+                    }
+                    document.body.removeChild(ta);
+                }
+            });
+        });
+    });
+</script>
+    <!-- Mobile Sidebar Overlay -->
+    <div x-show="sidebarOpen" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-40 lg:hidden" @click="sidebarOpen = false">
+        <div class="absolute inset-0 bg-gray-600 opacity-75"></div>
+    </div>
+
+    <div class="flex w-full">
+         <!-- Desktop Sidebar -->
+         <div class="hidden lg:flex w-64 bg-gray-700 text-white flex-col h-full flex-shrink-0 desktop-sidebar">
+            <!-- Profile Header -->
+            <div class="p-6 border-b border-gray-700">
+                <h2 class="text-2xl font-semibold">Bradley C.</h2>
+            </div>
+            <!-- Navigation Menu -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="/index.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    About
+                </a>
+                <a href="/experience.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6"></path>
+                    </svg>
+                    Experience
+                </a>
+                <a href="/documents.html" class="flex items-center px-3 py-2 text-sm font-medium text-blue-300 bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Documents
+                </a>
+                <a href="/resume.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Resume
+                </a>
+                <a href="/blog.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    Blog
+                </a>
+                <a href="/portfolio.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Portfolio
+                </a>
+                <a href="/magento.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
+                    </svg>
+                    Magento Modules
+                </a>
+                <a href="/side-projects.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
+                    </svg>
+                    Projects & Personal Work
+                </a>
+                <a href="/photography.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Photography
+                </a>
+                <a href="/contact.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    Contact
+                </a>
+                <a href="/personal.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    Personal
+                </a>
+            </nav>
+        </div>
+
+        <!-- Mobile Sidebar -->
+        <div x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform -translate-x-full" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-full" class="lg:hidden w-64 bg-gray-700 text-white flex flex-col h-full fixed inset-y-0 left-0 z-50">
+            <!-- Profile Header -->
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h2 class="text-2xl font-semibold pl-10">Bradley C.</h2>
+                <button @click="sidebarOpen = false" class="text-gray-300 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Navigation Menu -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="/index.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    About
+                </a>
+                <a href="/experience.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2V6"></path>
+                    </svg>
+                    Experience
+                </a>
+                <a href="/documents.html" class="flex items-center px-3 py-2 text-sm font-medium text-blue-300 bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Documents
+                </a>
+                <a href="/resume.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Resume
+                </a>
+                <a href="/blog.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    Blog
+                </a>
+                <a href="/portfolio.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Portfolio
+                </a>
+                <a href="/magento.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
+                    </svg>
+                    Magento Modules
+                </a>
+                <a href="/side-projects.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z"></path>
+                    </svg>
+                    Projects & Personal Work
+                </a>
+                <a href="/photography.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Photography
+                </a>
+                <a href="/contact.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    Contact
+                </a>
+                <a href="/personal.html" class="flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded-md" @click="sidebarOpen = false">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    Personal
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex flex-col flex-1 h-full w-full lg:ml-0 main-content">
+        	<!-- Header Section -->
+        	<div class="bg-gray-800 text-white p-4 lg:p-6">
+                <!-- Mobile Header Layout -->
+                <div class="lg:hidden flex flex-col">
+                    <div class="flex-1">
+                        <h1 class="text-2xl font-bold mb-2 pl-10">Bradley R. Clampitt</h1>
+                        <h2 class="text-base mb-4">Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect</h2>
+                        <p class="text-gray-300 mb-6 text-sm">Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.</p>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
+                            <a href="../../portfolio.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                View My Work
+                            </a>
+                            <a href="../../documents.html" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600 flex items-center justify-center text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Resume
+                            </a>
+                        </div>
+                        <!-- Social Links -->
+                        <div class="flex flex-wrap justify-center space-x-4 mt-6">
+                            <a href="https://github.com/bradclampitt" class="text-gray-300 hover:text-white">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.7 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                            </a>
+                            <a href="https://linkedin.com/in/bclampitt" class="text-gray-300 hover:text-white">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg>
+                            </a>
+                            <a href="mailto:bradclampitt@gmail.com" class="text-gray-300 hover:text-white">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 01-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </a>
+                            <a href="tel:+1234567890" class="text-gray-300 hover:text-white">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Header Layout -->
+                <div class="hidden lg:flex items-center justify-between">
+                    <!-- Left: Name, Title, Description, Buttons -->
+                    <div class="flex flex-col justify-center flex-1 pr-8 max-w-none">
+                        <h1 class="text-4xl font-bold mb-2">Bradley R. Clampitt</h1>
+                        <h2 class="text-xl mb-4">Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect</h2>
+                        <p class="text-gray-300 mb-6">Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.</p>
+                        <div class="flex space-x-4 mb-6">
+                            <a href="../../portfolio.html" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
+                                <svg class="w-5 h-5 mr-2 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                View My Work
+                            </a>
+                            <a href="../../documents.html" class="bg-gray-700 text-white px-6 py-3 rounded hover:bg-gray-600 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
+                                <svg class="w-5 h-5 mr-2 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Resume
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Right: Profile Photo (Desktop only) -->
+                    <div class="hidden lg:flex flex-shrink-0 items-center justify-center h-full">
+                        <div class="w-40 h-40 bg-gray-600 rounded-full flex items-center justify-center overflow-hidden">
+                            <img src="../../assets/images/profile/bradley-clampitt-headshot.jpg" alt="Bradley Clampitt Headshot" class="w-40 h-40 object-cover rounded-full" />
+                        </div>
+                    </div>
+                </div>
+                <!-- Desktop Social Links: Place below the header row for desktop only -->
+                <div class="hidden lg:flex space-x-4 mt-4 mb-2 justify-end items-center">
+                    <a href="https://github.com/bradclampitt" class="text-gray-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                    </a>
+                    <a href="https://linkedin.com/in/bclampitt" class="text-gray-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        </svg>
+                    </a>
+                    <a href="mailto:bradclampitt@gmail.com" class="text-gray-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 01-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </a>
+                    <a href="tel:+1234567890" class="text-gray-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8"
+                 x-data="documentApp()" x-init="init()">
+                <!-- Back Link Section -->
+                <div class="mb-4">
+                    <a href="../../documents.html" class="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline text-sm lg:text-base font-medium">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Back to Documents
+                    </a>
+                </div>
+
+                <!-- Document Header -->
+                <div class="bg-white rounded-lg shadow-md p-6 lg:p-8 mb-6 w-full max-w-none">
+                    <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Enhanced Blog with Confluence Style Markdown Elements</h1>
+                    
+                    <!-- Summary Section -->
+                    <div class="w-full mb-6">
+                        <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4 lg:p-5"><h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Summary</h3><p class="text-base lg:text-lg text-gray-700 leading-relaxed">Basic project documentation guide used for testing out this documentation CMS, summary.</p></div>
+                    </div>
+                    
+                    <!-- Metadata Section -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <div class="flex flex-wrap items-center gap-3 lg:gap-4 mb-4">
+                            <span class="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-folder mr-2 text-xs"></i>DevOps</span>
+                            <span class="inline-flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-file-alt mr-2 text-xs"></i>Project Documentation</span>
+                            <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-calendar mr-2 text-xs"></i>Posted: 2025-11-06</span>
+                            
+                            <span class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-user mr-2 text-xs"></i>Bradley R. Clampitt</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-2 w-full mt-4"><span class="text-xs lg:text-sm font-semibold text-gray-600 mr-2"><i class="fas fa-tags mr-1"></i>Tags:</span><span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs lg:text-sm font-medium hover:bg-blue-200 transition-colors">projects</span> <span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs lg:text-sm font-medium hover:bg-blue-200 transition-colors">documentation</span></div>
+                    </div>
+                </div>
+
+                <!-- Document Content -->
+                <article class="bg-white rounded-lg shadow-md p-6 lg:p-8 w-full max-w-none">
+                    <div id="document-content" class="space-y-4 lg:space-y-6 leading-relaxed w-full max-w-none"><h1 id="enhanced-blog-with-confluence-style-markdown-elements" class="text-xl lg:text-2xl font-bold text-gray-900 mt-8 lg:mt-10 mb-4 lg:mb-6">Enhanced Blog with Confluence-Style Markdown Elements</h1>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Welcome to the future of technical blogging! Our blog system now supports <strong>Confluence-style elements</strong> that make your content more engaging, professional, and easy to read.</p>
+<div class="callout info">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-info"></i></span>    <div class="body"><span class="title">Info:</span> All Confluence-style features are now active and ready to use. These elements work seamlessly with our existing PrismJS syntax highlighting and responsive design.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h2 id="info-boxes-and-callouts" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">🎯 <strong>Info Boxes and Callouts</strong></h2>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Let's explore the different types of informational callouts available:</p>
+<div style="clear:both"></div>
+<h3 id="information-callouts" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Information Callouts</h3>
+<div class="callout info">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-info"></i></span>    <div class="body"><span class="title">Info:</span> This is an <strong>information</strong> callout. Perfect for providing helpful context, background information, or additional details that enrich your content without interrupting the main flow.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="warning-callouts" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Warning Callouts</h3>
+<div class="callout warning">  <div class="row">    <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>    <div class="body"><span class="title">Important:</span> ** This is a <strong>warning</strong> callout. Use these to highlight crucial information, potential pitfalls, or things users should be careful about. They grab attention with their yellow coloring.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="success-callouts" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Success Callouts</h3>
+<div class="callout success">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-check"></i></span>    <div class="body"><span class="title">Success:</span> <strong>Excellent!</strong> This is a <strong>success</strong> callout. Great for celebrating achievements, confirming completed tasks, or highlighting positive outcomes. The green color provides positive reinforcement.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="error-callouts" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Error Callouts</h3>
+<div class="callout error">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-xmark"></i></span>    <div class="body"><span class="title">Error:</span> <strong>Attention required:</strong> This is an <strong>error</strong> callout. Use these to explain what went wrong, common mistakes to avoid, or critical issues that need immediate attention.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="tip-callouts" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Tip Callouts</h3>
+<div class="callout tip">  <div class="row">    <span class="icon"><i class="fa-solid fa-lightbulb"></i></span>    <div class="body"><span class="title">Pro tip:</span> ** This is a <strong>tip</strong> callout. Perfect for sharing shortcuts, best practices, insider knowledge, or helpful hints that make your content more valuable.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h2 id="enhanced-image-capabilities" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">🖼️ <strong>Enhanced Image Capabilities</strong></h2>
+
+<figure class="block mx-auto my-6 mt-6 overflow-hidden figure-max-600"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Confluence-style features overview</figcaption></div></figure>
+
+<div style="clear:both"></div>
+<h3 id="image-placeholders" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Image Placeholders</h3>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Our system now supports <strong>image placeholders</strong> for content planning:</p>
+<!-- Centered group of placeholders -->
+<figure class="block mx-auto my-6 mt-6 overflow-hidden figure-max-600"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Dashboard screenshot</figcaption></div></figure>
+<figure class="block mx-auto my-6 mt-6 overflow-hidden figure-max-600"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Code editor view</figcaption></div></figure>
+<figure class="block mx-auto my-6 mt-6 overflow-hidden figure-max-600"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Mobile responsive view</figcaption></div></figure>
+
+<!-- Small inline placeholder (thumbnail) -->
+<figure class="inline-block w-40 mr-4 mb-6 mt-6 overflow-hidden figure-max-300"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">User interface example</figcaption></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Each placeholder above shows a simple planning block. Replace them with final images when you're ready. Below are examples showing alignment and wrapping behavior.</p>
+<div class="callout tip">  <div class="row">    <span class="icon"><i class="fa-solid fa-lightbulb"></i></span>    <div class="body"><span class="title">Pro tip:</span> <strong>Content planning tip:</strong> Use placeholders to plan your visuals before creating final images. They provide visual context during writing and can be easily replaced later.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="image-alignment-options" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Image Alignment Options</h3>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Here's how <strong>left-aligned images</strong> work with text wrapping:</p>
+<div class="clear-left"></div>
+<figure class="float-left mr-8 mb-6 mt-6 w-5/12 lg:w-5/12 float-left-force placeholder-mr"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-left">Documentation example</figcaption></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">When you use left alignment, the image floats to the left side and the paragraph text wraps beside it. This is ideal for shorter images placed alongside explanatory text.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Example: the image below is left-aligned and the following paragraph demonstrates how text will wrap around it. Note how on narrow screens the image will stack above the content.</p>
+<div class="clear-left"></div>
+<figure class="float-left mr-8 mb-6 mt-6 w-5/12 lg:w-5/12 float-left-force placeholder-mr"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-left">Documentation example</figcaption></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">This paragraph continues the example and will flow alongside the left-aligned placeholder on wider screens, demonstrating natural text wrapping.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Now a right-aligned example. The image will float to the right and text will wrap on its left side.</p>
+<div class="clear-right"></div>
+<figure class="float-right ml-16 mb-6 mt-12 w-5/12 lg:w-5/12 float-right-force placeholder-ml"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-right">Workflow diagram</figcaption></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Pro tip: place the image at the beginning of the paragraph you want to wrap around to control how the flow behaves.</p>
+<div class="callout success">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-check"></i></span>    <div class="body"><span class="title">Success:</span> <strong>Layout achievement:</strong> Your images now have professional placement options that rival Confluence's visual presentation.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h2 id="mixed-content-example" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">🚀 <strong>Mixed Content Example</strong></h2>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Let's see how all these elements work together:</p>
+<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers language-javascript"><code class="language-javascript">// Example: Enhanced component with proper styling
+const InfoBox = ({ type, children }) =&gt; {
+  const styles = {
+    &#x27;info&#x27;: &#x27;border-blue-400 bg-blue-50&#x27;,
+    &#x27;warning&#x27;: &#x27;border-yellow-400 bg-yellow-50&#x27;,
+    &#x27;success&#x27;: &#x27;border-green-400 bg-green-50&#x27;,
+    &#x27;error&#x27;: &#x27;border-red-400 bg-red-50&#x27;,
+    &#x27;tip&#x27;: &#x27;border-indigo-400 bg-indigo-50&#x27;
+  };
+
+  return (
+    &lt;div className={`border-l-4 p-4 rounded-r-lg ${styles[type]}`}&gt;
+      {children}
+    &lt;/div&gt;
+  );
+};</code></pre></div>
+
+<div class="callout info">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-info"></i></span>    <div class="body"><span class="title">Info:</span> <strong>Technical note:</strong> The code above demonstrates how our blog's styling system works under the hood. All Confluence-style elements use consistent Tailwind CSS classes.</div>  </div></div>
+
+<div class="callout warning">  <div class="row">    <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>    <div class="body"><span class="title">Important:</span> <strong>Performance consideration:</strong> While these features add visual appeal, they're lightweight and won't impact page load times.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="mobile-responsiveness" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Mobile Responsiveness</h3>
+
+<figure class="block mx-auto my-6 mt-6 overflow-hidden figure-max-600"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Mobile layout preview</figcaption></div></figure>
+
+<div style="clear:both"></div>
+<h3 id="real-image-examples-wrapping-vs-non-wrapping" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Real image examples (wrapping vs non-wrapping)</h3>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Below are examples using a real image shipped with the repository at <code>blog/posts/media/images/placeholder_image.png</code>.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Left-aligned (with caption):</p>
+<figure class="figure-left my-6 mt-6 figure-max-600"><div class="fig-inner-pad"><img src="../../blog/media/images/placeholder_image.png" alt="Left captioned image" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-left">Left captioned image</figcaption></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Right-aligned (no caption):</p>
+<figure class="figure-right my-6 mt-6 figure-max-600"><div class="fig-inner-pad"><img src="https://placehold.co/400x300/6366f1/ffffff?text=Image+Not+Found" alt=" " class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Centered (no wrapping):</p>
+<figure class="block mx-auto my-6 mt-6 overflow-hidden figure-max-600"><div class="fig-inner-pad"><img src="https://placehold.co/400x300/6366f1/ffffff?text=Image+Not+Found" alt="Centered image" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Centered image</figcaption></div></figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.<br />
+this is some jibberish text in between images to see if it helps.</p>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Small thumbnail (inline):</p>
+<figure class="figure-center my-6 mt-6 figure-max-300 figure-max-300"><div class="fig-inner-pad"><img src="https://placehold.co/400x300/6366f1/ffffff?text=Image+Not+Found" alt="Thumbnail" class="rounded-lg shadow-md max-w-full h-auto" onclick="openImageModal(this)"></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Thumbnail</figcaption></div></figure>
+
+<div class="callout success">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-check"></i></span>    <div class="body"><span class="title">Success:</span> <strong>Mobile optimized:</strong> All Confluence-style elements are fully responsive and work perfectly on mobile devices.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h2 id="usage-guidelines" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">📊 <strong>Usage Guidelines</strong></h2>
+
+<div style="clear:both"></div>
+<h3 id="best-practices" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Best Practices</h3>
+
+<div class="callout info">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-info"></i></span>    <div class="body"><span class="title">Info:</span> <strong>Recommendation:</strong> Use info boxes sparingly. They're most effective when they provide genuinely helpful additional information.</div>  </div></div>
+
+<div class="callout warning">  <div class="row">    <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>    <div class="body"><span class="title">Important:</span> <strong>Avoid overuse:</strong> Too many warning boxes can make your content feel alarmist. Reserve them for truly important cautions.</div>  </div></div>
+
+<div class="callout success">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-check"></i></span>    <div class="body"><span class="title">Success:</span> <strong>Quality tip:</strong> Success boxes work best when acknowledging reader achievements or celebrating milestones in your content.</div>  </div></div>
+
+<div class="callout tip">  <div class="row">    <span class="icon"><i class="fa-solid fa-lightbulb"></i></span>    <div class="body"><span class="title">Pro tip:</span> ** Mix different callout types strategically to create visually engaging and informative content flows.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h3 id="content-planning" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Content Planning</h3>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">When planning your blog posts:</p>
+<ol>
+<li><strong>Identify key points</strong> that would benefit from callouts</li>
+<li><strong>Plan your visuals</strong> using image placeholders</li>
+<li><strong>Test alignment</strong> with different image positioning</li>
+<li><strong>Review on mobile</strong> to ensure responsive behavior</li>
+</ol>
+<figure class="inline-block w-40 mr-4 mb-6 mt-6 overflow-hidden figure-max-300"><div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto placeholder-inner default"><div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div></div><div class="w-full block"><figcaption class="block w-full text-xs text-gray-500 mt-2 mb-4 text-center">Content planning checklist</figcaption></div></figure>
+
+<div class="callout error">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-xmark"></i></span>    <div class="body"><span class="title">Error:</span> <strong>Common mistake:</strong> Don't use placeholder images in your final posts - always replace them with real visuals.</div>  </div></div>
+
+<div style="clear:both"></div>
+<h2 id="getting-started" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">🎉 <strong>Getting Started</strong></h2>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Ready to enhance your blog posts? Here's how to add these features:</p>
+<div style="clear:both"></div>
+<h3 id="basic-callout-syntax" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Basic Callout Syntax</h3>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Here are live examples of each callout type:</p>
+<div class="callout info">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-info"></i></span>    <div class="body"><span class="title">Info:</span> This is an <strong>information</strong> callout. Perfect for providing helpful context, background information, or additional details that enrich your content without interrupting the main flow.</div>  </div></div>
+
+<div class="callout warning">  <div class="row">    <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>    <div class="body"><span class="title">Important:</span> ** This is a <strong>warning</strong> callout. Use this for critical information, important caveats, or potential issues that readers need to be aware of. Great for highlighting gotchas or breaking changes.</div>  </div></div>
+
+<div class="callout success">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-check"></i></span>    <div class="body"><span class="title">Success:</span> <strong>Success!</strong> This is a <strong>success</strong> callout. Perfect for completed tasks, achievements, or positive outcomes. Use this to celebrate milestones or confirm that something has been completed successfully.</div>  </div></div>
+
+<div class="callout error">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-xmark"></i></span>    <div class="body"><span class="title">Error:</span> ** This is an <strong>error</strong> callout. Essential for highlighting problems, failures, or things that went wrong. This helps readers understand common pitfalls and learn from failures.</div>  </div></div>
+
+<div class="callout tip">  <div class="row">    <span class="icon"><i class="fa-solid fa-lightbulb"></i></span>    <div class="body"><span class="title">Pro tip:</span> ** This is a <strong>tip</strong> callout. Excellent for sharing practical advice, shortcuts, or helpful hints that can improve the reader's workflow or understanding. Use this for expert-level insights.</div>  </div></div>
+
+<h4 id="markdown-syntax-reference" class="text-sm lg:text-sm font-semibold mt-3 mb-2 text-gray-800">Markdown Syntax Reference</h4>
+<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers language-markdown"><code class="language-markdown">^ info
+Your informational content here
+
+! warning
+Your warning content here
+
+check success
+Your success content here
+
+x error
+Your error content here
+
+tip
+Your tip content here</code></pre></div>
+
+<div style="clear:both"></div>
+<h3 id="image-placeholder-syntax" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Image Placeholder Syntax</h3>
+<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers language-markdown"><code class="language-markdown">![Description](placeholder:unique-id)
+![Small image](placeholder:tiny-icon){: .small}
+![Centered image](placeholder:hero-image){: .center}</code></pre></div>
+
+<div class="callout success">  <div class="row">    <span class="icon"><i class="fa-solid fa-circle-check"></i></span>    <div class="body"><span class="title">Success:</span> <strong>You're all set!</strong> Your blog now has professional Confluence-style capabilities that will significantly enhance your content presentation and reader engagement.</div>  </div></div>
+
+<hr />
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10"><strong>Transform your technical blog with these powerful Confluence-style features and create content that stands out in the developer community!</strong></p>
+<hr />
+<div class="note-block">
+  <div class="note-header">
+    <span class="note-badge">Note</span>
+    <span class="note-text">This is a comment line.</span>
+  </div>
+  <div class="note-body"><ul>
+<li>Bulletin</li>
+<li>Child Bullet</li>
+</ul></div>
+</div>
+
+<hr />
+<div style="clear:both"></div>
+<h2 id="collapisble-section-in-markdown" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">Collapisble Section in Markdown</h2>
+
+<div style="clear:both"></div>
+<h3 id="customize-clicakble-text" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Customize Clicakble Text</h3>
+
+<details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title"><i>Wow, so fancy</i></span></summary><div class="details-content"><b>WOW, SO BOLD</b></div></details>
+
+<hr />
+<div style="clear:both"></div>
+<h3 id="nested-collapsible-sections" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Nested Collapsible Sections</h3>
+
+<details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Section A</span></summary><div class="details-content"><details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Section A.B</span></summary><div class="details-content"><details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Section A.B.C</span></summary><div class="details-content"><details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Section A.B.C.D</span></summary><div class="details-content"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Done!</p></div></details></div></details></div></details></div></details>
+
+<hr />
+<div style="clear:both"></div>
+<h3 id="with-a-table" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">With a Table</h3>
+
+<details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Click me</span></summary><div class="details-content"><table class="confluence-table">
+<thead><tr><th>Header 1</th><th>Header 2</th></tr></thead>
+<tbody><tr><td>Row 1</td><td>Row 1</td></tr>
+<tr><td>Row 2</td><td>Row 2</td></tr></tbody>
+</table></div></details>
+
+<hr />
+<div style="clear:both"></div>
+<h3 id="code-highlighting" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Code Highlighting.</h3>
+
+<details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Contents of <code>file.txt</code></span></summary><div class="details-content"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10"><div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers"><code class="">[File contents inside code block]</code></pre></div></p></div></details>
+
+<hr />
+<div style="clear:both"></div>
+<h3 id="codemarkdown" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Code/Markdown</h3>
+
+<details class="details-panel"><summary><span class="summary-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 8L10 12L14 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="summary-title">Click me</span></summary><div class="details-content"><h3>Heading</h3>
+<ol>
+<li>Foo</li>
+<li>Bar<ul>
+<li>Baz</li>
+<li>Qux</li>
+</ul>
+</li>
+</ol>
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">### Some Javascript
+<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers language-js"><code class="language-js">  function logSomething(something) {
+    console.log(&#x27;Something&#x27;, something);
+  }</code></pre></div></p></div></details>
+
+<hr />
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10"><strong>Embeddings</strong></p>
+<div class="embed embed-youtube">
+  <div class="embed-media">
+    <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Launch teaser" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </div>
+  <p class="embed-caption">Launch teaser</p>
+</div>
+<div class="embed-block">
+  <a class="embed embed-simple" href="https://docs.readme.com/rdmd/docs/embeds" target="_blank" rel="noopener noreferrer">
+    <span class="embed-simple-title">RDMD Embed Docs</span>
+    <span class="embed-simple-description">Syntax Simple embedded content is written as a Markdown link, with a title of "@embed", like so: [Embed Title](https://youtu.be/8bh238ekw3 "@embed") More robus…</span>
+    <span class="embed-simple-domain">ReadMe Markdown</span>
+  </a>
+</div>
+<div class="embed-block">
+  <a class="embed embed-card" href="https://example.com" target="_blank" rel="noopener noreferrer">
+    <div class="embed-card-placeholder">E</div>
+    <div class="embed-card-body">
+      <span class="embed-card-site">example.com</span>
+      <span class="embed-card-title">Example Domain</span>
+    </div>
+  </a>
+</div>
+
+<hr />
+<div style="clear:both"></div>
+<h3 id="tasks-lists" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">Tasks Lists</h3>
+
+<ul class="task-list">
+<li class="task-list-item">
+<div class="task-item task-open">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">Here is a Task</span></div>
+
+<ul class="task-list">
+<li class="task-list-item"><div class="task-item task-complete">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">Here is a sub task completed</span></div>
+</li>
+</ul>
+</li>
+<li class="task-list-item">
+<div class="task-item task-complete">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">Here is another task completed</span></div>
+
+</li>
+<li class="task-list-item"><div class="task-item task-open">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">Another task</span></div>
+</li>
+<li class="task-list-item"><div class="task-item task-open">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">And Another Task</span></div>
+</li>
+<li class="task-list-item"><div class="task-item task-complete">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">And anotehr task (completed)</span></div>
+</li>
+<li class="task-list-item"><div class="task-item task-open">  <span class="task-checkbox" aria-hidden="true"></span>  <span class="task-text">And another one that is not.</span></div>
+</li>
+</ul>
+<hr />
+<div style="clear:both"></div>
+<h2 id="tabs" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">Tabs</h2>
+
+<div class="tab-set" data-tab-group="tabs-2">
+  <input type="radio" name="tabs-2" id="tabs-2-tab-0" checked>
+  <label class="tab-trigger" for="tabs-2-tab-0"><span class="tab-label">Overview</span></label>
+  <div class="tab-panel"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">High-level summary…</p></div>
+  <input type="radio" name="tabs-2" id="tabs-2-tab-1">
+  <label class="tab-trigger" for="tabs-2-tab-1"><span class="tab-icon">🚀</span><span class="tab-label">Deep Dive</span><span class="tab-badge">New</span></label>
+  <div class="tab-panel"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Long-form explanation with markdown.
+Secondline
+3rd Line
+4th Line</p></div>
+</div>
+
+<hr />
+<div style="clear:both"></div>
+<h2 id="columns" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">Columns</h2>
+
+<div class="column-set">
+  <div class="column-item">
+    <div class="column-title">"Problem"</div>
+    <div class="column-body"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Explain the challenge.</p></div>
+  </div>
+  <div class="column-item column-span-2">
+    <div class="column-title">"Solution"</div>
+    <div class="column-body"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">wrap-up content here.</p></div>
+  </div>
+</div>
+
+<hr />
+<div style="clear:both"></div>
+<h2 id="cards" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">Cards</h2>
+
+<div class="card-grid">
+  <a class="card-item card-accent-blue" href="https://example.com" target="_blank" rel="noopener noreferrer">
+    <div class="card-icon">✨</div>
+    <div class="card-title">Example Card</div>
+    <div class="card-body"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Supports full markdown in the body.</p></div>
+  </a>
+  <div class="card-item">
+    <div class="card-title">Another Card</div>
+    <div class="card-body"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">No link? it will render as a static card.</p></div>
+  </div>
+</div>
+
+<hr />
+<div style="clear:both"></div>
+<h2 id="quotes" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">Quotes</h2>
+
+<figure class="quote-block">
+  <blockquote><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Great quotes deserve the spotlight.</p></blockquote>
+  <figcaption><span class="quote-cite-title">Clarity</span> · <span class="quote-cite-author">Jane Doe
+</span></figcaption>
+</figure>
+
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">More to come....</p>
+<div class="note-block">
+  <div class="note-header">
+    <span class="note-badge">Note</span>
+    <span class="note-text">This is a note.</span>
+  </div>
+  <div class="note-body"><p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Note content here.</p></div>
+</div>
+
+<hr />
+<p class="mb-3 lg:mb-4 text-sm lg:text-base leading-relaxed px-10">Another Test</p></div>
+                </article>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div x-show="showImageModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+         @click="showImageModal = false"
+         @keydown.escape.window="showImageModal = false">
+        <div class="relative max-w-4xl max-h-full">
+            <button @click="showImageModal = false" 
+                    class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <img :src="currentImage" 
+                 :alt="currentImageAlt" 
+                 class="max-w-full max-h-full object-contain rounded-lg"
+                 @click.stop>
+        </div>
+    </div>
+
+    <script>
+        // Alpine.js app for document page (minimal - content is already static)
+        window.documentApp = function() {
+            return {
+                loading: false,
+                error: null,
+                
+                init() {
+                    // Content is already loaded in static HTML, just initialize PrismJS
+                    this.initializePrismJS();
+                },
+                
+                initializePrismJS() {
+                    // Use the global initializePrismJS function
+                    if (typeof window.initializePrismJS === 'function') {
+                        setTimeout(() => window.initializePrismJS(), 200);
+                    } else {
+                        // Fallback: wait for PrismJS and initialize
+                        const checkPrism = setInterval(() => {
+                            if (typeof Prism !== 'undefined' && typeof window.initializePrismJS === 'function') {
+                                clearInterval(checkPrism);
+                                setTimeout(() => window.initializePrismJS(), 200);
+                            }
+                        }, 50);
+                        setTimeout(() => clearInterval(checkPrism), 5000);
+                    }
+                }
+            };
+        };
+        
+        // Global function for image modal (called by inline onclick)
+        function openImageModal(img) {
+            window.currentImage = img.src;
+            window.currentImageAlt = img.alt || 'Image';
+            window.showImageModal = true;
+        }
+        
+        // Function to make images clickable and show in modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('article img');
+            images.forEach(img => {
+                img.classList.add('cursor-pointer', 'hover:opacity-80', 'transition-opacity');
+                img.addEventListener('click', function() {
+                    openImageModal(this);
+                });
+            });
+        });
+    </script>
+    
+    <!-- PrismJS JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    
+    <!-- Initialize PrismJS -->
+    <script>
+        window.initializePrismJS = function() {
+            // Configure autoloader before highlighting
+            if (typeof Prism !== 'undefined' && typeof Prism.plugins !== 'undefined' && Prism.plugins.autoloader) {
+                Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/';
+            }
+            
+            // Function to clean line numbers from code content
+            function cleanCodeContent(codeEl) {
+                if (!codeEl) return;
+                let text = codeEl.textContent || codeEl.innerText;
+                // Remove line numbers that might have been inserted (pattern: number followed by space at start of line)
+                text = text.replace(/^\s*\d+\s+/gm, '');
+                // Update the code element with cleaned content
+                codeEl.textContent = text;
+            }
+            
+            try {
+                if (typeof Prism !== 'undefined') {
+                    // Check if line-numbers plugin is available
+                    const hasLineNumbers = typeof Prism.plugins !== 'undefined' && Prism.plugins.lineNumbers;
+                    
+                    if (!hasLineNumbers) {
+                        console.warn('PrismJS line-numbers plugin not loaded');
+                    }
+                    
+                    // Target the document content area specifically
+                    const contentArea = document.getElementById('document-content') || document.querySelector('.markdown-content');
+                    const scope = contentArea || document;
+                    
+                    // Ensure all code blocks have line-numbers class BEFORE highlighting
+                    scope.querySelectorAll('pre[class*="language-"], .code-block pre, pre.line-numbers').forEach(function(pre) {
+                        if (!pre.classList.contains('line-numbers')) {
+                            pre.classList.add('line-numbers');
+                        }
+                    });
+                    
+                    // First, clean any code content that might have line numbers already inserted
+                    scope.querySelectorAll('pre.line-numbers code, pre[class*="language-"] code').forEach(function(codeEl) {
+                        cleanCodeContent(codeEl);
+                    });
+                    
+                    // Remove any existing line-numbers-rows to prevent duplicates
+                    scope.querySelectorAll('pre.line-numbers .line-numbers-rows').forEach(function(rows) {
+                        rows.remove();
+                    });
+                    
+                    // Highlight code - use scope if available, otherwise highlight all
+                    if (contentArea && typeof Prism.highlightAllUnder === 'function') {
+                        Prism.highlightAllUnder(contentArea);
+                    } else if (typeof Prism.highlightAll === 'function') {
+                        // Highlight all code blocks in the scope
+                        scope.querySelectorAll('pre code[class*="language-"]').forEach(function(codeEl) {
+                            Prism.highlightElement(codeEl);
+                        });
+                    }
+                    
+                    // Post-Prism: Clean code content again and ensure line-numbers-rows is positioned correctly
+                    setTimeout(function() {
+                        scope.querySelectorAll('pre.line-numbers').forEach(function(pre) {
+                            const codeEl = pre.querySelector('code');
+                            if (codeEl) {
+                                // Clean any line numbers that might have been inserted into code content
+                                cleanCodeContent(codeEl);
+                            }
+                            
+                            // Ensure line-numbers-rows exists and is positioned correctly
+                            let rows = pre.querySelector('.line-numbers-rows');
+                            if (!rows && hasLineNumbers) {
+                                // If rows don't exist, the plugin might not have run - try to trigger it
+                                if (codeEl && typeof Prism.highlightElement === 'function') {
+                                    Prism.highlightElement(codeEl);
+                                }
+                                rows = pre.querySelector('.line-numbers-rows');
+                            }
+                            
+                            if (rows && pre.firstChild !== rows) {
+                                pre.insertBefore(rows, pre.firstChild);
+                            }
+                            
+                            // Remove duplicate line-numbers-rows if they exist
+                            const allRows = pre.querySelectorAll('.line-numbers-rows');
+                            if (allRows.length > 1) {
+                                for (let i = 1; i < allRows.length; i++) {
+                                    allRows[i].remove();
+                                }
+                            }
+                        });
+                        console.log('PrismJS initialized successfully with line numbers');
+                    }, 100);
+                } else {
+                    console.warn('PrismJS not available');
+                }
+            } catch (error) {
+                console.error('PrismJS initialization error:', error);
+            }
+        }
+        
+        // Initialize when DOM is ready and PrismJS is loaded
+        function waitForPrismAndInit() {
+            if (typeof Prism !== 'undefined' && typeof Prism.highlightAll === 'function') {
+                setTimeout(initializePrismJS, 100);
+            } else {
+                setTimeout(waitForPrismAndInit, 50);
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                waitForPrismAndInit();
+            });
+        } else {
+            waitForPrismAndInit();
+        }
+        
+        // Also try after a longer delay to catch any late-loading content
+        setTimeout(function() {
+            if (typeof Prism !== 'undefined' && typeof Prism.highlightAll === 'function') {
+                initializePrismJS();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

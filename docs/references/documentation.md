@@ -104,7 +104,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 ```php
 /**
  * Calculate shipping cost based on weight and destination
- * 
+ *
  * @param float $weight Package weight in pounds
  * @param string $zipCode destination ZIP code
  * @return float Shipping cost in USD
@@ -116,10 +116,10 @@ public function calculateShipping(float $weight, string $zipCode): float
     if ($weight < 0) {
         throw new InvalidArgumentException('Weight cannot be negative');
     }
-    
+
     // Get shipping zone from ZIP code
     $zone = $this->getShippingZone($zipCode);
-    
+
     // Calculate base cost using zone multiplier
     return $weight * $zone->getRatePerPound();
 }
@@ -286,4 +286,4 @@ echo "Documentation validation complete!"
 
 ---
 
-*These standards evolve with our team and projects. Suggest improvements through our documentation feedback process.* 
+*These standards evolve with our team and projects. Suggest improvements through our documentation feedback process.*

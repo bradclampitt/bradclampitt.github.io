@@ -2,7 +2,7 @@
 
 **A modern, full-stack portfolio website showcasing professional work, blog posts, technical documentation, and more.**
 
-Last Updated: January 2025
+Last Updated: December 2025
 
 ---
 
@@ -199,6 +199,53 @@ The frontend pages load data from the SQLite database using `sql.js`:
 
 ### Media Management
 
+---
+
+# Install from Github Repo
+
+Follow these steps to run the admin panel locally and build the frontend after cloning this repo.
+
+1. **Clone the repository**:
+```bash
+git clone <your-repo-url>
+cd github_v2
+```
+
+2. **Install Node.js dependencies (frontend)**:
+```bash
+npm install
+```
+
+3. **Build Tailwind CSS**:
+```bash
+npm run build
+```
+
+4. **Create the unified database from the schema**:
+```bash
+sqlite3 admin/database/unified.sqlite < admin/database/schema.sql
+```
+
+5. **Set up Python and install dependencies (admin panel)**:
+```bash
+cd admin
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\\Scripts\\activate
+pip install -r requirements.txt
+```
+
+6. **Start the admin server**:
+```bash
+./admin-panel.sh start
+```
+
+7. **Open the admin panel**:
+```
+http://localhost:8000/admin
+```
+
+Note: When schema changes are made, update `admin/database/schema.sql` so new installs stay accurate.
+
 All media files are stored in `assets/images/` organized by section:
 - `assets/images/blog/` - Blog post images
 - `assets/images/portfolio/` - Portfolio project images
@@ -353,7 +400,7 @@ This project is for personal/portfolio use. Feel free to use it as inspiration f
 
 ## 📅 Changelog
 
-### January 2025
+### December 2025
 - ✅ Consolidated all sections into unified `admin/` structure
 - ✅ Migrated to single unified SQLite database with namespaced tables
 - ✅ Improved code organization and maintainability

@@ -316,4 +316,4 @@ git push origin docs/update-api-guide
 
 ---
 
-*This documentation guide is a living document that evolves with our practices and tools. Contribute improvements through our standard review process.* 
+*This documentation guide is a living document that evolves with our practices and tools. Contribute improvements through our standard review process.*

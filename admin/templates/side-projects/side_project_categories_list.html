@@ -13,6 +13,29 @@
             </div>
         </div>
 
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Categories</label>
+                <input type="text" 
+                       placeholder="Type to search by code or label..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="label">Label</option>
+                    <option value="code">Code</option>
+                    <option value="display_order">Display Order</option>
+                </select>
+            </div>
+        </div>
+
         <div class="overflow-x-auto -mx-6 px-6">
             <table class="w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
@@ -25,9 +48,9 @@
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedCategories().length">
-                    <template x-for="category in paginatedCategories()" :key="category.id">
-                        <tr class="hover:bg-slate-50">
+                <tbody id="categories-list" class="divide-y divide-slate-100 bg-white" x-show="filteredAndPaginatedCategories().length">
+                    <template x-for="category in filteredAndPaginatedCategories()" :key="category.id">
+                        <tr class="hover:bg-slate-50 cursor-move" :data-category-id="category.id">
                             <td class="px-3 py-4 hidden sm:table-cell sm:px-4">
                                 <template x-if="category.icon">
                                     <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-lg text-blue-600">
@@ -66,21 +89,21 @@
                             <td class="px-3 py-4 whitespace-nowrap text-sm text-slate-500 hidden xl:table-cell sm:px-4">
                                 <span x-text="category.display_order || 0"></span>
                             </td>
-                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4" @click.stop>
                                 <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
-                                    <button type="button" @click="editCategory(category)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</button>
-                                    <form method="POST" action="/admin/side-projects/categories/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                    <button type="button" @click.stop="editCategory(category)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition cursor-pointer" draggable="false">Edit</button>
+                                    <form method="POST" action="/admin/side-projects/categories/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this category?');" @click.stop>
                                         <input type="hidden" name="category_id" :value="category.id">
-                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition">Delete</button>
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition cursor-pointer" draggable="false">Delete</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     </template>
                 </tbody>
-                <tbody x-show="!paginatedCategories().length">
+                <tbody x-show="!filteredAndPaginatedCategories().length">
                     <tr>
-                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No categories yet.</td>
+                        <td colspan="6" class="px-6 py-6 text-center text-slate-500">No categories match your filters.</td>
                     </tr>
                 </tbody>
             </table>
@@ -118,30 +141,30 @@
     <!-- Edit/Add Form -->
     <section id="edit-form" class="glass-panel p-6">
         <h3 class="text-2xl font-semibold text-slate-900 mb-2" x-text="editingCategory ? 'Edit Side Project Category' : 'Add New Side Project Category'"></h3>
-        <p class="text-sm text-slate-500 mb-6">Icons use Font Awesome 6 classes (optional).</p>
+        <p class="text-sm text-slate-500 mb-6">Icons use Font Awesome 6 classes (optional). Categories can be reordered by dragging rows in the table above.</p>
         <form method="post" :action="editingCategory ? '/admin/side-projects/categories/update' : '/admin/side-projects/categories/new'" class="grid gap-4 md:grid-cols-2">
             <input type="hidden" name="category_id" :value="editingCategory ? editingCategory.id : ''" x-show="editingCategory">
-            <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <label class="text-sm font-medium text-slate-600 space-y-2">
                 <span>Code</span>
                 <input type="text" name="code" required placeholder="development"
                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                        x-model="formData.code">
                 <p class="text-xs text-slate-500">Unique identifier (lowercase, URL-friendly)</p>
             </label>
-            <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <label class="text-sm font-medium text-slate-600 space-y-2">
                 <span>Label</span>
                 <input type="text" name="label" required placeholder="Development"
                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                        x-model="formData.label">
             </label>
-            <label class="text-sm font-semibold text-slate-600 space-y-2 md:col-span-2">
+            <label class="text-sm font-medium text-slate-600 space-y-2 md:col-span-2">
                 <span>Description</span>
                 <textarea name="description" rows="2" placeholder="Development projects"
                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           x-model="formData.description"></textarea>
             </label>
             <div class="grid gap-4 md:col-span-1 md:grid-cols-2">
-                <label class="text-sm font-semibold text-slate-600 space-y-2">
+                <label class="text-sm font-medium text-slate-600 space-y-2">
                     <span>Icon class</span>
                     <input type="text" name="icon" placeholder="fas fa-code"
                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -154,7 +177,7 @@
                     </div>
                 </div>
             </div>
-            <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <label class="text-sm font-medium text-slate-600 space-y-2">
                 <span>Color</span>
                 <select name="color" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" x-model="formData.color">
                     <option value="">None</option>
@@ -165,11 +188,12 @@
                     <option value="purple">Purple</option>
                 </select>
             </label>
-            <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <label class="text-sm font-medium text-slate-600 space-y-2">
                 <span>Display Order</span>
                 <input type="number" name="display_order"
                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                        x-model.number="formData.display_order">
+                <p class="text-xs text-slate-500">Lower numbers appear first. You can also drag rows to reorder.</p>
             </label>
             <div class="md:col-span-2 flex gap-3" style="width: 70%;">
                 <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-semibold" x-text="editingCategory ? 'Update Category' : 'Add Category'"></button>
@@ -179,6 +203,7 @@
     </section>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
 function sideProjectCategoriesTable(initial) {
     return {
@@ -186,6 +211,9 @@ function sideProjectCategoriesTable(initial) {
         perPage: 10,
         currentPage: 1,
         categories: initial.categories || [],
+        searchQuery: '',
+        sortBy: 'display_order',
+        sortableInstance: null,
         editingCategory: null,
         formData: {
             code: '',
@@ -198,14 +226,128 @@ function sideProjectCategoriesTable(initial) {
         formIcon: '',
         init() {
             this.$watch('perPage', () => { this.currentPage = 1; });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
+            this.$watch('currentPage', () => {
+                // Reinitialize sortable when page changes
+                this.$nextTick(() => {
+                    this.initSortable();
+                });
+            });
+            // Initialize sortable after initial render
+            this.$nextTick(() => {
+                this.initSortable();
+            });
+        },
+        initSortable() {
+            const tbody = document.getElementById('categories-list');
+            if (tbody && this.sortableInstance) {
+                this.sortableInstance.destroy();
+            }
+            if (tbody) {
+                this.sortableInstance = Sortable.create(tbody, {
+                    handle: 'tr',
+                    animation: 150,
+                    filter: 'a, button, form, input, select, textarea',
+                    preventOnFilter: false,
+                    onEnd: (evt) => {
+                        // Get all rows in current page after reorder
+                        const rows = Array.from(tbody.querySelectorAll('tr[data-category-id]'));
+                        const pageStart = (this.currentPage - 1) * this.perPage;
+                        const orders = {};
+
+                        // Update display_order for categories on this page based on their new positions
+                        rows.forEach((row, index) => {
+                            const categoryId = parseInt(row.getAttribute('data-category-id'));
+                            // Calculate new display_order: position in full list = pageStart + position in page
+                            orders[categoryId] = pageStart + index + 1;
+                        });
+
+                        // Update display_order in database
+                        fetch('/admin/side-projects/categories/reorder', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: 'category_orders=' + encodeURIComponent(JSON.stringify(orders))
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Reload page to get updated order from server
+                                location.reload();
+                            } else {
+                                alert('Error reordering categories: ' + (data.error || 'Unknown error'));
+                                location.reload();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error reordering categories');
+                            location.reload();
+                        });
+                    }
+                });
+            }
+        },
+        filteredCategories() {
+            let filtered = [...this.categories];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(category => 
+                    (category.label || '').toLowerCase().includes(query) ||
+                    (category.code || '').toLowerCase().includes(query) ||
+                    (category.description || '').toLowerCase().includes(query)
+                );
+            }
+            
+            // Apply sorting - always sort by display_order first when not searching
+            if (!this.searchQuery || !this.searchQuery.trim()) {
+                // When not searching, always use display_order
+                filtered.sort((a, b) => {
+                    const aVal = a.display_order || 0;
+                    const bVal = b.display_order || 0;
+                    return aVal - bVal;
+                });
+            } else {
+                // When searching, allow other sort options
+                filtered.sort((a, b) => {
+                    let aVal, bVal;
+                    
+                    switch(this.sortBy) {
+                        case 'code':
+                            aVal = (a.code || '').toLowerCase();
+                            bVal = (b.code || '').toLowerCase();
+                            break;
+                        case 'display_order':
+                            aVal = a.display_order || 0;
+                            bVal = b.display_order || 0;
+                            return aVal - bVal;
+                        case 'label':
+                        default:
+                            aVal = (a.label || '').toLowerCase();
+                            bVal = (b.label || '').toLowerCase();
+                            break;
+                    }
+                    
+                    if (aVal < bVal) return -1;
+                    if (aVal > bVal) return 1;
+                    return 0;
+                });
+            }
+            
+            return filtered;
         },
         totalPages() {
-            const total = this.categories.length;
+            const total = this.filteredCategories().length;
             return Math.max(1, Math.ceil(total / this.perPage));
         },
-        paginatedCategories() {
+        filteredAndPaginatedCategories() {
+            const filtered = this.filteredCategories();
             const start = (this.currentPage - 1) * this.perPage;
-            return this.categories.slice(start, start + this.perPage);
+            return filtered.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -236,12 +378,13 @@ function sideProjectCategoriesTable(initial) {
             return pages;
         },
         rangeSummary() {
-            if (!this.categories.length) {
+            const filtered = this.filteredCategories();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.categories.length);
-            return `Showing ${start}-${end} of ${this.categories.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
         },
         editCategory(category) {
             this.editingCategory = { ...category };

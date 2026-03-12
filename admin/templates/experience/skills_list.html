@@ -16,9 +16,9 @@
         </div>
 
         <!-- Filters and Sorting -->
-        <div class="flex flex-col gap-4 border-b border-slate-200 pb-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
             <!-- Search Input -->
-            <div>
+            <div class="flex-1">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Search Skills</label>
                 <input type="text" 
                        placeholder="Type to search by name or description..."
@@ -28,7 +28,7 @@
             </div>
             
             <!-- Sort by -->
-            <div class="flex-1 min-w-[200px]">
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
                 <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
                     <option value="name">Name</option>

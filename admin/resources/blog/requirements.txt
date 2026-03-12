@@ -1,6 +1,0 @@
-# Blog Management System Requirements
-# Install with: pip3 install -r requirements.txt
-
-frontmatter>=3.0.0
-markdown>=3.4.4
-Pygments>=2.15.1  # For syntax highlighting in code blocks

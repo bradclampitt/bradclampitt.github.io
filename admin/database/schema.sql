@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     featured INTEGER DEFAULT 0,
     read_time TEXT,
     cover_image TEXT,
-    status TEXT DEFAULT 'Published',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
+    status TEXT DEFAULT 'Published',
     FOREIGN KEY (category_id) REFERENCES blog_categories(id)
 );
 
@@ -104,7 +104,8 @@ CREATE TABLE IF NOT EXISTS documents (
   effective_to    TEXT,
   tags            TEXT,
   extra           JSON,
-  status          TEXT DEFAULT 'Published'
+  status          TEXT DEFAULT 'Published',
+  featured        INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS document_tabs (
@@ -224,6 +225,27 @@ CREATE TABLE IF NOT EXISTS portfolio_project_features (
   icon        TEXT,
   description TEXT,
   sort        INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS feature_library (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT NOT NULL,
+  icon TEXT,
+  description TEXT,
+  category TEXT
+);
+
+CREATE TABLE IF NOT EXISTS portfolio_feature_library (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT NOT NULL,
+  icon TEXT,
+  description TEXT,
+  category TEXT
+);
+
+CREATE TABLE IF NOT EXISTS portfolio_project_statuses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS portfolio_tech_tags (
@@ -517,6 +539,7 @@ CREATE TABLE IF NOT EXISTS experience_companies (
   description     TEXT,
   website         TEXT,
   location        TEXT,
+  sort_order      INTEGER DEFAULT 0,
   created_at      TEXT DEFAULT (datetime('now')),
   updated_at      TEXT DEFAULT (datetime('now'))
 );
@@ -633,11 +656,11 @@ CREATE TABLE IF NOT EXISTS cms_blocks (
     is_active       INTEGER DEFAULT 1,
     sort_order      INTEGER DEFAULT 0,
     image           TEXT,
+    created_at      TEXT DEFAULT (datetime('now')),
+    updated_at      TEXT DEFAULT (datetime('now')),
     image_position  TEXT DEFAULT 'right',
     image_description TEXT,
-    gallery_images  TEXT,
-    created_at      TEXT DEFAULT (datetime('now')),
-    updated_at      TEXT DEFAULT (datetime('now'))
+    gallery_images  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS cms_site_settings (
@@ -656,13 +679,13 @@ CREATE TABLE IF NOT EXISTS cms_contact_info (
     value                   TEXT NOT NULL,
     field_type              TEXT DEFAULT 'text',
     icon                    TEXT,
-    description             TEXT,
     is_public               INTEGER DEFAULT 1,
+    sort_order              INTEGER DEFAULT 0,
+    updated_at              TEXT DEFAULT (datetime('now')),
+    description             TEXT,
     show_in_get_in_touch    INTEGER DEFAULT 0,
     get_in_touch_title      TEXT,
-    get_in_touch_description TEXT,
-    sort_order              INTEGER DEFAULT 0,
-    updated_at              TEXT DEFAULT (datetime('now'))
+    get_in_touch_description TEXT
 );
 
 INSERT OR IGNORE INTO cms_site_settings (setting_key, setting_value, setting_type, description) VALUES
@@ -684,4 +707,3 @@ CREATE INDEX IF NOT EXISTS idx_cms_site_settings_key ON cms_site_settings(settin
 CREATE INDEX IF NOT EXISTS idx_cms_contact_info_field_name ON cms_contact_info(field_name);
 CREATE INDEX IF NOT EXISTS idx_cms_contact_info_public ON cms_contact_info(is_public);
 CREATE INDEX IF NOT EXISTS idx_cms_contact_info_sort ON cms_contact_info(sort_order);
-

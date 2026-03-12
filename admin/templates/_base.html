@@ -31,7 +31,7 @@
     <script src="{{ url_for('admin-static', path='alpine.js') }}" defer></script>
 </head>
 <body class="min-h-full bg-slate-50 font-display text-slate-900">
-    <div class="min-h-screen lg:flex" x-data="{ 
+    <div class="min-h-screen lg:flex" x-data="{
         sidebarOpen: false,
             expandedSections: {
             portfolio: {% if request.url.path.startswith('/admin/clients') or request.url.path.startswith('/admin/projects') or request.url.path.startswith('/admin/project-types') or request.url.path.startswith('/admin/tech-tags') or request.url.path.startswith('/admin/features') %}true{% else %}false{% endif %},
@@ -66,7 +66,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <div class="overflow-y-auto flex-1">
                 <!-- Dashboard -->
                 <div class="px-4 py-4">

@@ -252,4 +252,4 @@ A chronological record of my professional development, skills acquired, certific
 
 ---
 
-*This changelog is updated monthly to track professional growth and development. It serves as both a personal record and a demonstration of continuous learning and improvement.* 
+*This changelog is updated monthly to track professional growth and development. It serves as both a personal record and a demonstration of continuous learning and improvement.*

@@ -6,93 +6,157 @@
 {% block content %}
 <div class="space-y-10">
     <section class="card-grid">
-        <article class="glass-panel p-6">
+        <a href="{{ url_for('clients_list') }}" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Clients</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ clients_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Active relationships across all projects.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="{{ url_for('projects_list') }}" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Portfolios</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ projects_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Tracked portfolio entries in the system.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/documents" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Documents</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ documents_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Knowledge base and document entries.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/documents/categories" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Categories</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ doc_categories_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Document categories.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/tech-skills" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Tech Skills</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ tech_skills_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Technical skills and technologies.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/experience" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Job Experiences</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ job_experiences_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Work experience entries.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/experience/companies" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Companies</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ companies_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Companies in experience history.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/tech-skills/skills-sets" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Skills Sets</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ skills_sets_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Technical skill sets.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/tech-skills/tools" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Tools</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ tools_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Development tools and software.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/tech-skills/soft-skills" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Soft Skills</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ soft_skills_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Personal attributes and soft skills.</p>
-        </article>
-        <article class="glass-panel p-6">
+        </a>
+        <a href="/admin/experience/education" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <p class="text-sm uppercase tracking-widest text-slate-500">Education</p>
             <div class="mt-3 flex items-end gap-2">
                 <span class="text-4xl font-semibold text-slate-900">{{ education_count }}</span>
                 <span class="text-sm text-slate-500">Total</span>
             </div>
             <p class="mt-2 text-sm text-slate-500">Education and certifications.</p>
+        </a>
+        <a href="/admin/blog" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">Blog Posts</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ blog_posts_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">{{ blog_featured_count }} featured · {{ blog_categories_count }} categories</p>
+        </a>
+        <a href="/admin/side-projects" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">Side Projects</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ side_projects_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">{{ side_project_categories_count }} categories</p>
+        </a>
+        <a href="/admin/magento" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">Magento Modules</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ magento_modules_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">{{ magento_categories_count }} categories</p>
+        </a>
+        <a href="/admin/photography" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">Photography</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ photography_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">{{ photography_categories_count }} categories</p>
+        </a>
+        <a href="/admin/references" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">References</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ references_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">Professional references and testimonials.</p>
+        </a>
+        <a href="/admin/cms/blocks" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">CMS Blocks</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ cms_blocks_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">{{ cms_blocks_active_count }} active</p>
+        </a>
+        <a href="/admin/cms/settings" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <p class="text-sm uppercase tracking-widest text-slate-500">CMS Settings</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ cms_settings_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">Site configuration settings.</p>
+        </a>
+        <article class="glass-panel p-6">
+            <p class="text-sm uppercase tracking-widest text-slate-500">Contact Info</p>
+            <div class="mt-3 flex items-end gap-2">
+                <span class="text-4xl font-semibold text-slate-900">{{ cms_contact_count }}</span>
+                <span class="text-sm text-slate-500">Total</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">Contact information fields.</p>
         </article>
         <article class="glass-panel p-6 col-span-full lg:col-span-2">
             <p class="text-sm uppercase tracking-widest text-slate-500 mb-4">Status Snapshot</p>
@@ -139,9 +203,9 @@
                             <p class="font-semibold text-slate-900">{{ project.title }}</p>
                             <p class="text-xs uppercase tracking-wide text-slate-400">{{ project.slug }}</p>
                         </td>
-                        <td class="py-3 text-slate-600">{{ project.client or '—' }}</td>
-                        <td class="py-3">{{ project.launched_date or '—' }}</td>
-                        <td class="py-3">{{ project.updated_at or '—' }}</td>
+                        <td class="py-3 text-slate-600">{{ project.client or '-' }}</td>
+                        <td class="py-3">{{ project.launched_date or '-' }}</td>
+                        <td class="py-3">{{ project.updated_at or '-' }}</td>
                         <td class="py-3">
                             {% if project.status %}
                                 <span class="status-pill bg-emerald-50 text-emerald-700">{{ project.status }}</span>
@@ -235,8 +299,222 @@
                             <p class="font-semibold text-slate-900">{{ doc.title }}</p>
                             <p class="text-xs uppercase tracking-wide text-slate-400">{{ doc.slug }}</p>
                         </td>
-                        <td class="py-3 text-slate-600">{{ doc.category or '—' }}</td>
-                        <td class="py-3">{{ doc.updated_at or '—' }}</td>
+                        <td class="py-3 text-slate-600">{{ doc.category or '-' }}</td>
+                        <td class="py-3">{{ doc.updated_at or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if latest_blog_posts %}
+    <section class="glass-panel p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Latest Blog Posts</h3>
+                <p class="text-sm text-slate-500">Recently published or updated blog posts.</p>
+            </div>
+            <a href="/admin/blog" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                View all posts
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
+                <thead>
+                    <tr>
+                        <th class="py-3 text-left">Post</th>
+                        <th class="py-3 text-left">Category</th>
+                        <th class="py-3 text-left">Date</th>
+                        <th class="py-3 text-left">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for post in latest_blog_posts %}
+                    <tr class="text-slate-700">
+                        <td class="py-3">
+                            <p class="font-semibold text-slate-900">{{ post.title }}</p>
+                            <p class="text-xs uppercase tracking-wide text-slate-400">{{ post.slug }}</p>
+                        </td>
+                        <td class="py-3 text-slate-600">{{ post.category or '-' }}</td>
+                        <td class="py-3">{{ post.date or post.updated_at or '-' }}</td>
+                        <td class="py-3">
+                            <span class="status-pill bg-emerald-50 text-emerald-700">{{ post.status or 'Published' }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if latest_side_projects %}
+    <section class="glass-panel p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Latest Side Projects</h3>
+                <p class="text-sm text-slate-500">Recently added or updated side projects.</p>
+            </div>
+            <a href="/admin/side-projects" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                View all projects
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
+                <thead>
+                    <tr>
+                        <th class="py-3 text-left">Project</th>
+                        <th class="py-3 text-left">Category</th>
+                        <th class="py-3 text-left">Status</th>
+                        <th class="py-3 text-left">Posted</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for project in latest_side_projects %}
+                    <tr class="text-slate-700">
+                        <td class="py-3">
+                            <p class="font-semibold text-slate-900">{{ project.title }}</p>
+                            <p class="text-xs uppercase tracking-wide text-slate-400">{{ project.slug }}</p>
+                        </td>
+                        <td class="py-3 text-slate-600">{{ project.category or '-' }}</td>
+                        <td class="py-3">
+                            <span class="status-pill bg-blue-50 text-blue-700">{{ project.status or '-' }}</span>
+                        </td>
+                        <td class="py-3">{{ project.posted_date or project.revised_date or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if latest_magento_modules %}
+    <section class="glass-panel p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Latest Magento Modules</h3>
+                <p class="text-sm text-slate-500">Recently added or updated Magento modules.</p>
+            </div>
+            <a href="/admin/magento" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                View all modules
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
+                <thead>
+                    <tr>
+                        <th class="py-3 text-left">Module</th>
+                        <th class="py-3 text-left">Category</th>
+                        <th class="py-3 text-left">Status</th>
+                        <th class="py-3 text-left">Posted</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for module in latest_magento_modules %}
+                    <tr class="text-slate-700">
+                        <td class="py-3">
+                            <p class="font-semibold text-slate-900">{{ module.title }}</p>
+                            <p class="text-xs uppercase tracking-wide text-slate-400">{{ module.slug }}</p>
+                        </td>
+                        <td class="py-3 text-slate-600">{{ module.category or '-' }}</td>
+                        <td class="py-3">
+                            <span class="status-pill bg-orange-50 text-orange-700">{{ module.status or '-' }}</span>
+                        </td>
+                        <td class="py-3">{{ module.posted_date or module.revised_date or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if latest_photography %}
+    <section class="glass-panel p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Latest Photography</h3>
+                <p class="text-sm text-slate-500">Recently added or updated photography entries.</p>
+            </div>
+            <a href="/admin/photography" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                View all photos
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
+                <thead>
+                    <tr>
+                        <th class="py-3 text-left">Photo</th>
+                        <th class="py-3 text-left">Category</th>
+                        <th class="py-3 text-left">Location</th>
+                        <th class="py-3 text-left">Year</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for photo in latest_photography %}
+                    <tr class="text-slate-700">
+                        <td class="py-3">
+                            <p class="font-semibold text-slate-900">{{ photo.photo_name }}</p>
+                        </td>
+                        <td class="py-3 text-slate-600">{{ photo.category or '-' }}</td>
+                        <td class="py-3">{{ photo.location or '-' }}</td>
+                        <td class="py-3">{{ photo.year or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if latest_references %}
+    <section class="glass-panel p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Latest References</h3>
+                <p class="text-sm text-slate-500">Recently added or updated references.</p>
+            </div>
+            <a href="/admin/references" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+                View all references
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+                </svg>
+            </a>
+        </div>
+        <div class="mt-6 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
+                <thead>
+                    <tr>
+                        <th class="py-3 text-left">Person</th>
+                        <th class="py-3 text-left">Company</th>
+                        <th class="py-3 text-left">Title</th>
+                        <th class="py-3 text-left">Updated</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for ref in latest_references %}
+                    <tr class="text-slate-700">
+                        <td class="py-3">
+                            <p class="font-semibold text-slate-900">{{ ref.person_name }}</p>
+                        </td>
+                        <td class="py-3 text-slate-600">{{ ref.company or '-' }}</td>
+                        <td class="py-3">{{ ref.title or '-' }}</td>
+                        <td class="py-3">{{ ref.updated_at or '-' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

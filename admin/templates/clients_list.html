@@ -32,6 +32,7 @@
             <table class="w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
                     <tr>
+                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Logo</th>
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Client</th>
                         <th class="px-3 py-3 text-left hidden md:table-cell sm:px-4 sm:py-3">Website</th>
                         <th class="px-3 py-3 text-center hidden md:table-cell sm:px-4 sm:py-3">Projects</th>
@@ -41,6 +42,16 @@
                 <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedClients().length">
                     <template x-for="client in paginatedClients()" :key="client.id">
                         <tr class="hover:bg-slate-50">
+                            <td class="px-3 py-4 sm:px-4">
+                                <template x-if="client.logo_url">
+                                    <img :src="normalizeLogoUrl(client.logo_url)" :alt="client.name + ' logo'" class="w-12 h-12 object-contain bg-slate-50 rounded border border-slate-200">
+                                </template>
+                                <template x-if="!client.logo_url">
+                                    <div class="w-12 h-12 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
+                                        <i class="fas fa-image text-slate-400 text-xs"></i>
+                                    </div>
+                                </template>
+                            </td>
                             <td class="px-3 py-4 sm:px-4">
                                 <p class="font-semibold text-slate-900" x-text="client.name"></p>
                                 <p class="text-xs uppercase tracking-wide text-slate-400 md:hidden" x-text="client.logo_url || 'No logo reference'"></p>
@@ -53,7 +64,7 @@
                                     <a :href="client.website" target="_blank" class="text-blue-600 hover:underline break-all" x-text="client.website"></a>
                                 </template>
                                 <template x-if="!client.website">
-                                    <span class="text-slate-400">—</span>
+                                    <span class="text-slate-400">-</span>
                                 </template>
                             </td>
                             <td class="px-3 py-4 text-center font-semibold text-slate-900 hidden md:table-cell sm:px-4" x-text="client.project_total"></td>
@@ -71,7 +82,7 @@
                 </tbody>
                 <tbody x-show="!paginatedClients().length">
                     <tr>
-                        <td colspan="4" class="px-6 py-6 text-center text-slate-500">No clients match your search.</td>
+                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No clients match your search.</td>
                     </tr>
                 </tbody>
             </table>
@@ -87,17 +98,17 @@
                     </template>
                 </select>
             </div>
-            
+
             <!-- Middle: Showing count -->
             <p class="text-sm text-slate-500 text-center" x-text="rangeSummary()"></p>
-            
+
             <!-- Right: Page navigation -->
             <div class="flex items-center gap-2">
                 <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="prevPage" :disabled="currentPage === 1">Prev</button>
                 <template x-for="page in pageNumbers()" :key="'client-page-' + page">
-                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold" 
-                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'" 
-                            @click="goToPage(page)" 
+                    <button type="button" class="rounded-lg border px-3 py-1 text-xs font-semibold"
+                            :class="page === currentPage ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-100'"
+                            @click="goToPage(page)"
                             x-text="page"></button>
                 </template>
                 <button type="button" class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40" @click="nextPage" :disabled="currentPage === totalPages()">Next</button>
@@ -123,7 +134,13 @@
             </label>
             <label class="text-sm font-semibold text-slate-600 space-y-2">
                 <span>Logo URL</span>
-                <input name="logo_url" placeholder="/assets/images/portfolio/logo.png" class="w-full font-medium rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" x-model="formData.logo_url">
+                <div class="flex gap-2">
+                    <input name="logo_url" placeholder="/assets/images/logos/logo.png" class="flex-1 font-medium rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" x-model="formData.logo_url">
+                    <button type="button" @click="openImageBrowser()" class="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition whitespace-nowrap">
+                        <i class="fas fa-folder-open mr-2"></i>Browse
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Path to logo image in /assets/images/logos/</p>
             </label>
             <label class="text-sm font-semibold text-slate-600 space-y-2 md:col-span-2">
                 <span>Blurb</span>
@@ -135,6 +152,58 @@
             </div>
         </form>
     </section>
+
+    <!-- Image Browser Modal -->
+    <div x-show="showBrowserModal" 
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         style="display: none;"
+         @click.away="closeImageBrowser()">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="closeImageBrowser()"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Select Logo Image</h3>
+                        <button type="button" @click="closeImageBrowser()" class="text-gray-400 hover:text-gray-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div x-show="browserLoading" class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
+                        <p class="mt-2 text-sm text-gray-500">Loading images...</p>
+                    </div>
+                    <div x-show="!browserLoading && availableImages.length === 0" class="text-center py-8">
+                        <p class="text-sm text-gray-500">No images found in /assets/images/logos/</p>
+                    </div>
+                    <div x-show="!browserLoading && availableImages.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                        <template x-for="img in availableImages" :key="img.url">
+                            <div @click="selectedBrowserImage = img.url" 
+                                 :class="selectedBrowserImage === img.url ? 'ring-2 ring-blue-500' : 'ring-1 ring-gray-200'"
+                                 class="relative cursor-pointer rounded-lg overflow-hidden bg-gray-50 hover:ring-2 hover:ring-blue-300 transition">
+                                <img :src="img.url" :alt="img.filename" class="w-full h-24 object-contain">
+                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate" x-text="img.filename"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" 
+                            @click="selectImage()" 
+                            :disabled="!selectedBrowserImage"
+                            :class="selectedBrowserImage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                        Select Image
+                    </button>
+                    <button type="button" 
+                            @click="closeImageBrowser()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -149,6 +218,10 @@ function clientDirectory(initial) {
         editingClient: false,
         createUrl: "{{ url_for('create_client') }}",
         updateUrl: "{{ url_for('client_update') }}",
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImage: null,
         formData: {
             client_id: null,
             name: '',
@@ -184,6 +257,13 @@ function clientDirectory(initial) {
                 logo_url: '',
                 blurb: ''
             };
+        },
+        normalizeLogoUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) {
+                return url;
+            }
+            return `/${url}`;
         },
         filteredClients() {
             const term = this.query.trim().toLowerCase();
@@ -232,18 +312,18 @@ function clientDirectory(initial) {
             const total = this.totalPages();
             if (total === 0) return [];
             if (total === 1) return [1];
-            
+
             const current = this.currentPage;
             const pages = [];
-            
+
             // Show current page and 1 page on each side
             const start = Math.max(1, current - 1);
             const end = Math.min(total, current + 1);
-            
+
             for (let i = start; i <= end; i++) {
                 pages.push(i);
             }
-            
+
             return pages;
         },
         rangeSummary() {
@@ -254,6 +334,31 @@ function clientDirectory(initial) {
             const start = (this.currentPage - 1) * this.perPage + 1;
             const end = Math.min(start + this.perPage - 1, filtered.length);
             return `Showing ${start}-${end} of ${filtered.length} items`;
+        },
+        async openImageBrowser() {
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImage = null;
+            try {
+                const response = await fetch('/admin/clients/images/browse');
+                const data = await response.json();
+                this.availableImages = Array.isArray(data.images) ? data.images : [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImage = null;
+        },
+        selectImage() {
+            if (this.selectedBrowserImage) {
+                this.formData.logo_url = this.selectedBrowserImage;
+                this.closeImageBrowser();
+            }
         },
     };
 }

@@ -70,4 +70,3 @@ STATUS_DEFAULTS = [
     "Shutdown",
     "Revised by Ultrasun NL",
 ]
-

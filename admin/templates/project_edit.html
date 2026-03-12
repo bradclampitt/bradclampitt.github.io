@@ -55,46 +55,58 @@
     statusOptions: {{ status_options | tojson | safe }},
     currentStatus: {{ selected_status | tojson | safe }}
 })' x-init="init()">
+    <!-- Error/Success Messages -->
+    <div x-show="getUrlParameter('error') || getUrlParameter('success')" 
+         x-cloak
+         x-init="setTimeout(() => { const url = new URL(window.location); url.searchParams.delete('error'); url.searchParams.delete('success'); window.history.replaceState({}, '', url); }, 5000)"
+         class="mb-6 p-4 rounded-lg"
+         :class="getUrlParameter('error') ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-green-50 border border-green-200 text-green-800'">
+        <div class="flex items-center">
+            <i :class="getUrlParameter('error') ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'" class="mr-2"></i>
+            <span x-text="decodeURIComponent(getUrlParameter('error') || getUrlParameter('success') || '')"></span>
+        </div>
+    </div>
+    
     <form method="post" action="{{ url_for('project_save') }}" class="glass-panel p-6 space-y-8">
         {% if project %}
         <input type="hidden" name="project_id" value="{{ project['id'] }}">
         {% endif %}
         <input type="hidden" name="extra" value='{{ project["extra"] if project and project["extra"] else "{}" }}'>
 
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+            <div class="flex-1 min-w-0">
                 <p class="text-sm uppercase tracking-widest text-slate-500">{{ mode|title }}</p>
-                <h2 class="text-3xl font-semibold text-slate-900">{{ project['title'] if project else 'New Project' }}</h2>
+                <h2 class="text-3xl font-semibold text-slate-900 break-words">{{ project['title'] if project else 'New Project' }}</h2>
                 <p class="text-sm text-slate-500">Populate all metadata directly from this page.</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-3 flex-shrink-0 whitespace-nowrap">
                 <a href="{{ url_for('projects_list') }}" class="inline-flex items-center rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">← Back</a>
                 <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition font-semibold">Save Project</button>
             </div>
         </div>
 
         <section class="grid gap-6 lg:grid-cols-2">
-            <label class="space-y-2 text-sm font-semibold text-slate-600">
+            <label class="space-y-2 text-sm font-semibold text-slate-600 block">
                 <span>Project title</span>
-                <input name="title" required value="{{ project['title'] if project else '' }}" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <input name="title" required value="{{ project['title'] if project else '' }}" class="w-full rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
             </label>
-            <label class="space-y-2 text-sm font-semibold text-slate-600">
+            <label class="space-y-2 text-sm font-semibold text-slate-600 block">
                 <span>Slug</span>
-                <input name="slug" value="{{ project['slug'] if project else '' }}" placeholder="auto-generated if blank" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <input name="slug" value="{{ project['slug'] if project else '' }}" placeholder="auto-generated if blank" class="w-full rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
             </label>
-            <label class="space-y-2 text-sm font-semibold text-slate-600">
+            <label class="space-y-2 text-sm font-semibold text-slate-600 block">
                 <span>Client</span>
-                <select name="client_id" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">— None —</option>
+                <select name="client_id" class="w-full rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">- None -</option>
                     {% for client in clients %}
                     <option value="{{ client['id'] }}" {% if project and project['client_id'] == client['id'] %}selected{% endif %}>{{ client['name'] }}</option>
                     {% endfor %}
                 </select>
             </label>
-            <label class="space-y-2 text-sm font-semibold text-slate-600">
+            <label class="space-y-2 text-sm font-semibold text-slate-600 block">
                 <span>Project type</span>
-                <select name="type_id" class="rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">— None —</option>
+                <select name="type_id" class="w-full rounded-2xl font-medium border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">- None -</option>
                     {% for pt in project_types %}
                     <option value="{{ pt['id'] }}" {% if project and project['type_id'] == pt['id'] %}selected{% endif %}>{{ pt['label'] }} ({{ pt['code'] }})</option>
                     {% endfor %}
@@ -197,7 +209,7 @@
                 <label class="text-sm font-semibold text-slate-600">Status</label>
                 <div class="flex gap-2">
                     <select class="w-1/2 font-medium text-sm rounded-2xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500" x-model="statusSelection" @change="syncStatusSelection">
-                        <option value="">— None —</option>
+                        <option value="">- None -</option>
                         <template x-for="status in statusOptions" :key="status">
                             <option :value="status" x-text="status"></option>
                         </template>
@@ -291,7 +303,17 @@
                             <div class="grid gap-3 lg:col-span-3">
                                 <label class="text-xs font-semibold text-slate-500 space-y-1">
                                     <span>Icon</span>
-                                    <input type="text" name="feature_icons" x-model="feature.icon" placeholder="fas fa-iconname" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                                    <div class="flex gap-2 items-center">
+                                        <div class="flex-1">
+                                            <input type="text" name="feature_icons" x-model="feature.icon" placeholder="fas fa-iconname" class="w-full font-medium text-sm rounded-xl border-slate-200">
+                                        </div>
+                                        <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50" x-show="feature.icon && feature.icon.trim()">
+                                            <i :class="feature.icon" class="text-slate-600 text-lg"></i>
+                                        </div>
+                                        <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50" x-show="!feature.icon || !feature.icon.trim()">
+                                            <i class="fas fa-image text-slate-300 text-lg"></i>
+                                        </div>
+                                    </div>
                                 </label>
                                 <label class="text-xs font-semibold text-slate-500 space-y-1">
                                     <span>Sort</span>
@@ -334,11 +356,19 @@
             <p class="text-sm text-slate-500">Save the project first to unlock uploads and attachments.</p>
         {% else %}
             <div class="grid gap-4 lg:grid-cols-2">
-                <form method="post" action="{{ url_for('upload_image') }}" enctype="multipart/form-data" class="space-y-3 rounded-2xl border border-slate-200 p-4">
+                <form method="post" action="{{ url_for('upload_image') }}" enctype="multipart/form-data" class="space-y-3 rounded-2xl border border-slate-200 p-4" x-data="{ hasFile: false, fileName: '' }" @submit.prevent="if (hasFile) { $el.submit(); } else { alert('Please select an image file to upload.'); }">
                     <input type="hidden" name="project_id" value="{{ project['id'] }}">
                     <label class="space-y-1 text-sm font-semibold text-slate-600">
                         <span>Upload file</span>
-                        <input type="file" name="file" required class="w-full font-medium rounded-xl border-slate-200">
+                        <input type="file" name="file" accept="image/*" required
+                               @change="hasFile = $event.target.files.length > 0; fileName = hasFile ? $event.target.files[0].name : '';"
+                               class="w-full font-medium rounded-xl border-slate-200">
+                        <p class="text-xs text-slate-500" x-show="hasFile">
+                            Selected: <span x-text="fileName" class="font-medium"></span>
+                        </p>
+                        <p class="text-xs text-slate-500" x-show="!hasFile">
+                            Please select an image file (PNG, JPG, JPEG, GIF, WEBP, SVG)
+                        </p>
                     </label>
                     <label class="space-y-1 text-sm font-semibold text-slate-600">
                         <span>Alt text</span>
@@ -352,34 +382,103 @@
                         <input type="checkbox" name="is_cover" value="1" class="rounded font-medium border-slate-300 text-blue-600 focus:ring-blue-500">
                         Make cover image
                     </label>
-                    <button type="submit" class="w-full rounded-2xl bg-slate-900 py-2 text-sm font-semibold text-white">Upload image</button>
+                    <button type="submit" 
+                            :disabled="!hasFile"
+                            :class="hasFile ? 'bg-slate-900 hover:bg-slate-800' : 'bg-gray-300 cursor-not-allowed'"
+                            class="w-full rounded-2xl py-2 text-sm font-semibold text-white transition">Upload image</button>
                 </form>
 
-                <form method="post" action="{{ url_for('add_existing_image') }}" class="space-y-3 rounded-2xl border border-slate-200 p-4">
-                    <input type="hidden" name="project_id" value="{{ project['id'] }}">
+                <div class="space-y-3 rounded-2xl border border-slate-200 p-4" x-data="projectImageBrowser()">
                     <label class="space-y-1 text-sm font-semibold text-slate-600">
-                        <span>Attach existing asset</span>
-                        <select name="image_path" class="w-full font-medium text-sm rounded-xl border-slate-200" required>
-                            <option value="">— Select image —</option>
-                            {% for path in available_images %}
-                            <option value="{{ path }}">{{ path }}</option>
-                            {% endfor %}
-                        </select>
+                        <span>Attach existing images</span>
+                        <button type="button" @click="openImageBrowser()" class="w-full rounded-2xl border border-slate-900 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-900 hover:text-white">
+                            <i class="fas fa-folder-open mr-2"></i>Browse Images
+                        </button>
                     </label>
-                    <label class="space-y-1 text-sm font-semibold text-slate-600">
-                        <span>Alt text</span>
-                        <input name="alt" class="w-full font-medium text-sm rounded-xl border-slate-200">
-                    </label>
-                    <label class="space-y-1 text-sm font-semibold text-slate-600">
-                        <span>Sort order</span>
-                        <input type="number" name="sort" value="0" class="w-full text-sm font-medium rounded-xl border-slate-200">
-                    </label>
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-                        <input type="checkbox" name="is_cover" value="1" class="rounded font-medium text-sm border-slate-300 text-blue-600 focus:ring-blue-500">
-                        Make cover image
-                    </label>
-                    <button type="submit" class="w-full rounded-2xl border border-slate-900 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-900 hover:text-white">Attach image</button>
-                </form>
+                    
+                    <!-- Image Browser Modal -->
+                    <div x-show="showBrowserModal" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+                         @click.away="closeImageBrowser()"
+                         style="display: none;">
+                        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-slate-900">Select Images from /assets/images/portfolio</h3>
+                                <button type="button" @click="closeImageBrowser()" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-6">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-show="!browserLoading && availableImages.length > 0">
+                                    <template x-for="img in availableImages" :key="img.url">
+                                        <div class="relative group border-2 rounded-lg overflow-hidden cursor-pointer transition-all"
+                                             :class="isImageSelected(img.url) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'"
+                                             @click="toggleImageSelection(img.url)">
+                                            <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                                                <img :src="img.url" :alt="img.filename" class="w-full h-full object-cover">
+                                            </div>
+                                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity"></div>
+                                            <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-2 truncate" x-text="img.filename"></div>
+                                            <div x-show="isImageSelected(img.url)" class="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1.5">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </div>
+                                            <div x-show="isImageSelected(img.url) && selectedBrowserImages.indexOf(img.url) === 0" class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                                                Main
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div x-show="!browserLoading && availableImages.length === 0" class="text-center py-12">
+                                    <i class="fas fa-images text-4xl text-gray-400 mb-4"></i>
+                                    <p class="text-gray-500">No images found in /assets/images/portfolio</p>
+                                </div>
+                                <div x-show="browserLoading" class="text-center py-12">
+                                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                                    <p class="text-gray-500">Loading images...</p>
+                                </div>
+                            </div>
+                            <div class="px-6 py-4 border-t border-gray-200">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="text-sm text-gray-600">
+                                        <span x-text="availableImages.length"></span> images found
+                                        <span x-show="selectedBrowserImages.length > 0" class="ml-2 text-blue-600 font-semibold">
+                                            (<span x-text="selectedBrowserImages.length"></span> selected)
+                                        </span>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <button type="button" @click="closeImageBrowser()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                            Cancel
+                                        </button>
+                                        <button type="button" @click="addSelectedImages()" 
+                                                :disabled="selectedBrowserImages.length === 0"
+                                                :class="selectedBrowserImages.length > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                                                class="px-4 py-2 text-white rounded-lg transition">
+                                            <i class="fas fa-check mr-2"></i>Select <span x-show="selectedBrowserImages.length > 0" x-text="selectedBrowserImages.length"></span> Image<span x-show="selectedBrowserImages.length !== 1">s</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div x-show="selectedBrowserImages.length > 0" class="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Image Description (Optional)</label>
+                                        <input type="text" x-model="browserImageAlt" 
+                                               placeholder="Enter image description..."
+                                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <label class="flex items-center">
+                                        <input type="checkbox" x-model="browserImageAsCover" class="mr-2">
+                                        <span class="text-sm text-slate-700">Set First Selected as Cover Image</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="mt-6 overflow-x-auto">
@@ -402,7 +501,7 @@
                                 <img src="{{ image['url'] }}" alt="" class="h-16 w-24 rounded object-cover">
                             </td>
                             <td class="px-4 py-2 text-xs text-slate-500">{{ image['url'] }}</td>
-                            <td class="px-4 py-2">{{ image['alt'] or '—' }}</td>
+                            <td class="px-4 py-2">{{ image['alt'] or '-' }}</td>
                             <td class="px-4 py-2">{{ image['sort'] }}</td>
                             <td class="px-4 py-2">{{ 'Yes' if image['is_cover'] else 'No' }}</td>
                             <td class="px-4 py-2 text-right space-x-2">
@@ -446,6 +545,10 @@ function projectEditor(initial) {
         statusOptions: Array.from(new Set(initial.statusOptions || [])),
         statusSelection: initial.currentStatus || '',
         statusInput: '',
+        getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        },
         init() {
             if (this.statusSelection && !this.statusOptions.includes(this.statusSelection)) {
                 this.statusOptions.push(this.statusSelection);
@@ -591,6 +694,99 @@ function datePicker(initialValue = '', fieldName = '') {
             const current = new Date(this.value);
             return current.getFullYear() === this.year && current.getMonth() === this.month && current.getDate() === day;
         },
+    };
+}
+
+function projectImageBrowser() {
+    return {
+        showBrowserModal: false,
+        browserLoading: false,
+        availableImages: [],
+        selectedBrowserImages: [],
+        browserImageAlt: '',
+        browserImageAsCover: false,
+        
+        async openImageBrowser() {
+            this.showBrowserModal = true;
+            this.browserLoading = true;
+            this.selectedBrowserImages = [];
+            this.browserImageAlt = '';
+            this.browserImageAsCover = false;
+            
+            try {
+                const response = await fetch('/admin/projects/images/browse');
+                const data = await response.json();
+                this.availableImages = data.images || [];
+            } catch (error) {
+                console.error('Error loading images:', error);
+                this.availableImages = [];
+            } finally {
+                this.browserLoading = false;
+            }
+        },
+        
+        closeImageBrowser() {
+            this.showBrowserModal = false;
+            this.selectedBrowserImages = [];
+            this.browserImageAlt = '';
+            this.browserImageAsCover = false;
+        },
+        
+        toggleImageSelection(url) {
+            const index = this.selectedBrowserImages.indexOf(url);
+            if (index > -1) {
+                this.selectedBrowserImages.splice(index, 1);
+            } else {
+                this.selectedBrowserImages.push(url);
+            }
+        },
+        
+        isImageSelected(url) {
+            return this.selectedBrowserImages.includes(url);
+        },
+        
+        async addSelectedImages() {
+            if (this.selectedBrowserImages.length === 0) return;
+            
+            const projectIdInput = document.querySelector('input[name="project_id"]');
+            const projectId = projectIdInput ? projectIdInput.value : null;
+            if (!projectId) {
+                alert('Please save the project first before adding images.');
+                return;
+            }
+            
+            for (let i = 0; i < this.selectedBrowserImages.length; i++) {
+                const imageUrl = this.selectedBrowserImages[i];
+                const isCover = this.browserImageAsCover && i === 0;
+                
+                const formData = new FormData();
+                formData.append('project_id', projectId);
+                formData.append('image_path', imageUrl);
+                formData.append('alt', this.browserImageAlt || '');
+                formData.append('sort', i);
+                if (isCover) {
+                    formData.append('is_cover', '1');
+                }
+                
+                try {
+                    const response = await fetch('{{ url_for("add_existing_image") }}', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to add image: ${response.statusText}`);
+                    }
+                } catch (error) {
+                    console.error('Error adding image:', error);
+                    alert(`Failed to add image: ${error.message}`);
+                }
+            }
+            
+            this.closeImageBrowser();
+            // Reload the page to show the new images
+            window.location.reload();
+        }
     };
 }
 </script>

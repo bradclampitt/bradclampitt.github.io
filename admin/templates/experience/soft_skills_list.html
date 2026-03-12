@@ -16,9 +16,9 @@
         </div>
 
         <!-- Filters and Sorting -->
-        <div class="flex flex-col gap-4 border-b border-slate-200 pb-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
             <!-- Search Input -->
-            <div>
+            <div class="flex-1">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Search Soft Skills</label>
                 <input type="text" 
                        placeholder="Type to search by name..."
@@ -28,7 +28,7 @@
             </div>
             
             <!-- Sort by -->
-            <div class="flex-1 min-w-[200px]">
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
                 <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
                     <option value="name">Name</option>
@@ -37,18 +37,23 @@
         </div>
 
         <div class="overflow-x-auto -mx-6 px-6">
-            <table class="w-full divide-y divide-slate-200 text-sm">
+            <table class="w-full divide-y divide-slate-200 text-sm table-fixed" style="min-width: 280px;">
+                <colgroup>
+                    <col style="width: 4rem;">
+                    <col>
+                    <col style="width: 1%; min-width: 8rem;">
+                </colgroup>
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
                     <tr>
                         <th class="px-3 py-3 text-left hidden sm:table-cell sm:px-4 sm:py-3">Icon</th>
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Name</th>
-                        <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
+                        <th class="px-3 py-3 text-right sm:px-4 sm:py-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedItems().length">
                     <template x-for="skill in paginatedItems()" :key="skill.id">
                         <tr class="hover:bg-slate-50">
-                            <td class="px-3 py-4 whitespace-nowrap hidden sm:table-cell sm:px-4">
+                            <td class="px-3 py-4 whitespace-nowrap hidden sm:table-cell sm:px-4" style="width: 4rem;">
                                 <template x-if="skill.icon">
                                     <i :class="skill.icon" class="text-xl text-slate-600"></i>
                                 </template>
@@ -56,11 +61,11 @@
                                     <span class="text-slate-400">-</span>
                                 </template>
                             </td>
-                            <td class="px-3 py-4 whitespace-nowrap sm:px-4">
-                                <div class="text-sm font-medium text-slate-900" x-text="skill.name"></div>
+                            <td class="px-3 py-4 sm:px-4 min-w-0">
+                                <div class="text-sm font-medium text-slate-900 truncate" x-text="skill.name"></div>
                             </td>
-                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium sm:px-4">
-                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2">
+                            <td class="px-3 py-4 whitespace-nowrap text-right sm:px-4">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:gap-2 justify-end">
                                     <button type="button" @click="editItem(skill)" class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">Edit</button>
                                     <form method="POST" action="/admin/experience/soft-skills/delete" class="inline" onsubmit="return confirm('Are you sure you want to delete this soft skill?');">
                                         <input type="hidden" name="skill_id" :value="skill.id">
@@ -112,29 +117,30 @@
     <section id="edit-form" class="glass-panel p-6">
         <h3 class="text-2xl font-semibold text-slate-900 mb-2" x-text="editingItem ? 'Edit Soft Skill' : 'Add New Soft Skill'"></h3>
         <p class="text-sm text-slate-500 mb-6">Icons use Font Awesome 6 classes (optional).</p>
-        <form method="post" action="/admin/experience/soft-skills/save" class="grid gap-4 md:grid-cols-2">
+        <form method="post" action="/admin/experience/soft-skills/save" class="space-y-4">
             <input type="hidden" name="skill_id" :value="editingItem ? editingItem.id : ''" x-show="editingItem">
-            <label class="text-sm font-semibold text-slate-600 space-y-2">
-                <span>Name</span>
-                <input type="text" name="name" required placeholder="Communication"
-                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                       x-model="formData.name">
-            </label>
-            <div class="grid gap-4 md:col-span-1 md:grid-cols-2">
-                <label class="text-sm font-semibold text-slate-600 space-y-2">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
+                <label class="text-sm font-semibold text-slate-600 space-y-2 flex-1 min-w-0 block">
+                    <span>Name</span>
+                    <input type="text" name="name" required placeholder="Communication"
+                           class="w-full min-w-0 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           x-model="formData.name">
+                    <p class="text-xs text-slate-500">Display name for the soft skill (e.g. Communication, Leadership)</p>
+                </label>
+                <label class="text-sm font-semibold text-slate-600 space-y-2 flex-1 min-w-0 block">
                     <span>Icon class</span>
                     <input type="text" name="icon" placeholder="fas fa-comments"
-                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           class="w-full min-w-0 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                            x-model="formIcon">
                     <p class="text-xs text-slate-500">Font Awesome 6 class (optional)</p>
                 </label>
-                <div class="flex items-center justify-center">
+                <div class="flex shrink-0 items-center justify-center sm:justify-end">
                     <div class="flex h-20 w-20 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-50 text-2xl text-blue-600">
                         <i :class="formIcon || 'fas fa-question'" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
-            <div class="md:col-span-2 flex gap-3" style="width: 70%;">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center max-w-2xl">
                 <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-semibold" x-text="editingItem ? 'Update Soft Skill' : 'Add Soft Skill'"></button>
                 <button type="button" @click="resetForm()" class="px-4 py-3 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold" x-show="editingItem">Cancel</button>
             </div>

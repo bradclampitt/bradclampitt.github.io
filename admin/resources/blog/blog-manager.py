@@ -121,7 +121,7 @@ class BlogManager:
 
         # 10) Fix any fenced code that slipped into paragraphs
         processed = self.fix_fenced_code_in_paragraphs(processed)
-        
+
         # 11) Post-process markdown links with @embed in title attribute
         processed = self.process_embed_links_post(processed)
 
@@ -826,7 +826,7 @@ class BlogManager:
                         la_stripped = lines[lookahead].lstrip()
                         # Stop if next line starts a new block (heading, new note block, code block, callout, etc.)
                         # But allow regular blockquotes and indented content (continuation of lists, etc.)
-                        if (la_stripped.startswith('#') or 
+                        if (la_stripped.startswith('#') or
                             (la_stripped.startswith('>') and (note_re.match(lines[lookahead]) or simple_note_re.match(lines[lookahead]))) or
                             la_stripped.startswith('```') or
                             la_stripped.startswith(':::') or
@@ -1127,23 +1127,28 @@ class BlogManager:
             nonlocal counter
             counter += 1
             pid = f'CODE_BLOCK_PLACEHOLDER_{counter}'
-            lang = m.group(1) or ''
-            code = m.group(2)
+            lang = m.group(3) or ''
+            code = m.group(4)
             escaped = html.escape(code)
             lang_class = f'language-{lang}' if lang else ''
+            # Build class strings, ensuring no trailing spaces
+            pre_classes = 'line-numbers' + (f' {lang_class}' if lang_class else '')
+            code_classes = lang_class if lang_class else ''
             # Updated: Add lang_class to <pre> for proper Prism integration; structure matches desired <pre><span rows></span><code></code></pre> after Prism
-            code_block_placeholders[pid] = f'<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="line-numbers {lang_class}"><code class="{lang_class}">{escaped}</code></pre></div>'
-            return f"\n{pid}\n"
+            code_block_placeholders[pid] = f'<div class="cust-border-lg border-blue-500 cust-rounded-lg code-block mb-6 lg:mb-8"><pre class="{pre_classes}"><code class="{code_classes}">{escaped}</code></pre></div>'
+            prefix = m.group(1) or ''
+            return f"{prefix}{pid}\n"
 
-        # Match code blocks: ```lang\ncontent\n``` followed by newline or end of string
-        # Allow optional leading/trailing whitespace around backticks to handle indented code blocks
-        # Use positive lookahead to ensure we don't capture trailing content like </details>
-        fence_pattern = r"\s*```(\w+)?\r?\n(.*?)\r?\n\s*```(?=\r?\n|$)"
+        # Match fenced code blocks using 3+ backticks so nested fences render correctly.
+        # Keep the fence length consistent by reusing the same delimiter in the closing fence.
+        # Use positive lookahead to avoid swallowing trailing content like </details>.
+        fence_pattern = r"(^|\n)[ \t]*(`{3,})([\w-]+)?\s*\r?\n(.*?)\r?\n[ \t]*\2(?=\r?\n|$)"
         modified = re.sub(fence_pattern, repl, text, flags=re.DOTALL)
         return modified, code_block_placeholders
 
     def restore_code_blocks(self, text, placeholders):
-        for k, v in placeholders.items():
+        for k in sorted(placeholders, key=len, reverse=True):
+            v = placeholders[k]
             text = text.replace(k, v)
         return text
 
@@ -1174,38 +1179,38 @@ class BlogManager:
         for k, v in placeholders.items():
             text = text.replace(k, v)
         return text
-    
+
     def process_embed_links_post(self, html: str) -> str:
         """
         Post-process HTML to convert links with @embed in title attribute to embed blocks.
         This runs AFTER markdown conversion, so it processes the HTML <a> tags.
         """
         import re
-        
+
         # Pattern to match <a> tags with @embed in title attribute
         # Matches: <a href="url" title="@embed">text</a> or <a href="url" title="something @embed">text</a>
         pattern = re.compile(
             r'<a\s+([^>]*href=["\']([^"\']+)["\'][^>]*title=["\'][^"\']*@embed[^"\']*["\'][^>]*)>(.*?)</a>',
             re.IGNORECASE | re.DOTALL
         )
-        
+
         def repl(match):
             attrs = match.group(1)
             url = match.group(2)
             link_text = match.group(3).strip()
-            
+
             # Extract title from attributes
             title_match = re.search(r'title=["\']([^"\']+)["\']', attrs, re.IGNORECASE)
             title_attr = title_match.group(1) if title_match else ''
-            
+
             # Determine if it's YouTube
             youtube_id = self.extract_youtube_id(url)
             if youtube_id:
                 return self.render_youtube_embed(url, youtube_id, link_text or title_attr.replace('@embed', '').strip())
-            
+
             # Use simple embed (matches blog behavior for non-YouTube links)
             return self.render_simple_embed(url, link_text or title_attr.replace('@embed', '').strip())
-        
+
         return pattern.sub(repl, html)
 
     def _render_inline_md(self, text: str) -> str:
@@ -1363,26 +1368,50 @@ class BlogManager:
         return '\n'.join(out)
 
     def process_headers(self, text):
+        used_ids = {}
         lines = text.split('\n')
         new_lines = []
         for line in lines:
             s = line.strip()
             if s.startswith('#### '):
-                content_html = self._render_inline_md(s[5:])
-                line = f'<h4 class="text-sm lg:text-sm font-semibold mt-3 mb-2 text-gray-800">{content_html}</h4>'
+                heading_text = s[5:]
+                content_html = self._render_inline_md(heading_text)
+                anchor_id = self._make_heading_id(heading_text, used_ids)
+                line = f'<h4 id="{anchor_id}" class="text-sm lg:text-sm font-semibold mt-3 mb-2 text-gray-800">{content_html}</h4>'
             elif s.startswith('### '):
-                content_html = self._render_inline_md(s[4:])
+                heading_text = s[4:]
+                content_html = self._render_inline_md(heading_text)
+                anchor_id = self._make_heading_id(heading_text, used_ids)
                 line = '<div style="clear:both"></div>' + \
-                    f'<h3 class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">{content_html}</h3>'
+                    f'<h3 id="{anchor_id}" class="text-base lg:text-lg font-semibold mt-4 lg:mt-6 mb-2 lg:mb-3">{content_html}</h3>'
             elif s.startswith('## '):
-                content_html = self._render_inline_md(s[3:])
+                heading_text = s[3:]
+                content_html = self._render_inline_md(heading_text)
+                anchor_id = self._make_heading_id(heading_text, used_ids)
                 line = '<div style="clear:both"></div>' + \
-                    f'<h2 class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">{content_html}</h2>'
+                    f'<h2 id="{anchor_id}" class="text-lg lg:text-xl font-bold text-gray-900 mt-6 lg:mt-8 mb-3 lg:mb-4">{content_html}</h2>'
             elif s.startswith('# '):
-                content_html = self._render_inline_md(s[2:])
-                line = f'<h1 class="text-xl lg:text-2xl font-bold text-gray-900 mt-8 lg:mt-10 mb-4 lg:mb-6">{content_html}</h1>'
+                heading_text = s[2:]
+                content_html = self._render_inline_md(heading_text)
+                anchor_id = self._make_heading_id(heading_text, used_ids)
+                line = f'<h1 id="{anchor_id}" class="text-xl lg:text-2xl font-bold text-gray-900 mt-8 lg:mt-10 mb-4 lg:mb-6">{content_html}</h1>'
             new_lines.append(line)
         return '\n'.join(new_lines)
+
+    def _make_heading_id(self, text: str, used_ids: dict) -> str:
+        """
+        Generate a stable, URL-friendly heading id that matches TOC links.
+        Ensures uniqueness by appending a numeric suffix when needed.
+        """
+        plain = text.strip()
+        plain = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', plain)
+        plain = plain.replace('`', '').replace('*', '').replace('_', '')
+        slug = re.sub(r'[^a-zA-Z0-9\s-]', '', plain).strip().lower()
+        slug = re.sub(r'\s+', '-', slug)
+        slug = re.sub(r'-{2,}', '-', slug) or 'section'
+        count = used_ids.get(slug, 0)
+        used_ids[slug] = count + 1
+        return f"{slug}-{count}" if count else slug
 
     def process_images(self, text):
         """Process images: placeholders continue to float; real images render as block-level figures with captions below."""
@@ -1428,7 +1457,7 @@ class BlogManager:
                     ph_id = src.replace('placeholder:', '')
                     ph_class = 'placeholder-inner default'
                     placeholder_inner = (
-                        f'<div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto {ph_class}">' 
+                        f'<div class="w-full h-full flex items-center justify-center text-gray-500 mx-auto {ph_class}">'
                         f'<div class="text-center text-gray-500 font-medium">PLACEHOLDER FOR IMAGE</div>'
                         '</div>'
                     )
@@ -1604,16 +1633,16 @@ class BlogManager:
 
     def format_post_html(self, metadata, content):
         return f"""<div id="blog-content" class="space-y-4 lg:space-y-6 leading-relaxed">{content}</div>"""
-    
+
     def generate_post_html_from_db(self, metadata_dict, html_content, slug):
         """
         Generate HTML file from database data (metadata dict and HTML content).
-        
+
         Args:
             metadata_dict: Dictionary with post metadata (title, date, author, etc.)
             html_content: Pre-processed HTML content (already converted from markdown)
             slug: Post slug for filename
-        
+
         Returns:
             tuple: (success: bool, output_path: str or None)
         """
@@ -1621,14 +1650,14 @@ class BlogManager:
             # Fix image paths in HTML content (for backward compatibility with old HTML)
             # This ensures old HTML files get updated paths when regenerated
             # Blog posts are at blog/posts/[slug].html, so media/images/ needs to be ../media/images/
-            
+
             # First, fix all media/images/ paths (most common case)
             html_content = re.sub(
                 r'src=(["\'])media/images/([^"\']+)\1',
                 r'src=\1../media/images/\2\1',
                 html_content
             )
-            
+
             # Also fix any remaining media/ paths that aren't already ../media/ or absolute URLs
             # This catches any other media/ paths that might exist
             html_content = re.sub(
@@ -1636,25 +1665,25 @@ class BlogManager:
                 r'src=\1../\2\1',
                 html_content
             )
-            
+
             # Debug: Print if we found and fixed any paths (can be removed in production)
             # if 'media/images/' in html_content and '../media/images/' not in html_content:
             #     print(f"Warning: Found media/images/ paths that weren't fixed in HTML for {slug}")
-            
+
             # Load template
             with open(self.template_file, 'r', encoding='utf-8') as f:
                 template = f.read()
-            
+
             # Format HTML content
             formatted_content = self.format_post_html(metadata_dict, html_content)
-            
+
             # Replace title placeholder
             html_file = template.replace('[POST_TITLE]', metadata_dict.get('title', 'Untitled'))
-            
+
             # Replace blog-content div
             blog_content_pattern = r'<div id="blog-content">.*?<!-- Content will be dynamically loaded here -->.*?</div>'
             html_file = re.sub(blog_content_pattern, formatted_content, html_file, flags=re.DOTALL)
-            
+
             # Write output file
             output_path = self.posts_html_dir / f"{slug}.html"
             # Ensure we write with a new file handle to avoid caching issues
@@ -1662,7 +1691,7 @@ class BlogManager:
                 f.write(html_file)
                 f.flush()
                 os.fsync(f.fileno())  # Force write to disk
-            
+
             print(f"Generated HTML: {output_path}")
             return True, str(output_path)
         except Exception as e:
@@ -1674,48 +1703,128 @@ class BlogManager:
     def generate_document_html_from_db(self, metadata_dict, html_content, slug, documents_root="/var/www/projectmanager.test/github_v2/documents"):
         """
         Generate HTML file for a document from database data (similar to blog posts).
-        
+
         Args:
             metadata_dict: Dictionary with document metadata (title, date, author, etc.)
             html_content: Pre-processed HTML content (already converted from markdown)
             slug: Document slug for filename
             documents_root: Root directory for documents system
-        
+
         Returns:
             tuple: (success: bool, output_path: str or None)
         """
         try:
             documents_path = Path(documents_root)
             posts_html_dir = documents_path / "posts"
-            template_file = documents_path / "document-template.html"
-            
+            # Template is in admin folder, but we generate to documents/posts/
+            # Go up from blog_root (/blog) to root directory, then to admin/resources/documents
+            root_dir = self.blog_root.parent  # From /blog up to root directory
+            template_file = root_dir / "admin" / "resources" / "documents" / "document-template.html"
+
             # Create posts directory if it doesn't exist
             posts_html_dir.mkdir(exist_ok=True)
-            
+
             # Load template
             if not template_file.exists():
                 raise FileNotFoundError(f"Document template not found: {template_file}")
-            
+
             with open(template_file, 'r', encoding='utf-8') as f:
                 template = f.read()
-            
+
             # Format HTML content (similar to blog posts)
-            formatted_content = f"""<div id="document-content" class="space-y-4 lg:space-y-6 leading-relaxed">{html_content}</div>"""
-            
-            # Replace title placeholder
-            html_file = template.replace('[DOCUMENT_TITLE]', metadata_dict.get('title', 'Untitled'))
-            
+            formatted_content = f"""<div id="document-content" class="space-y-4 lg:space-y-6 leading-relaxed w-full max-w-none">{html_content}</div>"""
+
+            # Replace metadata placeholders
+            title = metadata_dict.get('title', 'Untitled')
+            summary = metadata_dict.get('summary', '')
+            category = metadata_dict.get('category', '')
+            doc_type = metadata_dict.get('type', '')
+            date = metadata_dict.get('date', '')
+            updated_date = metadata_dict.get('updated_date', '')
+            author = metadata_dict.get('author', 'Bradley R. Clampitt')
+            tags = metadata_dict.get('tags', [])
+
+            html_file = template.replace('[DOCUMENT_TITLE]', title)
+
+            # Replace summary with styled box
+            if summary:
+                html_file = html_file.replace('[DOCUMENT_SUMMARY]', f'<div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4 lg:p-5"><h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Summary</h3><p class="text-base lg:text-lg text-gray-700 leading-relaxed">{summary}</p></div>')
+            else:
+                html_file = html_file.replace('[DOCUMENT_SUMMARY]', '')
+
+            # Replace category with modern badge
+            if category:
+                html_file = html_file.replace('[DOCUMENT_CATEGORY]', f'<span class="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-folder mr-2 text-xs"></i>{category}</span>')
+            else:
+                html_file = html_file.replace('[DOCUMENT_CATEGORY]', '')
+
+            # Replace type with modern badge
+            if doc_type:
+                html_file = html_file.replace('[DOCUMENT_TYPE]', f'<span class="inline-flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-file-alt mr-2 text-xs"></i>{doc_type}</span>')
+            else:
+                html_file = html_file.replace('[DOCUMENT_TYPE]', '')
+
+            # Replace date with modern badge (posted date)
+            if date:
+                html_file = html_file.replace('[DOCUMENT_DATE]', f'<span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-calendar mr-2 text-xs"></i>Posted: {date}</span>')
+            else:
+                html_file = html_file.replace('[DOCUMENT_DATE]', '')
+
+            # Replace updated date with modern badge
+            if updated_date and updated_date != date:
+                html_file = html_file.replace('[DOCUMENT_UPDATED_DATE]', f'<span class="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-edit mr-2 text-xs"></i>Updated: {updated_date}</span>')
+            else:
+                html_file = html_file.replace('[DOCUMENT_UPDATED_DATE]', '')
+
+            # Replace author with modern badge
+            if author:
+                html_file = html_file.replace('[DOCUMENT_AUTHOR]', f'<span class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-user mr-2 text-xs"></i>{author}</span>')
+            else:
+                html_file = html_file.replace('[DOCUMENT_AUTHOR]', '')
+
+            # Replace tags with modern badges
+            if tags and len(tags) > 0:
+                tags_html = '<div class="flex flex-wrap items-center gap-2 w-full mt-4">'
+                tags_html += '<span class="text-xs lg:text-sm font-semibold text-gray-600 mr-2"><i class="fas fa-tags mr-1"></i>Tags:</span>'
+                tags_html += ' '.join([f'<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs lg:text-sm font-medium hover:bg-blue-200 transition-colors">{tag.strip()}</span>' for tag in tags if tag.strip()])
+                tags_html += '</div>'
+                html_file = html_file.replace('[DOCUMENT_TAGS]', tags_html)
+            else:
+                html_file = html_file.replace('[DOCUMENT_TAGS]', '')
+
             # Replace document-content div
-            document_content_pattern = r'<div id="document-content">.*?<!-- Content will be dynamically loaded here -->.*?</div>'
-            html_file = re.sub(document_content_pattern, formatted_content, html_file, flags=re.DOTALL)
-            
+            document_content_pattern = r'<div id="document-content" class="[^"]*markdown-content[^"]*">.*?<!-- Content will be dynamically loaded here -->.*?</div>'
+            html_file = re.sub(document_content_pattern, lambda _m: formatted_content, html_file, flags=re.DOTALL)
+
+            # Ensure all code blocks have line-numbers class for PrismJS
+            # This needs to happen before PrismJS processes them
+            # Pattern 1: pre tags with language class but missing line-numbers
+            html_file = re.sub(
+                r'<pre class="([^"]*language-[^"]*)"',
+                lambda m: m.group(0) if 'line-numbers' in m.group(1) else f'<pre class="{m.group(1)} line-numbers"',
+                html_file
+            )
+            # Pattern 2: pre tags inside code-block divs
+            html_file = re.sub(
+                r'(<div class="[^"]*code-block[^"]*">\s*<pre class=")([^"]*)"',
+                lambda m: f'{m.group(1)}{m.group(2)} line-numbers"' if 'line-numbers' not in m.group(2) else m.group(0),
+                html_file
+            )
+            # Pattern 3: Any pre tag with code that has language class
+            html_file = re.sub(
+                r'<pre class="([^"]*)"([^>]*>.*?<code[^>]*class="[^"]*language-[^"]*")',
+                lambda m: m.group(0) if 'line-numbers' in m.group(1) else f'<pre class="{m.group(1)} line-numbers"{m.group(2)}',
+                html_file,
+                flags=re.DOTALL
+            )
+
             # Write output file
             output_path = posts_html_dir / f"{slug}.html"
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_file)
                 f.flush()
                 os.fsync(f.fileno())  # Force write to disk
-            
+
             print(f"Generated document HTML: {output_path}")
             return True, str(output_path)
         except Exception as e:

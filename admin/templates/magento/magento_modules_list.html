@@ -16,6 +16,30 @@
             </a>
         </div>
 
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Modules</label>
+                <input type="text" 
+                       placeholder="Type to search by title, version, category, or description..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="title">Title</option>
+                    <option value="revised_date">Date Revised</option>
+                    <option value="category">Category</option>
+                    <option value="version">Version</option>
+                </select>
+            </div>
+        </div>
+
         <div class="overflow-x-auto -mx-6 px-6">
             <table class="w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-widest text-slate-400">
@@ -27,8 +51,8 @@
                         <th class="px-3 py-3 text-left sm:px-4 sm:py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white" x-show="paginatedModules().length">
-                    <template x-for="module in paginatedModules()" :key="module.id">
+                <tbody class="divide-y divide-slate-100 bg-white" x-show="filteredAndPaginatedModules().length">
+                    <template x-for="module in filteredAndPaginatedModules()" :key="module.id">
                         <tr class="hover:bg-slate-50">
                             <td class="px-3 py-4 sm:px-4 max-w-xs">
                                 <div class="text-sm font-medium text-slate-900 break-words" x-text="module.title"></div>
@@ -75,9 +99,9 @@
                         </tr>
                     </template>
                 </tbody>
-                <tbody x-show="!paginatedModules().length">
+                <tbody x-show="!filteredAndPaginatedModules().length">
                     <tr>
-                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No Magento modules yet.</td>
+                        <td colspan="5" class="px-6 py-6 text-center text-slate-500">No Magento modules match your filters.</td>
                     </tr>
                 </tbody>
             </table>
@@ -120,16 +144,66 @@ function magentoModulesTable(initial) {
         perPage: 10,
         currentPage: 1,
         modules: initial.modules || [],
+        searchQuery: '',
+        sortBy: 'title',
         init() {
             this.$watch('perPage', () => { this.currentPage = 1; });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
+        },
+        filteredModules() {
+            let filtered = [...this.modules];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(module => 
+                    (module.title || '').toLowerCase().includes(query) ||
+                    (module.version || '').toLowerCase().includes(query) ||
+                    (module.category_label || '').toLowerCase().includes(query) ||
+                    (module.description || '').toLowerCase().includes(query)
+                );
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(this.sortBy) {
+                    case 'revised_date':
+                        aVal = (a.revised_date || '').toLowerCase();
+                        bVal = (b.revised_date || '').toLowerCase();
+                        return bVal.localeCompare(aVal); // Descending
+                    case 'category':
+                        aVal = (a.category_label || '').toLowerCase();
+                        bVal = (b.category_label || '').toLowerCase();
+                        break;
+                    case 'version':
+                        aVal = (a.version || '').toLowerCase();
+                        bVal = (b.version || '').toLowerCase();
+                        break;
+                    case 'title':
+                    default:
+                        aVal = (a.title || '').toLowerCase();
+                        bVal = (b.title || '').toLowerCase();
+                        break;
+                }
+                
+                if (aVal < bVal) return -1;
+                if (aVal > bVal) return 1;
+                return 0;
+            });
+            
+            return filtered;
         },
         totalPages() {
-            const total = this.modules.length;
+            const total = this.filteredModules().length;
             return Math.max(1, Math.ceil(total / this.perPage));
         },
-        paginatedModules() {
+        filteredAndPaginatedModules() {
+            const filtered = this.filteredModules();
             const start = (this.currentPage - 1) * this.perPage;
-            return this.modules.slice(start, start + this.perPage);
+            return filtered.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -160,12 +234,13 @@ function magentoModulesTable(initial) {
             return pages;
         },
         rangeSummary() {
-            if (!this.modules.length) {
+            const filtered = this.filteredModules();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.modules.length);
-            return `Showing ${start}-${end} of ${this.modules.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
         },
     };
 }

@@ -30,4 +30,4 @@ permalink: pretty
 
 # Sass configuration
 sass:
-  style: compressed 
+  style: compressed

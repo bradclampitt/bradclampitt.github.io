@@ -208,7 +208,7 @@
                         <h2 class="text-base mb-4">Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect</h2>
                         <p class="text-gray-300 mb-6 text-sm">Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.</p>
                       <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
-                          <a href="documents.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center text-sm">
+                          <a href="../portfolio.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center text-sm">
                           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -262,7 +262,7 @@
                       <h2 class="text-xl mb-4">Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect</h2>
                       <p class="text-gray-300 mb-6">Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.</p>
                       <div class="flex space-x-4 mb-6">
-                          <a href="documents.html" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
+                          <a href="../portfolio.html" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
                               <svg class="w-5 h-5 mr-2 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -310,7 +310,7 @@
           </div>
 
             <!-- Main Content -->
-            <div class="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8" 
+            <div class="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8"
                  x-data="documentApp()" x-init="init()">
                 <div class="bg-white rounded-lg shadow p-4 lg:p-6">
                     <!-- Loading State -->
@@ -345,7 +345,7 @@
                             </div>
                             <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2" x-text="document?.title"></h1>
                             <p x-show="document?.summary" class="text-lg text-gray-600 mb-4" x-text="document?.summary"></p>
-                            
+
                             <!-- Metadata -->
                             <div class="flex flex-wrap gap-4 text-sm text-gray-500">
                                 <span x-show="document?.created_at">
@@ -358,7 +358,7 @@
                                     <i class="fas fa-calendar-edit mr-1"></i>Updated: <span x-text="document?.updated_at"></span>
                                 </span>
                                 <span x-show="document?.effective_from || document?.effective_to">
-                                    <i class="fas fa-calendar-alt mr-1"></i>Effective: 
+                                    <i class="fas fa-calendar-alt mr-1"></i>Effective:
                                     <span x-show="document?.effective_from" x-text="document?.effective_from"></span>
                                     <span x-show="document?.effective_from && document?.effective_to"> - </span>
                                     <span x-show="document?.effective_to" x-text="document?.effective_to"></span>
@@ -424,213 +424,21 @@
         </div>
     </div>
 
-    <script>
-        function documentApp() {
-            return {
-                loading: true,
-                error: null,
-                db: null,
-                document: null,
-                images: [],
-                links: [],
-                markdownHtml: '',
-
-                async init() {
-                    try {
-                        const params = new URLSearchParams(window.location.search);
-                        const slug = params.get('slug');
-                        
-                        if (!slug) {
-                            throw new Error('No document slug provided');
-                        }
-
-                        const SQL = await initSqlJs({
-                            locateFile: (file) => `/assets/js/${file}`
-                        });
-
-                        const resp = await fetch('/admin/database/unified.sqlite');
-                        if (!resp.ok) {
-                            throw new Error(`Failed to load database: ${resp.status}`);
-                        }
-                        const buf = await resp.arrayBuffer();
-                        const db = new SQL.Database(new Uint8Array(buf));
-                        this.db = db;
-
-                        // Load document
-                        let stmt = db.prepare(`
-                            SELECT
-                                d.*,
-                                c.label AS category_label,
-                                t.label AS type_label,
-                                GROUP_CONCAT(DISTINCT tab.code) AS tab_codes
-                            FROM documents d
-                                LEFT JOIN doc_categories c ON c.id = d.category_id
-                                LEFT JOIN doc_types t ON t.id = d.type_id
-                                LEFT JOIN document_tabs dt ON dt.document_id = d.id
-                                LEFT JOIN doc_tabs tab ON tab.id = dt.tab_id
-                            WHERE d.slug = ?
-                            GROUP BY d.id;
-                        `);
-                        stmt.bind([slug]);
-                        
-                        if (!stmt.step()) {
-                            throw new Error('Document not found');
-                        }
-                        
-                        const doc = stmt.getAsObject();
-                        doc.tabCodes = doc.tab_codes ? doc.tab_codes.split(',') : [];
-                        
-                        // Debug logging
-                        console.log('Document loaded:', {
-                            id: doc.id,
-                            title: doc.title,
-                            content_source: doc.content_source,
-                            content_format: doc.content_format,
-                            has_content_markdown: !!doc.content_markdown,
-                            has_content_html: !!doc.content_html,
-                            content_path: doc.content_path,
-                            content_markdown_length: doc.content_markdown ? doc.content_markdown.length : 0
-                        });
-                        
-                        this.document = doc;
-                        stmt.free();
-
-                        // Load images
-                        stmt = db.prepare(`
-                            SELECT url, alt, is_cover, sort
-                            FROM document_images
-                            WHERE document_id = ?
-                            ORDER BY sort;
-                        `);
-                        stmt.bind([doc.id]);
-                        this.images = [];
-                        while (stmt.step()) {
-                            this.images.push(stmt.getAsObject());
-                        }
-                        stmt.free();
-
-                        // Load links
-                        stmt = db.prepare(`
-                            SELECT label, url, sort
-                            FROM document_links
-                            WHERE document_id = ?
-                            ORDER BY sort;
-                        `);
-                        stmt.bind([doc.id]);
-                        this.links = [];
-                        while (stmt.step()) {
-                            this.links.push(stmt.getAsObject());
-                        }
-                        stmt.free();
-
-                        // Render markdown if needed
-                        // Wait for marked.js to be available
-                        const waitForMarked = () => {
-                            return new Promise((resolve) => {
-                                if (typeof marked !== 'undefined') {
-                                    resolve();
-                                } else {
-                                    const checkInterval = setInterval(() => {
-                                        if (typeof marked !== 'undefined') {
-                                            clearInterval(checkInterval);
-                                            resolve();
-                                        }
-                                    }, 50);
-                                    // Timeout after 5 seconds
-                                    setTimeout(() => {
-                                        clearInterval(checkInterval);
-                                        resolve();
-                                    }, 5000);
-                                }
-                            });
-                        };
-
-                        await waitForMarked();
-
-                        // Handle content based on content_source
-                        if (doc.content_source === 'inline') {
-                            // Content is stored in database
-                            // Prefer backend-processed HTML if available (from shared markdown processor)
-                            if (doc.content_html) {
-                                console.log('Using backend-processed HTML content');
-                                this.markdownHtml = ''; // content_html will be displayed directly
-                            } else if (doc.content_format === 'markdown' && doc.content_markdown) {
-                                // Fallback: client-side markdown processing if backend didn't process it
-                                console.log('Processing inline markdown content client-side, length:', doc.content_markdown.length);
-                                if (typeof marked !== 'undefined') {
-                                    marked.setOptions({
-                                        gfm: true,
-                                        tables: true,
-                                        breaks: true,
-                                        sanitize: false,
-                                    });
-                                    this.markdownHtml = marked.parse(doc.content_markdown);
-                                    console.log('Markdown parsed successfully, HTML length:', this.markdownHtml.length);
-                                } else {
-                                    console.warn('marked.js not loaded, displaying raw markdown');
-                                    this.markdownHtml = '<pre>' + doc.content_markdown + '</pre>';
-                                }
-                            } else {
-                                console.warn('Inline content but format/content mismatch:', {
-                                    format: doc.content_format,
-                                    has_markdown: !!doc.content_markdown,
-                                    has_html: !!doc.content_html
-                                });
-                            }
-                        } else if (doc.content_source === 'file' && doc.content_path) {
-                            // Content is in a file
-                            try {
-                                const contentResp = await fetch(doc.content_path);
-                                if (!contentResp.ok) {
-                                    throw new Error(`Failed to load content file: ${contentResp.status}`);
-                                }
-                                const contentText = await contentResp.text();
-                                if (doc.content_format === 'markdown' && typeof marked !== 'undefined') {
-                                    marked.setOptions({
-                                        gfm: true,
-                                        tables: true,
-                                        breaks: true,
-                                        sanitize: false,
-                                    });
-                                    this.markdownHtml = marked.parse(contentText);
-                                } else if (doc.content_format === 'html') {
-                                    this.markdownHtml = contentText;
-                                } else {
-                                    this.markdownHtml = '<pre>' + contentText + '</pre>';
-                                }
-                            } catch (err) {
-                                console.error('Error loading content file:', err);
-                                this.markdownHtml = '<p class="text-red-600">Error loading content file: ' + err.message + '</p>';
-                            }
-                        } else {
-                            console.warn('No content found for document:', doc);
-                        }
-
-                        this.loading = false;
-                    } catch (err) {
-                        console.error('Error loading document:', err);
-                        this.error = err.message || 'Failed to load document';
-                        this.loading = false;
-                    }
-                }
-            };
-        }
-    </script>
 
     <style>
         body {
             overflow-x: hidden;
         }
-        
+
         .main-content {
             max-width: 100vw;
             overflow-x: hidden;
         }
-        
+
         .prose {
             color: #374151;
         }
-        
+
         .prose h1 {
             font-size: 2.25em;
             font-weight: 800;
@@ -638,7 +446,7 @@
             margin-bottom: 0.8888889em;
             line-height: 1.1111111;
         }
-        
+
         .prose h2 {
             font-size: 1.5em;
             font-weight: 700;
@@ -646,7 +454,7 @@
             margin-bottom: 1em;
             line-height: 1.3333333;
         }
-        
+
         .prose h3 {
             font-size: 1.25em;
             font-weight: 600;
@@ -654,24 +462,24 @@
             margin-bottom: 0.6em;
             line-height: 1.6;
         }
-        
+
         .prose p {
             margin-top: 1.25em;
             margin-bottom: 1.25em;
         }
-        
+
         .prose a {
             color: #2563eb;
             text-decoration: underline;
         }
-        
+
         .prose code {
             background-color: #f3f4f6;
             padding: 0.125rem 0.25rem;
             border-radius: 0.25rem;
             font-size: 0.875em;
         }
-        
+
         .prose pre {
             background-color: #1f2937;
             color: #f9fafb;
@@ -679,70 +487,70 @@
             border-radius: 0.5rem;
             overflow-x: auto;
         }
-        
+
         .prose pre code {
             background-color: transparent;
             padding: 0;
         }
-        
+
         .prose ul, .prose ol {
             margin-top: 1.25em;
             margin-bottom: 1.25em;
             padding-left: 1.625em;
             list-style-position: outside;
         }
-        
+
         .prose ul {
             list-style-type: disc;
         }
-        
+
         .prose ol {
             list-style-type: decimal;
         }
-        
+
         .prose li {
             margin-top: 0.5em;
             margin-bottom: 0.5em;
             display: list-item;
         }
-        
+
         /* Ensure markdown-content lists are properly styled */
         .markdown-content ul {
             list-style-type: disc;
             padding-left: 1.25rem;
             margin: 0.5rem 0 1rem;
         }
-        
+
         .markdown-content ol {
             list-style-type: decimal;
             padding-left: 1.25rem;
             margin: 0.5rem 0 1rem;
         }
-        
+
         .markdown-content li {
             margin: 0.25rem 0;
             display: list-item;
         }
-        
+
         .markdown-content > ul,
         .markdown-content > ol {
             padding-left: 2.5rem;
             margin-left: 0;
             list-style-position: outside;
         }
-        
+
         .markdown-content ul ul,
         .markdown-content ol ol {
             padding-left: 1.5rem;
         }
-        
+
         .prose table {
             width: 100%;
             margin-top: 1.5em;
             margin-bottom: 1.5em;
             border-collapse: collapse;
         }
-        
+
         .prose table th {
             background-color: #f3f4f6;
             padding: 0.75em;
@@ -750,12 +558,12 @@
             font-weight: 600;
             border: 1px solid #d1d5db;
         }
-        
+
         .prose table td {
             padding: 0.75em;
             border: 1px solid #d1d5db;
         }
-        
+
         .prose blockquote {
             border-left: 4px solid #2563eb;
             padding-left: 1em;
@@ -764,13 +572,13 @@
             font-style: italic;
             color: #6b7280;
         }
-        
+
         @media (max-width: 1023px) {
             .hamburger-menu {
                 z-index: 60;
                 display: block;
             }
-            
+
             .main-content {
                 overflow-y: auto;
                 overflow-x: hidden;
@@ -778,17 +586,17 @@
                 max-width: 100vw;
             }
         }
-        
+
         @media (min-width: 1024px) {
             .main-content {
                 overflow-y: auto;
                 height: 100vh;
             }
-            
+
             .hamburger-menu {
                 display: none !important;
             }
-            
+
             .desktop-sidebar {
                 display: flex !important;
             }
@@ -796,7 +604,7 @@
     </style>
 
     <script>
-        function documentApp() {
+        window.documentApp = function() {
             return {
                 document: null,
                 loading: true,
@@ -804,31 +612,30 @@
                 images: [],
                 links: [],
                 markdownHtml: '',
-                
+
                 async init() {
                     try {
                         this.loading = true;
                         this.error = null;
-                        
+
                         // Get slug from URL
                         const urlParams = new URLSearchParams(window.location.search);
                         const slug = urlParams.get('slug');
-                        
+
                         if (!slug) {
                             this.error = 'No document slug provided';
                             this.loading = false;
                             return;
                         }
-                        
                         // Load database and query document
                         const SQL = await initSqlJs({
                             locateFile: file => `/assets/js/${file}`
                         });
-                        
+
                         const dbResponse = await fetch('/admin/database/unified.sqlite');
                         const dbBuffer = await dbResponse.arrayBuffer();
                         const db = new SQL.Database(new Uint8Array(dbBuffer));
-                        
+
                         const stmt = db.prepare(`
                             SELECT d.*,
                                    c.label as category_label, c.code as category_code,
@@ -842,13 +649,13 @@
                         stmt.bind([slug]);
                         const row = stmt.step() ? stmt.getAsObject() : null;
                         stmt.free();
-                        
+
                         if (!row) {
                             this.error = 'Document not found';
                             this.loading = false;
                             return;
                         }
-                        
+
                         const doc = {
                             id: row.id,
                             title: row.title || '',
@@ -872,10 +679,10 @@
                             tags: row.tags || '',
                             extra: row.extra || ''
                         };
-                        
+
                         this.document = doc;
                         console.log('Document loaded:', doc);
-                        
+
                         // Load images
                         const imgStmt = db.prepare(`
                             SELECT id, url, alt, width, height, is_cover, sort
@@ -889,7 +696,7 @@
                             this.images.push(imgStmt.getAsObject());
                         }
                         imgStmt.free();
-                        
+
                         // Load links
                         const linkStmt = db.prepare(`
                             SELECT id, url, label, sort
@@ -903,7 +710,7 @@
                             this.links.push(linkStmt.getAsObject());
                         }
                         linkStmt.free();
-                        
+
                         // Wait for marked.js (for fallback processing)
                         const waitForMarked = () => {
                             return new Promise((resolve) => {
@@ -923,9 +730,9 @@
                                 }
                             });
                         };
-                        
+
                         await waitForMarked();
-                        
+
                         // Handle content based on content_source
                         if (doc.content_source === 'inline') {
                             // Content is stored in database
@@ -984,9 +791,9 @@
                         } else {
                             console.warn('No content found for document:', doc);
                         }
-                        
+
                         this.loading = false;
-                        
+
                         // Initialize PrismJS and process embeds after content is loaded (for dynamically loaded content)
                         setTimeout(() => {
                             if (typeof initializePrismJS === 'function') {
@@ -1010,7 +817,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-    
+
     <!-- Initialize PrismJS and enhance details panels -->
     <script>
         // Function to initialize PrismJS (can be called multiple times for dynamic content)
@@ -1020,84 +827,84 @@
                     console.warn('PrismJS not loaded yet');
                     return;
                 }
-                
+
                 if (typeof Prism.plugins !== 'undefined' && Prism.plugins.autoloader) {
                     Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/';
                 }
-                
+
                 // Find all code blocks that need highlighting
                 const contentArea = document.querySelector('.markdown-content');
                 if (!contentArea) return;
-                
+
                 // First, fix malformed code blocks (code inside paragraphs instead of pre)
                 // This can happen when markdown code blocks aren't processed correctly
                 const paragraphsWithCode = contentArea.querySelectorAll('p code, p > code');
                 paragraphsWithCode.forEach(function(codeEl) {
                     const paragraph = codeEl.closest('p');
                     if (!paragraph) return;
-                    
+
                     // Check if this looks like a code block (has newlines or multiple lines)
                     const codeText = codeEl.textContent || codeEl.innerText;
                     if (codeText.includes('\n') || codeText.split('\n').length > 2) {
                         // Extract the heading if present (e.g., "### Some Javascript")
                         const paragraphText = paragraph.textContent || paragraph.innerText;
                         const headingMatch = paragraphText.match(/^###\s+(.+?)\s*$/m);
-                        
+
                         // Create proper code block structure
                         const codeBlockWrapper = document.createElement('div');
                         codeBlockWrapper.className = 'code-block';
-                        
+
                         const pre = document.createElement('pre');
                         pre.className = 'line-numbers';
-                        
+
                         const newCode = document.createElement('code');
-                        
+
                         // Extract language from code text (e.g., "js\nfunction...")
                         const langMatch = codeText.match(/^(\w+)\s*\n/);
                         const language = langMatch ? langMatch[1] : '';
-                        
+
                         // Extract actual code (remove language prefix)
                         const actualCode = langMatch ? codeText.substring(langMatch[0].length).trim() : codeText.trim();
-                        
+
                         if (language) {
                             pre.className += ' language-' + language;
                             newCode.className = 'language-' + language;
                         }
-                        
+
                         newCode.textContent = actualCode;
                         pre.appendChild(newCode);
                         codeBlockWrapper.appendChild(pre);
-                        
+
                         // Replace paragraph with heading (if exists) + code block
                         if (headingMatch) {
                             const heading = document.createElement('h3');
                             heading.textContent = headingMatch[1];
                             paragraph.parentNode.insertBefore(heading, paragraph);
                         }
-                        
+
                         paragraph.parentNode.insertBefore(codeBlockWrapper, paragraph);
                         paragraph.remove();
                     }
                 });
-                
+
                 // Find all pre elements with code blocks (including those inside details/collapsible sections)
                 const allPreElements = contentArea.querySelectorAll('pre');
                 const codeBlocks = [];
-                
+
                 allPreElements.forEach(function(pre) {
                     if (pre.hasAttribute('data-prism-processed')) {
                         return; // Skip already processed
                     }
-                    
+
                     const code = pre.querySelector('code');
                     if (!code) {
                         return; // No code element
                     }
-                    
+
                     // Check if it's a code block (has language class or is inside .code-block)
                     const hasLanguage = code.className.includes('language-') || pre.className.includes('language-');
                     const isInCodeBlock = pre.closest('.code-block') !== null;
-                    
+
                     if (hasLanguage || isInCodeBlock || code.textContent.trim()) {
                         // Add line-numbers class BEFORE highlighting (required for plugin)
                         if (!pre.classList.contains('line-numbers')) {
@@ -1106,7 +913,7 @@
                         codeBlocks.push(pre);
                     }
                 });
-                
+
                 // Also check inside details/collapsible sections that might be closed
                 const detailsElements = contentArea.querySelectorAll('details, details.details-panel');
                 detailsElements.forEach(function(details) {
@@ -1116,7 +923,7 @@
                         if (code) {
                             const hasLanguage = code.className.includes('language-') || pre.className.includes('language-');
                             const isInCodeBlock = pre.closest('.code-block') !== null;
-                            
+
                             if (hasLanguage || isInCodeBlock || code.textContent.trim()) {
                                 if (!pre.classList.contains('line-numbers')) {
                                     pre.classList.add('line-numbers');
@@ -1126,7 +933,7 @@
                         }
                     });
                 });
-                
+
                 // Highlight all code blocks - this will trigger the line-numbers plugin
                 if (codeBlocks.length > 0) {
                     // First, remove any existing line-numbers-rows to prevent duplicates
@@ -1136,7 +943,7 @@
                             rows.remove();
                         });
                     });
-                    
+
                     // Highlight each code block individually to have better control
                     codeBlocks.forEach(function(pre) {
                         const code = pre.querySelector('code');
@@ -1149,12 +956,12 @@
                             }
                         }
                     });
-                    
+
                     // Mark all as processed BEFORE line numbers are added
                     codeBlocks.forEach(function(pre) {
                         pre.setAttribute('data-prism-processed', 'true');
                     });
-                    
+
                     // Clean up any duplicate line-numbers-rows after PrismJS adds them
                     setTimeout(function() {
                         contentArea.querySelectorAll('pre.line-numbers').forEach(function(pre) {
@@ -1175,19 +982,19 @@
                             }
                         });
                     }, 200);
-                    
+
                     console.log('PrismJS processed', codeBlocks.length, 'code blocks');
                 }
             } catch (error) {
                 console.error('PrismJS initialization error:', error);
             }
         }
-        
+
         // Process markdown links with @embed to convert them to embed blocks
         function processEmbedLinks() {
             const contentArea = document.querySelector('.markdown-content');
             if (!contentArea) return;
-            
+
             // Find all links with @embed in title attribute or href pattern
             const links = contentArea.querySelectorAll('a:not([data-embed-processed])');
             links.forEach(function(link) {
@@ -1195,12 +1002,12 @@
                 if (link.closest('.embed-block') || link.hasAttribute('data-embed-processed')) {
                     return;
                 }
-                
+
                 const href = link.getAttribute('href') || '';
                 const title = link.getAttribute('title') || '';
                 const linkText = link.textContent || '';
                 const isEmbed = title.includes('@embed') || title.toLowerCase().includes('embed');
-                
+
                 // Check for YouTube links
                 if (href.includes('youtu') || href.includes('youtube')) {
                     // Extract YouTube video ID
@@ -1208,39 +1015,39 @@
                     if (videoIdMatch) {
                         const videoId = videoIdMatch[1];
                         const embedTitle = linkText || title.replace(/@embed/gi, '').trim();
-                        
+
                         // Create YouTube embed block matching blog CSS
                         const embedWrapper = document.createElement('div');
                         embedWrapper.className = 'embed-block embed-youtube';
                         embedWrapper.innerHTML = `
                             <div class="embed-media">
-                                <iframe 
-                                    src="https://www.youtube.com/embed/${videoId}" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                <iframe
+                                    src="https://www.youtube.com/embed/${videoId}"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowfullscreen>
                                 </iframe>
                             </div>
                             ${embedTitle ? `<div class="embed-caption">${embedTitle}</div>` : ''}
                         `;
-                        
+
                         link.parentNode.replaceChild(embedWrapper, link);
                         link.setAttribute('data-embed-processed', 'true');
                         return;
                     }
                 }
-                
+
                 // Check for @embed in title (generic embed - use embed-simple like blog)
                 if (isEmbed && href) {
                     try {
                         const urlObj = new URL(href);
                         const domain = urlObj.hostname.replace('www.', '');
-                        
+
                         // Extract title from link text or title attribute (remove @embed)
                         // The link text might be just the title, or title + description
                         let embedTitle = '';
                         let description = '';
-                        
+
                         // If title attribute has @embed, use linkText as title
                         if (title.includes('@embed')) {
                             embedTitle = linkText.trim();
@@ -1248,7 +1055,7 @@
                             // Try to split it intelligently
                             if (embedTitle.length > 50) {
                                 // Look for common separators
-                                const separators = [': ', ' - ', '. ', ' — '];
+                                const separators = [': ', ' - ', '. ', ' - '];
                                 for (const sep of separators) {
                                     const parts = embedTitle.split(sep, 2);
                                     if (parts.length === 2 && parts[0].length < 100) {
@@ -1261,45 +1068,45 @@
                         } else {
                             embedTitle = linkText || title.replace(/@embed/gi, '').trim();
                         }
-                        
+
                         if (!embedTitle || embedTitle === href) {
                             embedTitle = domain;
                         }
-                        
+
                         // Truncate description if too long (match blog behavior - 160 chars)
                         if (description && description.length > 160) {
                             description = description.substring(0, 157) + '…';
                         }
-                        
+
                         // Create embed-simple structure matching blog CSS
                         const embedWrapper = document.createElement('div');
                         embedWrapper.className = 'embed-block';
-                        
+
                         const embedLink = document.createElement('a');
                         embedLink.className = 'embed embed-simple';
                         embedLink.href = href;
                         embedLink.target = '_blank';
                         embedLink.rel = 'noopener noreferrer';
-                        
+
                         if (embedTitle) {
                             const titleSpan = document.createElement('span');
                             titleSpan.className = 'embed-simple-title';
                             titleSpan.textContent = embedTitle;
                             embedLink.appendChild(titleSpan);
                         }
-                        
+
                         if (description) {
                             const descSpan = document.createElement('span');
                             descSpan.className = 'embed-simple-description';
                             descSpan.textContent = description;
                             embedLink.appendChild(descSpan);
                         }
-                        
+
                         const domainSpan = document.createElement('span');
                         domainSpan.className = 'embed-simple-domain';
                         domainSpan.textContent = domain;
                         embedLink.appendChild(domainSpan);
-                        
+
                         embedWrapper.appendChild(embedLink);
                         link.parentNode.replaceChild(embedWrapper, link);
                         link.setAttribute('data-embed-processed', 'true');
@@ -1320,64 +1127,64 @@
                         sum.setAttribute('tabindex','0');
                         sum.setAttribute('data-setup', 'true');
                         const details = sum.closest('details');
-                        
+
                         // Add event listener for when details opens to process code blocks inside
                         details.addEventListener('toggle', function() {
                             if (details.open) {
                                 // When opened, process code blocks inside this details section
                                 setTimeout(function() {
                                     const detailsContent = details.querySelector('.details-content') || details;
-                                    
+
                                     // First, fix malformed code blocks (code inside paragraphs instead of pre)
                                     const paragraphsWithCode = detailsContent.querySelectorAll('p code, p > code');
                                     paragraphsWithCode.forEach(function(codeEl) {
                                         const paragraph = codeEl.closest('p');
                                         if (!paragraph) return;
-                                        
+
                                         // Check if this looks like a code block (has newlines or multiple lines)
                                         const codeText = codeEl.textContent || codeEl.innerText;
                                         if (codeText.includes('\n') || codeText.split('\n').length > 2) {
                                             // Extract the heading if present (e.g., "### Some Javascript")
                                             const paragraphText = paragraph.textContent || paragraph.innerText;
                                             const headingMatch = paragraphText.match(/^###\s+(.+?)\s*$/m);
-                                            
+
                                             // Create proper code block structure
                                             const codeBlockWrapper = document.createElement('div');
                                             codeBlockWrapper.className = 'code-block';
-                                            
+
                                             const pre = document.createElement('pre');
                                             pre.className = 'line-numbers';
-                                            
+
                                             const newCode = document.createElement('code');
-                                            
+
                                             // Extract language from code text (e.g., "js\nfunction...")
                                             const langMatch = codeText.match(/^(\w+)\s*\n/);
                                             const language = langMatch ? langMatch[1] : '';
-                                            
+
                                             // Extract actual code (remove language prefix)
                                             const actualCode = langMatch ? codeText.substring(langMatch[0].length).trim() : codeText.trim();
-                                            
+
                                             if (language) {
                                                 pre.className += ' language-' + language;
                                                 newCode.className = 'language-' + language;
                                             }
-                                            
+
                                             newCode.textContent = actualCode;
                                             pre.appendChild(newCode);
                                             codeBlockWrapper.appendChild(pre);
-                                            
+
                                             // Replace paragraph with heading (if exists) + code block
                                             if (headingMatch) {
                                                 const heading = document.createElement('h3');
                                                 heading.textContent = headingMatch[1];
                                                 paragraph.parentNode.insertBefore(heading, paragraph);
                                             }
-                                            
+
                                             paragraph.parentNode.insertBefore(codeBlockWrapper, paragraph);
                                             paragraph.remove();
                                         }
                                     });
-                                    
+
                                     // Then, ensure code blocks are wrapped in .code-block divs
                                     const allPreInDetails = detailsContent.querySelectorAll('pre:not([data-prism-processed])');
                                     allPreInDetails.forEach(function(pre) {
@@ -1389,10 +1196,10 @@
                                             wrapper.appendChild(pre);
                                         }
                                     });
-                                    
+
                                     // Find all pre elements with code that haven't been processed
                                     const unprocessedPre = detailsContent.querySelectorAll('pre:not([data-prism-processed])');
-                                    
+
                                     unprocessedPre.forEach(function(pre) {
                                         let code = pre.querySelector('code');
                                         if (!code) {
@@ -1414,26 +1221,26 @@
                                                 return;
                                             }
                                         }
-                                        
+
                                         if (!code) return;
-                                        
+
                                         // Ensure line-numbers class is present
                                         if (!pre.classList.contains('line-numbers')) {
                                             pre.classList.add('line-numbers');
                                         }
-                                        
+
                                         // Ensure code has language class if pre has it
                                         const langMatch = pre.className.match(/language-(\w+)/);
                                         if (langMatch && !code.className.includes('language-')) {
                                             code.className = 'language-' + langMatch[1];
                                         }
-                                        
+
                                         // Remove any existing line-numbers-rows
                                         const existingRows = pre.querySelectorAll('.line-numbers-rows');
                                         existingRows.forEach(function(rows) {
                                             rows.remove();
                                         });
-                                        
+
                                         // Highlight the code
                                         try {
                                             Prism.highlightElement(code);
@@ -1442,7 +1249,7 @@
                                             console.warn('Error highlighting code in details:', e);
                                         }
                                     });
-                                    
+
                                     // Clean up duplicates and position line-numbers-rows after a delay
                                     setTimeout(function() {
                                         detailsContent.querySelectorAll('pre.line-numbers').forEach(function(pre) {
@@ -1458,14 +1265,14 @@
                                                 pre.insertBefore(rows, pre.firstChild);
                                             }
                                         });
-                                        
+
                                         // Also set up copy buttons for code blocks in this details section
                                         setupCodeCopyButtons();
                                     }, 150);
                                 }, 150);
                             }
                         });
-                        
+
                         sum.addEventListener('keydown', function(e){
                             if(e.key === 'Enter' || e.key === ' '){
                                 e.preventDefault();
@@ -1490,7 +1297,7 @@
                 const allCodeBlocks = document.querySelectorAll('.code-block pre, pre.line-numbers, pre[class*="language-"]');
                 allCodeBlocks.forEach(function(pre){
                     let wrapper = pre.closest('.code-block');
-                    
+
                     // If pre is not inside a code-block wrapper, wrap it
                     if (!wrapper && pre.querySelector('code')) {
                         wrapper = document.createElement('div');
@@ -1498,23 +1305,23 @@
                         pre.parentNode.insertBefore(wrapper, pre);
                         wrapper.appendChild(pre);
                     }
-                    
+
                     if(!wrapper) return;
-                    
+
                     // Avoid double-inserting
                     if(wrapper.querySelector('.code-copy-btn')) return;
-                    
+
                     const codeEl = pre.querySelector('code');
                     const lines = codeEl ? codeEl.innerText.split('\n').length : 1;
                     pre.setAttribute('data-line-count', String(lines));
                     pre.setAttribute('tabindex', '0');
-                    
+
                     // Ensure line-numbers-rows is positioned correctly
                     const rows = pre.querySelector('.line-numbers-rows');
                     if (rows && pre.firstChild !== rows) {
                         pre.insertBefore(rows, pre.firstChild);
                     }
-                    
+
                     // Create copy button
                     const btn = document.createElement('button');
                     btn.className = 'code-copy-btn';
@@ -1526,7 +1333,7 @@
                     toast.innerText = 'Copied!';
                     wrapper.appendChild(btn);
                     wrapper.appendChild(toast);
-                    
+
                     btn.addEventListener('click', function(){
                         if(!codeEl) return;
                         const text = codeEl.innerText;
@@ -1536,7 +1343,7 @@
                             toast.style.display = 'block';
                             setTimeout(()=> { toast.style.display = 'none'; btn.innerText = prev; }, 1200);
                         };
-                        
+
                         if (navigator.clipboard && navigator.clipboard.writeText) {
                             navigator.clipboard.writeText(text).then(function(){
                                 showSuccess();
@@ -1583,7 +1390,7 @@
             setupDetailsPanels();
             setupCodeCopyButtons();
             processEmbedLinks();
-            
+
             // Initialize PrismJS after a short delay
             setTimeout(function() {
                 initializePrismJS();
@@ -1594,7 +1401,7 @@
                     processEmbedLinks();
                 }, 100);
             }, 300);
-            
+
             // Watch for Alpine.js content updates and re-initialize
             let reinitTimeout = null;
             const observer = new MutationObserver(function(mutations) {
@@ -1630,7 +1437,7 @@
                     }, 200);
                 }
             });
-            
+
             // Observe the markdown content area
             const contentArea = document.querySelector('.markdown-content');
             if (contentArea) {
@@ -1643,4 +1450,3 @@
     </script>
 </body>
 </html>
-

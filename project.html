@@ -158,7 +158,7 @@
                             <dl class="space-y-2 text-sm text-gray-600">
                                 <div>
                                     <dt class="font-semibold text-gray-700">Posted</dt>
-                                    <dd x-text="formatDate(project.posted_at) || '—'"></dd>
+                                    <dd x-text="formatDate(project.posted_at) || '-'"></dd>
                                 </div>
                                 <div>
                                     <dt class="font-semibold text-gray-700">Tags</dt>
@@ -170,7 +170,7 @@
                                                 </template>
                                             </div>
                                         </template>
-                                        <span x-show="!project.tagsList.length">—</span>
+                                        <span x-show="!project.tagsList.length">-</span>
                                     </dd>
                                 </div>
                             </dl>
@@ -326,7 +326,7 @@
                 if (!project.in_use_start && !project.in_use_end) {
                     return '';
                 }
-                const start = this.formatDate(project.in_use_start) || '—';
+                const start = this.formatDate(project.in_use_start) || '-';
                 const end = this.formatDate(project.in_use_end) || 'Present';
                 return `In use ${start} → ${end}`;
             }

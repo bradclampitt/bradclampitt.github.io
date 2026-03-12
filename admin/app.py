@@ -394,6 +394,115 @@ def _as_bool(value: str | None) -> bool:
     return value.lower() not in {"", "0", "false", "off"}
 
 
+def _load_blog_manager() -> Any | None:
+    try:
+        import importlib.util
+        blog_manager_path = BLOG_RESOURCES / "blog-manager.py"
+        if not blog_manager_path.exists():
+            return None
+        spec = importlib.util.spec_from_file_location("blog_manager", blog_manager_path)
+        blog_manager_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(blog_manager_module)
+        return blog_manager_module.BlogManager(str(ROOT / "blog"))
+    except Exception as e:
+        print(f"Warning: Unable to load BlogManager: {e}")
+        return None
+
+
+def _generate_document_html_fallback(metadata: dict, html_body: str, slug_value: str) -> bool:
+    """Generate document HTML without BlogManager (no markdown dependency)."""
+    template_path = ROOT / "admin" / "resources" / "documents" / "document-template.html"
+    posts_dir = ROOT / "documents" / "posts"
+    try:
+        if not template_path.exists():
+            print(f"Warning: Document template not found: {template_path}")
+            return False
+        posts_dir.mkdir(exist_ok=True)
+        template = template_path.read_text(encoding="utf-8")
+
+        title_text = metadata.get("title", "Untitled")
+        summary_text = metadata.get("summary") or ""
+        category_text = metadata.get("category") or ""
+        type_text = metadata.get("type") or ""
+        date_text = metadata.get("date") or ""
+        updated_text = metadata.get("updated_date") or ""
+        author_text = metadata.get("author") or "Bradley R. Clampitt"
+        tags_list = metadata.get("tags") or []
+
+        html_file = template.replace("[DOCUMENT_TITLE]", title_text)
+
+        if summary_text:
+            html_file = html_file.replace(
+                "[DOCUMENT_SUMMARY]",
+                f'<div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4 lg:p-5"><h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Summary</h3><p class="text-base lg:text-lg text-gray-700 leading-relaxed">{summary_text}</p></div>',
+            )
+        else:
+            html_file = html_file.replace("[DOCUMENT_SUMMARY]", "")
+
+        if category_text:
+            html_file = html_file.replace(
+                "[DOCUMENT_CATEGORY]",
+                f'<span class="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-folder mr-2 text-xs"></i>{category_text}</span>',
+            )
+        else:
+            html_file = html_file.replace("[DOCUMENT_CATEGORY]", "")
+
+        if type_text:
+            html_file = html_file.replace(
+                "[DOCUMENT_TYPE]",
+                f'<span class="inline-flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-file-alt mr-2 text-xs"></i>{type_text}</span>',
+            )
+        else:
+            html_file = html_file.replace("[DOCUMENT_TYPE]", "")
+
+        if date_text:
+            html_file = html_file.replace(
+                "[DOCUMENT_DATE]",
+                f'<span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-calendar mr-2 text-xs"></i>Posted: {date_text}</span>',
+            )
+        else:
+            html_file = html_file.replace("[DOCUMENT_DATE]", "")
+
+        if updated_text and updated_text != date_text:
+            html_file = html_file.replace(
+                "[DOCUMENT_UPDATED_DATE]",
+                f'<span class="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-edit mr-2 text-xs"></i>Updated: {updated_text}</span>',
+            )
+        else:
+            html_file = html_file.replace("[DOCUMENT_UPDATED_DATE]", "")
+
+        if author_text:
+            html_file = html_file.replace(
+                "[DOCUMENT_AUTHOR]",
+                f'<span class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-xs lg:text-sm font-medium"><i class="fas fa-user mr-2 text-xs"></i>{author_text}</span>',
+            )
+        else:
+            html_file = html_file.replace("[DOCUMENT_AUTHOR]", "")
+
+        if tags_list:
+            tags_html = '<div class="flex flex-wrap items-center gap-2 w-full mt-4">'
+            tags_html += '<span class="text-xs lg:text-sm font-semibold text-gray-600 mr-2"><i class="fas fa-tags mr-1"></i>Tags:</span>'
+            tags_html += " ".join(
+                f'<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs lg:text-sm font-medium hover:bg-blue-200 transition-colors">{tag.strip()}</span>'
+                for tag in tags_list if str(tag).strip()
+            )
+            tags_html += "</div>"
+            html_file = html_file.replace("[DOCUMENT_TAGS]", tags_html)
+        else:
+            html_file = html_file.replace("[DOCUMENT_TAGS]", "")
+
+        formatted_content = f'<div id="document-content" class="space-y-4 lg:space-y-6 leading-relaxed w-full max-w-none">{html_body or ""}</div>'
+        content_pattern = r'<div id="document-content" class="[^"]*markdown-content[^"]*">.*?<!-- Content will be dynamically loaded here -->.*?</div>'
+        html_file = re.sub(content_pattern, lambda _m: formatted_content, html_file, flags=re.DOTALL)
+
+        output_path = posts_dir / f"{slug_value}.html"
+        output_path.write_text(html_file, encoding="utf-8")
+        return True
+    except Exception as e:
+        print(f"Warning: Fallback document generation failed: {e}")
+        return False
+
+
 def _ensure_schema_updates(conn: sqlite3.Connection) -> None:
     # Schema updates for unified database - using namespaced tables
     try:
@@ -466,6 +575,82 @@ def _validate_existing_image(path_value: str) -> str:
     return rel_url
 
 
+async def _validate_image_upload(file: UploadFile, max_size: int = 10 * 1024 * 1024) -> tuple[bytes, str, str | None]:
+    """
+    Validate an uploaded image file for security.
+    
+    Returns:
+        tuple: (file_content, file_extension, error_message)
+        If error_message is not None, the upload is invalid.
+    """
+    # Maximum file size: 10MB by default
+    MAX_FILE_SIZE = max_size
+    
+    # Validate file was provided
+    if not file or not file.filename:
+        return (b'', '', "No file provided")
+    
+    # Validate file extension
+    ext = Path(file.filename).suffix.lower()
+    if ext not in IMAGE_EXTENSIONS:
+        return (b'', '', "Unsupported image format")
+    
+    # Read file content
+    try:
+        content = await file.read()
+    except Exception:
+        return (b'', '', "Error reading file")
+    
+    # Validate file size
+    if len(content) == 0:
+        return (b'', '', "File is empty")
+    
+    if len(content) > MAX_FILE_SIZE:
+        return (b'', '', f"File too large (max {MAX_FILE_SIZE // (1024 * 1024)}MB)")
+    
+    # Validate MIME type
+    file_mime_type = file.content_type
+    allowed_mime_types = {
+        "image/png", "image/jpeg", "image/jpg", "image/gif", 
+        "image/webp", "image/svg+xml"
+    }
+    
+    # Check MIME type from content-type header
+    if file_mime_type and file_mime_type not in allowed_mime_types:
+        return (b'', '', "Invalid file type")
+    
+    # Additional validation: Check file signature (magic bytes)
+    file_signature = content[:12]  # Check first 12 bytes
+    signature_match = False
+    
+    # Check JPEG
+    if file_signature[:3] == b'\xff\xd8\xff':
+        signature_match = ext in ['.jpg', '.jpeg']
+    # Check PNG
+    elif file_signature[:8] == b'\x89PNG\r\n\x1a\n':
+        signature_match = ext == '.png'
+    # Check GIF
+    elif file_signature[:6] in [b'GIF87a', b'GIF89a']:
+        signature_match = ext == '.gif'
+    # Check WEBP (RIFF...WEBP)
+    elif file_signature[:4] == b'RIFF' and b'WEBP' in content[:20]:
+        signature_match = ext == '.webp'
+    # Check SVG (text-based, check for SVG tag or XML declaration)
+    elif ext == '.svg':
+        content_str = content[:200].decode('utf-8', errors='ignore').lower()
+        signature_match = '<svg' in content_str or '<?xml' in content_str
+    
+    if not signature_match:
+        return (b'', '', "File content does not match file type")
+    
+    # Additional security: Validate filename doesn't contain path traversal
+    filename = Path(file.filename).name  # Get just the filename, no path
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return (b'', '', "Invalid filename")
+    
+    return (content, ext, None)
+
+
 def _ensure_list(value: Iterable[str] | str | None) -> List[str]:
     if value is None:
         return []
@@ -484,6 +669,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add request logging middleware - log ALL POST requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    try:
+        if request.method == "POST" and request.url.path == "/admin/documents/save":
+            import sys
+            print(f"POST REQUEST TO /admin/documents/save", file=sys.stderr)
+            sys.stderr.flush()
+    except Exception:
+        pass  # Don't break the request if logging fails
+    response = await call_next(request)
+    return response
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Static file mounts
@@ -662,6 +860,166 @@ def dashboard(request: Request) -> Any:
     except Exception:
         pass
 
+    # Blog stats
+    blog_posts_count = 0
+    blog_categories_count = 0
+    blog_featured_count = 0
+    latest_blog_posts = []
+    try:
+        with get_conn() as blog_conn:
+            blog_posts_count = blog_conn.execute("SELECT COUNT(*) FROM blog_posts").fetchone()[0]
+            blog_categories_count = blog_conn.execute("SELECT COUNT(*) FROM blog_categories").fetchone()[0]
+            blog_featured_count = blog_conn.execute("SELECT COUNT(*) FROM blog_posts WHERE featured = 1").fetchone()[0]
+            latest_blog_rows = blog_conn.execute("""
+                SELECT p.id, p.title, p.slug, p.date, p.updated_at, p.status, c.label AS category_label
+                FROM blog_posts p
+                LEFT JOIN blog_categories c ON c.id = p.category_id
+                ORDER BY COALESCE(p.updated_at, p.date) DESC, p.id DESC
+                LIMIT 6
+            """).fetchall()
+            latest_blog_posts = [
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "slug": row["slug"],
+                    "date": row["date"],
+                    "updated_at": row["updated_at"],
+                    "status": row["status"],
+                    "category": row["category_label"],
+                }
+                for row in latest_blog_rows
+            ]
+    except Exception:
+        pass
+
+    # Side Projects stats
+    side_projects_count = 0
+    side_project_categories_count = 0
+    latest_side_projects = []
+    try:
+        with get_conn() as sp_conn:
+            side_projects_count = sp_conn.execute("SELECT COUNT(*) FROM side_projects").fetchone()[0]
+            side_project_categories_count = sp_conn.execute("SELECT COUNT(*) FROM side_project_categories").fetchone()[0]
+            latest_sp_rows = sp_conn.execute("""
+                SELECT p.id, p.title, p.slug, p.status, p.posted_date, p.revised_date, c.label AS category_label
+                FROM side_projects p
+                LEFT JOIN side_project_categories c ON c.id = p.category_id
+                ORDER BY COALESCE(p.revised_date, p.posted_date, p.updated_at) DESC, p.id DESC
+                LIMIT 6
+            """).fetchall()
+            latest_side_projects = [
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "slug": row["slug"],
+                    "status": row["status"],
+                    "posted_date": row["posted_date"],
+                    "revised_date": row["revised_date"],
+                    "category": row["category_label"],
+                }
+                for row in latest_sp_rows
+            ]
+    except Exception:
+        pass
+
+    # Magento stats
+    magento_modules_count = 0
+    magento_categories_count = 0
+    latest_magento_modules = []
+    try:
+        with get_conn() as mag_conn:
+            magento_modules_count = mag_conn.execute("SELECT COUNT(*) FROM magento_modules").fetchone()[0]
+            magento_categories_count = mag_conn.execute("SELECT COUNT(*) FROM magento_module_categories").fetchone()[0]
+            latest_mag_rows = mag_conn.execute("""
+                SELECT m.id, m.title, m.slug, m.status, m.posted_date, m.revised_date, c.label AS category_label
+                FROM magento_modules m
+                LEFT JOIN magento_module_categories c ON c.id = m.category_id
+                ORDER BY COALESCE(m.revised_date, m.posted_date, m.updated_at) DESC, m.id DESC
+                LIMIT 6
+            """).fetchall()
+            latest_magento_modules = [
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "slug": row["slug"],
+                    "status": row["status"],
+                    "posted_date": row["posted_date"],
+                    "revised_date": row["revised_date"],
+                    "category": row["category_label"],
+                }
+                for row in latest_mag_rows
+            ]
+    except Exception:
+        pass
+
+    # Photography stats
+    photography_count = 0
+    photography_categories_count = 0
+    latest_photography = []
+    try:
+        with get_conn() as photo_conn:
+            photography_count = photo_conn.execute("SELECT COUNT(*) FROM photography").fetchone()[0]
+            photography_categories_count = photo_conn.execute("SELECT COUNT(*) FROM photography_categories").fetchone()[0]
+            latest_photo_rows = photo_conn.execute("""
+                SELECT p.id, p.photo_name, p.location, p.year, c.label AS category_label, p.created_at, p.updated_at
+                FROM photography p
+                LEFT JOIN photography_categories c ON c.id = p.category_id
+                ORDER BY COALESCE(p.updated_at, p.created_at) DESC, p.id DESC
+                LIMIT 6
+            """).fetchall()
+            latest_photography = [
+                {
+                    "id": row["id"],
+                    "photo_name": row["photo_name"],
+                    "location": row["location"],
+                    "year": row["year"],
+                    "category": row["category_label"],
+                    "updated_at": row["updated_at"],
+                }
+                for row in latest_photo_rows
+            ]
+    except Exception:
+        pass
+
+    # References stats
+    references_count = 0
+    latest_references = []
+    try:
+        with get_conn() as ref_conn:
+            references_count = ref_conn.execute("SELECT COUNT(*) FROM ref_entries").fetchone()[0]
+            latest_ref_rows = ref_conn.execute("""
+                SELECT id, person_name, company, title, created_at, updated_at
+                FROM ref_entries
+                ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+                LIMIT 6
+            """).fetchall()
+            latest_references = [
+                {
+                    "id": row["id"],
+                    "person_name": row["person_name"],
+                    "company": row["company"],
+                    "title": row["title"],
+                    "updated_at": row["updated_at"],
+                }
+                for row in latest_ref_rows
+            ]
+    except Exception:
+        pass
+
+    # CMS stats
+    cms_blocks_count = 0
+    cms_blocks_active_count = 0
+    cms_settings_count = 0
+    cms_contact_count = 0
+    try:
+        with get_conn() as cms_conn:
+            cms_blocks_count = cms_conn.execute("SELECT COUNT(*) FROM cms_blocks").fetchone()[0]
+            cms_blocks_active_count = cms_conn.execute("SELECT COUNT(*) FROM cms_blocks WHERE is_active = 1").fetchone()[0]
+            cms_settings_count = cms_conn.execute("SELECT COUNT(*) FROM cms_site_settings").fetchone()[0]
+            cms_contact_count = cms_conn.execute("SELECT COUNT(*) FROM cms_contact_info").fetchone()[0]
+    except Exception:
+        pass
+
     context = {
         "request": request,
         "clients_count": clients_count,
@@ -682,6 +1040,25 @@ def dashboard(request: Request) -> Any:
         "tools_count": tools_count,
         "soft_skills_count": soft_skills_count,
         "education_count": education_count,
+        "blog_posts_count": blog_posts_count,
+        "blog_categories_count": blog_categories_count,
+        "blog_featured_count": blog_featured_count,
+        "latest_blog_posts": latest_blog_posts,
+        "side_projects_count": side_projects_count,
+        "side_project_categories_count": side_project_categories_count,
+        "latest_side_projects": latest_side_projects,
+        "magento_modules_count": magento_modules_count,
+        "magento_categories_count": magento_categories_count,
+        "latest_magento_modules": latest_magento_modules,
+        "photography_count": photography_count,
+        "photography_categories_count": photography_categories_count,
+        "latest_photography": latest_photography,
+        "references_count": references_count,
+        "latest_references": latest_references,
+        "cms_blocks_count": cms_blocks_count,
+        "cms_blocks_active_count": cms_blocks_active_count,
+        "cms_settings_count": cms_settings_count,
+        "cms_contact_count": cms_contact_count,
     }
     return templates.TemplateResponse("dashboard.html", context)
 
@@ -718,6 +1095,13 @@ def clients_list(request: Request) -> Any:
             "clients_payload": clients_payload,
         },
     )
+
+
+@app.get("/admin/clients/images/browse")
+def clients_images_browse() -> JSONResponse:
+    """API endpoint to browse existing client logo images."""
+    images = list_logo_images()
+    return JSONResponse(content={"images": images})
 
 
 @app.post("/admin/clients/new")
@@ -1550,7 +1934,7 @@ async def project_save(
         conn.commit()
 
     return RedirectResponse(
-        url=request.url_for("project_edit", project_id=project_pk),
+        url=request.url_for("projects_list"),
         status_code=303,
     )
 
@@ -1564,26 +1948,47 @@ async def upload_image(
     sort: str | None = Form(None),
     is_cover: str | None = Form(None),
 ) -> RedirectResponse:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="File name missing.")
     project_pk = _optional_int(project_id)
     if project_pk is None:
-        raise HTTPException(status_code=400, detail="Invalid project id.")
+        return RedirectResponse(
+            url=request.url_for("project_edit", project_id=project_id) + "?error=Invalid+project+id",
+            status_code=303
+        )
+    
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=request.url_for("project_edit", project_id=project_pk) + f"?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
 
-    project_dir = IMG_ROOT / str(project_pk)
+    project_dir = PORTFOLIO_MEDIA / str(project_pk)
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    # Avoid overwriting by adding incremental suffix when needed.
-    destination = project_dir / file.filename
-    counter = 1
-    stem = destination.stem
-    suffix = destination.suffix
-    while destination.exists():
-        destination = project_dir / f"{stem}-{counter}{suffix}"
-        counter += 1
+    # Generate safe filename
+    safe_filename = secrets.token_urlsafe(16) + ext
+    destination = project_dir / safe_filename
+    
+    # Ensure we're writing within the intended directory
+    try:
+        destination.resolve().relative_to(project_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=request.url_for("project_edit", project_id=project_pk) + "?error=Invalid+file+path",
+            status_code=303
+        )
 
-    content = await file.read()
-    destination.write_bytes(content)
+    # Write file
+    try:
+        destination.write_bytes(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=request.url_for("project_edit", project_id=project_pk) + "?error=Error+saving+file",
+            status_code=303
+        )
 
     rel_url = "/" + str(destination.relative_to(ROOT)).replace("\\", "/")
 
@@ -1607,7 +2012,7 @@ async def upload_image(
         conn.commit()
 
     return RedirectResponse(
-        url=request.url_for("project_edit", project_id=project_pk),
+        url=request.url_for("project_edit", project_id=project_pk) + "?success=Image+uploaded+successfully",
         status_code=303,
     )
 
@@ -1762,6 +2167,67 @@ def documents_list(request: Request) -> Any:
     )
 
 
+@app.post("/admin/documents/regenerate")
+def documents_regenerate(request: Request) -> RedirectResponse:
+    blog_mgr = BLOG_MANAGER if HAS_BLOG_MANAGER and BLOG_MANAGER else None
+    if not blog_mgr:
+        blog_mgr = _load_blog_manager()
+
+    regenerated = 0
+    with get_conn() as conn:
+        rows = conn.execute("""
+            SELECT d.id, d.title, d.slug, d.summary, d.posted_at, d.created_at, d.updated_at,
+                   d.tags, d.content_html, d.content_markdown, d.content_format,
+                   c.label AS category_label,
+                   t.label AS type_label
+            FROM documents d
+                LEFT JOIN doc_categories c ON c.id = d.category_id
+                LEFT JOIN doc_types t ON t.id = d.type_id
+            WHERE d.status = 'Published'
+            ORDER BY d.id
+        """).fetchall()
+
+    for row in rows:
+        metadata = {
+            "title": row["title"],
+            "slug": row["slug"],
+            "summary": row["summary"],
+            "author": "Bradley R. Clampitt",
+            "date": row["posted_at"] or row["created_at"] or row["updated_at"] or "",
+            "updated_date": row["updated_at"] or "",
+            "category": row["category_label"] or "",
+            "type": row["type_label"] or "",
+            "tags": row["tags"].split(",") if row["tags"] else [],
+        }
+        html_body = row["content_html"] or ""
+        if blog_mgr and row["content_format"] == "markdown" and row["content_markdown"]:
+            try:
+                html_body = blog_mgr.markdown_to_html(row["content_markdown"])
+            except Exception as e:
+                print(f"Warning: Failed to reprocess markdown for {row['slug']}: {e}")
+
+        if blog_mgr:
+            try:
+                success, _output = blog_mgr.generate_document_html_from_db(
+                    metadata,
+                    html_body,
+                    row["slug"],
+                    str(ROOT / "documents"),
+                )
+                if success:
+                    regenerated += 1
+                else:
+                    _generate_document_html_fallback(metadata, html_body, row["slug"])
+            except Exception as e:
+                print(f"Warning: Failed to regenerate document {row['slug']}: {e}")
+                _generate_document_html_fallback(metadata, html_body, row["slug"])
+        else:
+            if _generate_document_html_fallback(metadata, html_body, row["slug"]):
+                regenerated += 1
+
+    return RedirectResponse(url=request.url_for("documents_list"), status_code=303)
+
+
 @app.get("/admin/documents/categories")
 def doc_categories_list(request: Request) -> Any:
     try:
@@ -1832,6 +2298,28 @@ def doc_types_update(
     return RedirectResponse(url="/admin/documents/types", status_code=303)
 
 
+@app.post("/admin/documents/types/reorder")
+def doc_types_reorder(
+    request: Request,
+    type_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    
+    try:
+        orders = json.loads(type_orders)
+        with get_conn() as conn:
+            for type_id, order in orders.items():
+                conn.execute("""
+                    UPDATE doc_types
+                    SET sort = ?
+                    WHERE id = ?
+                """, (order, int(type_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
+
+
 @app.post("/admin/documents/categories/new")
 def doc_categories_new(
     code: str = Form(...),
@@ -1897,6 +2385,28 @@ def doc_categories_update(
         except sqlite3.IntegrityError as exc:
             raise HTTPException(status_code=400, detail=f"Category code '{code}' already exists") from exc
     return RedirectResponse(url="/admin/documents/categories", status_code=303)
+
+
+@app.post("/admin/documents/categories/reorder")
+def doc_categories_reorder(
+    request: Request,
+    category_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    
+    try:
+        orders = json.loads(category_orders)
+        with get_conn() as conn:
+            for cat_id, order in orders.items():
+                conn.execute("""
+                    UPDATE doc_categories
+                    SET sort = ?
+                    WHERE id = ?
+                """, (order, int(cat_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
 
 
 @app.post("/admin/documents/categories/delete")
@@ -1988,6 +2498,11 @@ def document_edit(request: Request, doc_id: int) -> Any:
         for field in text_fields:
             if document.get(field) is None:
                 document[field] = ''
+        # Ensure featured is an integer (not None)
+        if document.get('featured') is None:
+            document['featured'] = 0
+        else:
+            document['featured'] = int(document['featured']) if document['featured'] else 0
         
         categories = conn.execute("SELECT id, label, icon FROM doc_categories ORDER BY sort, label").fetchall()
         types = conn.execute("SELECT id, label, icon FROM doc_types ORDER BY sort, label").fetchall()
@@ -2022,6 +2537,21 @@ def document_edit(request: Request, doc_id: int) -> Any:
     )
 
 
+@app.get("/admin/test-logging")
+def test_logging():
+    """Test endpoint to verify logging works"""
+    debug_log_path = Path(__file__).parent / "admin.log"
+    try:
+        with open(debug_log_path, "a", encoding="utf-8") as f:
+            f.write(f"\n[{date.today().isoformat()}] TEST ENDPOINT CALLED - LOGGING WORKS!\n")
+            f.flush()
+            import os
+            os.fsync(f.fileno())
+        return {"status": "success", "message": "Logging test successful - check admin.log"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @app.post("/admin/documents/save")
 def document_save(
     request: Request,
@@ -2045,8 +2575,51 @@ def document_save(
     extra: str | None = Form(None),
     tab_ids: list[int] | None = Form(None),
     status: str = Form("Published"),
+    featured: str | None = Form(None),  # Match blog handler exactly
 ) -> RedirectResponse:
+    import sys
+    import traceback
+    
+    # IMMEDIATE logging at function start - multiple methods
+    debug_log_path = Path(__file__).parent / "admin.log"
+    
+    # Method 1: stderr (always works)
+    print("="*80, file=sys.stderr)
+    print("DOCUMENT SAVE FUNCTION CALLED", file=sys.stderr)
+    print(f"featured = {featured!r}", file=sys.stderr)
+    print("="*80, file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Method 2: log file
+    try:
+        with open(debug_log_path, "a", encoding="utf-8") as f:
+            f.write(f"\n{'='*80}\n")
+            f.write(f"[{date.today().isoformat()}] DOCUMENT SAVE FUNCTION CALLED\n")
+            f.write(f"  featured parameter: {featured!r}\n")
+            f.write(f"  featured type: {type(featured).__name__}\n")
+            f.write(f"  doc_id: {doc_id!r}\n")
+            f.write(f"  title: {title[:50]!r}...\n")
+            f.flush()
+            import os
+            os.fsync(f.fileno())  # Force write to disk
+    except Exception as e:
+        print(f"ERROR writing to log file: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        sys.stderr.flush()
+    
     today = date.today().isoformat()
+    
+    # Debug: Log ALL form parameters received
+    print("=" * 80, file=sys.stderr)
+    print("DOCUMENT SAVE DEBUG - ALL PARAMETERS:", file=sys.stderr)
+    print(f"  doc_id: {doc_id!r}", file=sys.stderr)
+    print(f"  title: {title[:50]!r}...", file=sys.stderr)
+    print(f"  status: {status!r}", file=sys.stderr)
+    print(f"  featured: {featured!r} (type: {type(featured).__name__})", file=sys.stderr)
+    print("=" * 80, file=sys.stderr)
+    
+    # Also print to stdout for console
+    print(f"DEBUG: Featured from Form() parameter: {featured!r}, type: {type(featured)}")
     
     if not slug:
         slug = doc_slugify(title)
@@ -2071,6 +2644,53 @@ def document_save(
             extra_json = json.dumps(json.loads(extra))
         except json.JSONDecodeError:
             extra_json = None
+    
+    # Process featured checkbox - EXACT same logic as blog posts
+    # Write debug info to a file for easy checking
+    try:
+        debug_file = Path("/tmp/document_save_debug.txt")
+        with open(debug_file, "w") as f:
+            f.write(f"featured parameter: {featured!r}\n")
+            f.write(f"featured type: {type(featured)}\n")
+            f.write(f"featured == '1': {featured == '1'}\n")
+            f.write(f"featured == 'on': {featured == 'on'}\n")
+    except Exception as e:
+        print(f"Could not write debug file: {e}", file=sys.stderr)
+    
+    # Write debug info to admin.log and debug file
+    debug_log_path = Path(__file__).parent / "admin.log"
+    debug_file_path = Path(__file__).parent / "document_save_debug.txt"
+    
+    try:
+        debug_msg = f"[{date.today().isoformat()}] DOCUMENT SAVE - featured={featured!r}, type={type(featured).__name__}, featured=='1'={featured == '1'}, featured=='on'={featured == 'on'}\n"
+        with open(debug_log_path, "a") as f:
+            f.write(debug_msg)
+        with open(debug_file_path, "w") as f:
+            f.write(debug_msg)
+            f.write(f"All parameters:\n")
+            f.write(f"  doc_id: {doc_id!r}\n")
+            f.write(f"  title: {title[:50]!r}...\n")
+            f.write(f"  status: {status!r}\n")
+            f.write(f"  featured: {featured!r}\n")
+    except Exception as e:
+        print(f"Could not write debug file: {e}", file=sys.stderr)
+    
+    print(f"DEBUG DOCUMENTS SAVE: featured parameter = {featured!r}, type = {type(featured)}", file=sys.stderr)
+    print(f"DEBUG DOCUMENTS SAVE: featured == '1' = {featured == '1'}, featured == 'on' = {featured == 'on'}", file=sys.stderr)
+    
+    # Process featured - EXACT same as blog: 1 if "1" or "on", else 0
+    featured_val = 1 if featured == "on" or featured == "1" else 0
+    
+    print(f"DEBUG DOCUMENTS SAVE: featured_val = {featured_val}", file=sys.stderr)
+    
+    # Log featured_val to files
+    try:
+        with open(debug_log_path, "a") as f:
+            f.write(f"[{date.today().isoformat()}] DOCUMENT SAVE - featured_val={featured_val}\n")
+        with open(debug_file_path, "a") as f:
+            f.write(f"featured_val calculated: {featured_val}\n")
+    except Exception as e:
+        pass
     
     # Process markdown to HTML using BlogManager (same as blog posts)
     # Reload BlogManager module to ensure we have the latest code changes
@@ -2120,16 +2740,36 @@ def document_save(
                 else:
                     processed_html = content_html
     
+    # Initialize old_slug for potential cleanup
+    old_slug = None
+    
     with get_conn() as conn:
         if doc_id and doc_id != "":
             doc_id_int = int(doc_id)
+            
+            # Get old slug before updating (to delete old HTML file if slug changed)
+            old_doc_row = conn.execute("SELECT slug FROM documents WHERE id = ?", (doc_id_int,)).fetchone()
+            old_slug = old_doc_row[0] if old_doc_row else None
+            
+            debug_log_path = Path(__file__).parent / "admin.log"
+            debug_file_path = Path(__file__).parent / "document_save_debug.txt"
+            
+            print(f"DEBUG DOCUMENTS SAVE: About to UPDATE document {doc_id_int} with featured_val = {featured_val}", file=sys.stderr)
+            try:
+                with open(debug_log_path, "a") as f:
+                    f.write(f"[{date.today().isoformat()}] About to UPDATE document {doc_id_int} with featured_val = {featured_val}\n")
+                with open(debug_file_path, "a") as f:
+                    f.write(f"About to UPDATE document {doc_id_int} with featured_val = {featured_val}\n")
+            except:
+                pass
+            
             conn.execute("""
                 UPDATE documents SET
                     category_id = ?, type_id = ?, title = ?, slug = ?, summary = ?,
                     content_format = ?, content_source = ?, content_path = ?,
                     content_markdown = ?, content_html = ?,
                     created_at = ?, posted_at = ?, updated_at = ?,
-                    effective_from = ?, effective_to = ?, tags = ?, extra = ?, status = ?
+                    effective_from = ?, effective_to = ?, tags = ?, extra = ?, status = ?, featured = ?
                 WHERE id = ?
             """, (
                 category_id_val, type_id_val, title.strip(), slug.strip(), summary.strip() if summary else None,
@@ -2139,10 +2779,22 @@ def document_save(
                 created_at, posted_at, updated_at,
                 effective_from if effective_from else None,
                 effective_to if effective_to else None,
-                tags.strip() if tags else None, extra_json, status,
+                tags.strip() if tags else None, extra_json, status, featured_val,
                 doc_id_int,
             ))
             conn.commit()
+            
+            # Verify what was actually saved
+            verify = conn.execute("SELECT featured FROM documents WHERE id = ?", (doc_id_int,)).fetchone()
+            db_value = verify[0] if verify else 'NOT FOUND'
+            print(f"DEBUG DOCUMENTS SAVE: After UPDATE, featured value in DB = {db_value}", file=sys.stderr)
+            try:
+                with open(debug_log_path, "a") as f:
+                    f.write(f"[{date.today().isoformat()}] After UPDATE, featured value in DB = {db_value}\n")
+                with open(debug_file_path, "a") as f:
+                    f.write(f"After UPDATE, featured value in DB = {db_value}\n")
+            except:
+                pass
             document_id = doc_id_int
         else:
             cursor = conn.execute("""
@@ -2151,8 +2803,8 @@ def document_save(
                     content_format, content_source, content_path,
                     content_markdown, content_html,
                     created_at, posted_at, updated_at,
-                    effective_from, effective_to, tags, extra, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    effective_from, effective_to, tags, extra, status, featured
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 category_id_val, type_id_val, title.strip(), slug.strip(), summary.strip() if summary else None,
                 content_format, content_source, content_path.strip() if content_path else None,
@@ -2161,7 +2813,7 @@ def document_save(
                 created_at, posted_at, updated_at,
                 effective_from if effective_from else None,
                 effective_to if effective_to else None,
-                tags.strip() if tags else None, extra_json, status,
+                tags.strip() if tags else None, extra_json, status, featured_val,
             ))
             conn.commit()
             document_id = cursor.lastrowid
@@ -2190,8 +2842,10 @@ def document_save(
     # Generate static HTML file only if status is "Published" (same as blog posts)
     # Use reloaded blog_manager_instance if available, otherwise fall back to cached BLOG_MANAGER
     blog_mgr = blog_manager_instance if blog_manager_instance else (BLOG_MANAGER if HAS_BLOG_MANAGER and BLOG_MANAGER else None)
-    
-    if blog_mgr and content_format == 'markdown' and content_markdown and status == 'Published':
+    if not blog_mgr and status == 'Published':
+        blog_mgr = _load_blog_manager()
+
+    if blog_mgr and status == 'Published':
         try:
             # Prepare metadata dict for HTML generation
             metadata = {
@@ -2200,6 +2854,7 @@ def document_save(
                 'summary': summary.strip() if summary else None,
                 'author': 'Bradley R. Clampitt',  # Default author for documents
                 'date': posted_at or created_at or updated_at or '',
+                'updated_date': updated_at or '',
                 'category': category_label or '',
                 'type': type_label or '',
                 'tags': tags.strip().split(',') if tags else [],
@@ -2215,39 +2870,162 @@ def document_save(
             
             if not success:
                 print(f"Warning: Failed to generate HTML file for document {document_id}")
+                _generate_document_html_fallback(metadata, processed_html or "", slug.strip())
             else:
                 print(f"Successfully generated document HTML file: {output_path}")
+                
+                # Delete old HTML file if slug changed (only for updates, not new documents)
+                if old_slug and old_slug != slug.strip():
+                    old_html_file = ROOT / "documents" / "posts" / f"{old_slug}.html"
+                    if old_html_file.exists():
+                        try:
+                            old_html_file.unlink()
+                            print(f"Deleted old document HTML file: {old_html_file}")
+                        except Exception as e:
+                            print(f"Warning: Failed to delete old document HTML file {old_html_file}: {e}")
         except Exception as e:
             print(f"Error generating document HTML file: {e}")
             import traceback
             traceback.print_exc()
+            _generate_document_html_fallback(metadata, processed_html or "", slug.strip())
+    elif status == 'Published':
+        print("Warning: Document HTML generation skipped because BlogManager is unavailable.")
+        _generate_document_html_fallback(metadata, processed_html or "", slug.strip())
+    else:
+        # Ensure drafts (or any non-published status) have no static HTML
+        current_html_file = ROOT / "documents" / "posts" / f"{slug.strip()}.html"
+        if current_html_file.exists():
+            try:
+                current_html_file.unlink()
+                print(f"Deleted draft document HTML file: {current_html_file}")
+            except Exception as e:
+                print(f"Warning: Failed to delete draft document HTML file {current_html_file}: {e}")
+
+        if old_slug and old_slug != slug.strip():
+            old_html_file = ROOT / "documents" / "posts" / f"{old_slug}.html"
+            if old_html_file.exists():
+                try:
+                    old_html_file.unlink()
+                    print(f"Deleted old draft document HTML file: {old_html_file}")
+                except Exception as e:
+                    print(f"Warning: Failed to delete old draft document HTML file {old_html_file}: {e}")
     
-    return RedirectResponse(url=f"/admin/documents/{document_id}", status_code=303)
+    # Redirect to documents list with success message
+    from urllib.parse import quote
+    title_encoded = quote(title.strip())
+    return RedirectResponse(url=f"/admin/documents?success=saved&title={title_encoded}", status_code=303)
+
+
+@app.post("/admin/documents/delete")
+def documents_delete(
+    request: Request,
+    doc_id: str = Form(...),
+) -> RedirectResponse:
+    doc_pk = _optional_int(doc_id)
+    if doc_pk is None:
+        raise HTTPException(status_code=400, detail="Document ID is required.")
+
+    slug = None
+    with get_conn() as conn:
+        row = conn.execute("SELECT slug FROM documents WHERE id = ?", (doc_pk,)).fetchone()
+        if row:
+            slug = row[0]
+        # Clean up related records (in case ON DELETE CASCADE isn't enforced)
+        conn.execute("DELETE FROM document_tabs WHERE document_id = ?", (doc_pk,))
+        conn.execute("DELETE FROM document_images WHERE document_id = ?", (doc_pk,))
+        conn.execute("DELETE FROM document_links WHERE document_id = ?", (doc_pk,))
+        conn.execute("DELETE FROM documents WHERE id = ?", (doc_pk,))
+        conn.commit()
+
+    # Remove generated HTML file
+    if slug:
+        html_path = ROOT / "documents" / "posts" / f"{slug}.html"
+        if html_path.exists():
+            try:
+                html_path.unlink()
+            except Exception as e:
+                print(f"Warning: Failed to delete document HTML file {html_path}: {e}")
+
+    # Remove uploaded images folder
+    images_dir = ROOT / "assets" / "images" / "documents" / str(doc_pk)
+    if images_dir.exists():
+        try:
+            import shutil
+            shutil.rmtree(images_dir)
+        except Exception as e:
+            print(f"Warning: Failed to delete document images folder {images_dir}: {e}")
+
+    return RedirectResponse(url=request.url_for("documents_list"), status_code=303)
+
+
+@app.get("/admin/documents/images/browse")
+def documents_images_browse() -> JSONResponse:
+    """List all available images from assets/images/documents directory"""
+    images = []
+    documents_dir = ROOT / "assets" / "images" / "documents"
+
+    if documents_dir.exists() and documents_dir.is_dir():
+        # Scan all subdirectories recursively
+        for item in documents_dir.rglob("*"):
+            if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS:
+                # Get relative path from assets/images directory
+                relative_path = item.relative_to(ROOT / "assets" / "images")
+                url = f"/assets/images/{relative_path.as_posix()}"
+                images.append({
+                    "url": url,
+                    "filename": item.name,
+                    "path": str(relative_path),
+                    "size": item.stat().st_size
+                })
+
+    # Sort by filename
+    images.sort(key=lambda x: x["filename"].lower())
+
+    return JSONResponse(content={"images": images})
 
 
 @app.post("/admin/documents/images/upload")
-def doc_image_upload(
+async def doc_image_upload(
     document_id: int = Form(...),
     file: UploadFile = File(...),
     is_cover: bool = Form(False),
 ) -> RedirectResponse:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    ext = Path(file.filename).suffix.lower()
-    if ext not in IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported image format: {ext}")
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=f"/admin/documents/{document_id}?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
     
     doc_img_dir = DOCUMENTS_MEDIA / str(document_id)
     doc_img_dir.mkdir(parents=True, exist_ok=True)
     
-    safe_filename = secrets.token_urlsafe(8) + ext
+    safe_filename = secrets.token_urlsafe(16) + ext
     file_path = doc_img_dir / safe_filename
+    
+    # Ensure we're writing within the intended directory
+    try:
+        file_path.resolve().relative_to(doc_img_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=f"/admin/documents/{document_id}?error=Invalid+file+path",
+            status_code=303
+        )
+    
     url = f"/assets/images/documents/{document_id}/{safe_filename}"
     
-    with file_path.open("wb") as f:
-        content = file.file.read()
-        f.write(content)
+    # Write file
+    try:
+        with file_path.open("wb") as f:
+            f.write(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=f"/admin/documents/{document_id}?error=Error+saving+file",
+            status_code=303
+        )
     
     with get_conn() as conn:
         if is_cover:
@@ -2259,6 +3037,28 @@ def doc_image_upload(
             INSERT INTO document_images (document_id, url, alt, is_cover, sort)
             VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM document_images WHERE document_id = ?))
         """, (document_id, url, file.filename, 1 if is_cover else 0, document_id))
+        conn.commit()
+    
+    return RedirectResponse(url=f"/admin/documents/{document_id}", status_code=303)
+
+
+@app.post("/admin/documents/images/add-existing")
+async def doc_image_add_existing(
+    document_id: int = Form(...),
+    image_path: str = Form(...),
+    is_cover: bool = Form(False),
+) -> RedirectResponse:
+    """Add an existing image from the server as a document image"""
+    with get_conn() as conn:
+        if is_cover:
+            conn.execute(
+                "UPDATE document_images SET is_cover = 0 WHERE document_id = ?",
+                (document_id,),
+            )
+        conn.execute("""
+            INSERT INTO document_images (document_id, url, alt, is_cover, sort)
+            VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(sort), 0) + 1 FROM document_images WHERE document_id = ?))
+        """, (document_id, image_path, '', 1 if is_cover else 0, document_id))
         conn.commit()
     
     return RedirectResponse(url=f"/admin/documents/{document_id}", status_code=303)
@@ -2934,6 +3734,30 @@ def cms_contact_save(
     return RedirectResponse(url="/admin/cms/contact", status_code=303)
 
 
+@app.post("/admin/cms/contact/reorder")
+def cms_contact_reorder(
+    request: Request,
+    contact_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    from datetime import datetime
+    
+    try:
+        orders = json.loads(contact_orders)
+        with get_conn() as conn:
+            now = datetime.now().isoformat()
+            for contact_id, order in orders.items():
+                conn.execute("""
+                    UPDATE cms_contact_info
+                    SET sort_order = ?, updated_at = ?
+                    WHERE id = ?
+                """, (order, now, int(contact_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
+
+
 @app.post("/admin/cms/contact/delete")
 def cms_contact_delete(
     contact_id: str = Form(...),
@@ -3351,17 +4175,17 @@ def tech_skill_save(
     category_id: str = Form(...),
 ) -> RedirectResponse:
     from datetime import datetime
-    
+
     ensure_tech_skills_categories()
     with get_conn() as conn:
         now = datetime.now().isoformat()
         category_id_int = int(category_id)
-        
+
         if skill_id:
             skill_id_int = int(skill_id)
             conn.execute("""
                 UPDATE tech_skills
-                SET skill_name = ?, logo_url = ?, description = ?, skill_level = ?, 
+                SET skill_name = ?, logo_url = ?, description = ?, skill_level = ?,
                     years_usage = ?, num_projects = ?, category_id = ?, updated_at = ?
                 WHERE id = ?
             """, (
@@ -3379,7 +4203,7 @@ def tech_skill_save(
         else:
             cursor = conn.execute("""
                 INSERT INTO tech_skills (
-                    skill_name, logo_url, description, skill_level, 
+                    skill_name, logo_url, description, skill_level,
                     years_usage, num_projects, category_id, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -3395,8 +4219,34 @@ def tech_skill_save(
             ))
             conn.commit()
             skill_id_int = cursor.lastrowid
-    
-    return RedirectResponse(url=f"/admin/tech-skills/{skill_id_int}", status_code=303)
+
+    return RedirectResponse(url="/admin/tech-skills", status_code=303)
+
+
+@app.get("/admin/tech-skills/images/browse")
+def tech_skills_images_browse() -> JSONResponse:
+    """List all available images from assets/images/skills directory"""
+    images = []
+    skills_dir = ROOT / "assets" / "images" / "skills"
+
+    if skills_dir.exists() and skills_dir.is_dir():
+        # Scan all subdirectories recursively
+        for item in skills_dir.rglob("*"):
+            if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS:
+                # Get relative path from assets/images directory
+                relative_path = item.relative_to(ROOT / "assets" / "images")
+                url = f"/assets/images/{relative_path.as_posix()}"
+                images.append({
+                    "url": url,
+                    "filename": item.name,
+                    "path": str(relative_path),
+                    "size": item.stat().st_size
+                })
+
+    # Sort by filename
+    images.sort(key=lambda x: x["filename"].lower())
+
+    return JSONResponse(content={"images": images})
 
 
 @app.post("/admin/tech-skills/delete")
@@ -3411,10 +4261,10 @@ def tech_skill_delete(
         skill_row = conn.execute("SELECT id FROM tech_skills WHERE id = ?", (skill_id_int,)).fetchone()
         if not skill_row:
             raise HTTPException(status_code=404, detail="Tech skill not found")
-        
+
         conn.execute("DELETE FROM tech_skills WHERE id = ?", (skill_id_int,))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/tech-skills", status_code=303)
 
 
@@ -3430,10 +4280,10 @@ def api_tech_skills() -> JSONResponse:
                 FROM tech_skill_categories
                 ORDER BY display_order, name
             """).fetchall()
-            
+
             # Get skills with category info
             skills = conn.execute("""
-                SELECT 
+                SELECT
                     ts.id,
                     ts.skill_name,
                     ts.logo_url,
@@ -3447,17 +4297,17 @@ def api_tech_skills() -> JSONResponse:
                 LEFT JOIN tech_skill_categories c ON ts.category_id = c.id
                 ORDER BY c.display_order, c.name, ts.skill_name
             """).fetchall()
-        
+
         # Build categories list with order
         categories_list = [{"id": cat["id"], "name": cat["name"], "order": cat["display_order"]} for cat in categories]
-        
+
         # Group skills by category
         skills_by_category = {}
         for skill in skills:
             cat_name = skill["category_name"] or "Uncategorized"
             if cat_name not in skills_by_category:
                 skills_by_category[cat_name] = []
-            
+
             skills_by_category[cat_name].append({
                 "name": skill["skill_name"],
                 "logo": skill["logo_url"] or "",
@@ -3466,7 +4316,7 @@ def api_tech_skills() -> JSONResponse:
                 "projects": skill["num_projects"] or "",
                 "description": skill["description"] or "",
             })
-        
+
         return JSONResponse(content={
             "categories": categories_list,
             "skills": skills_by_category
@@ -3491,7 +4341,7 @@ def side_projects_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             projects_rows = conn.execute("""
-                SELECT 
+                SELECT
                     sp.*,
                     c.label AS category_label,
                     c.code AS category_code,
@@ -3515,7 +4365,7 @@ def side_project_categories_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             categories_rows = conn.execute("""
-                SELECT 
+                SELECT
                     c.*,
                     COUNT(sp.id) AS project_count
                 FROM side_project_categories c
@@ -3537,7 +4387,7 @@ def side_project_categories_list(request: Request) -> Any:
 def side_project_new(request: Request) -> Any:
     with get_conn() as conn:
         categories = conn.execute("""
-            SELECT * FROM side_project_categories 
+            SELECT * FROM side_project_categories
             ORDER BY display_order, label
         """).fetchall()
     return templates.TemplateResponse(
@@ -3562,42 +4412,42 @@ def side_project_edit(request: Request, project_id: int) -> Any:
         ).fetchone()
         if not project:
             raise HTTPException(status_code=404, detail="Side project not found")
-        
+
         categories = conn.execute("""
-            SELECT * FROM side_project_categories 
+            SELECT * FROM side_project_categories
             ORDER BY display_order, label
         """).fetchall()
-        
+
         technologies_rows = conn.execute("""
-            SELECT * FROM side_project_technologies 
-            WHERE project_id = ? 
+            SELECT * FROM side_project_technologies
+            WHERE project_id = ?
             ORDER BY display_order, name
         """, (project_id,)).fetchall()
-        
+
         features_rows = conn.execute("""
-            SELECT * FROM side_project_features 
-            WHERE project_id = ? 
+            SELECT * FROM side_project_features
+            WHERE project_id = ?
             ORDER BY display_order, name
         """, (project_id,)).fetchall()
-        
+
         technical_details_rows = conn.execute("""
-            SELECT * FROM side_project_technical_details 
-            WHERE project_id = ? 
+            SELECT * FROM side_project_technical_details
+            WHERE project_id = ?
             ORDER BY display_order, title
         """, (project_id,)).fetchall()
-        
+
         images_rows = conn.execute("""
-            SELECT * FROM side_project_images 
-            WHERE project_id = ? 
+            SELECT * FROM side_project_images
+            WHERE project_id = ?
             ORDER BY display_order, id
         """, (project_id,)).fetchall()
-    
+
     # Convert Row objects to dictionaries for JSON serialization
     technologies = [dict(row) for row in technologies_rows]
     features = [dict(row) for row in features_rows]
     technical_details = [dict(row) for row in technical_details_rows]
     images = [dict(row) for row in images_rows]
-    
+
     return templates.TemplateResponse(
         "side-projects/side_project_edit.html",
         {
@@ -3634,28 +4484,28 @@ def side_project_save(
     technical_detail_descriptions: list[str] | None = Form(None),
 ) -> RedirectResponse:
     today = date.today().isoformat()
-    
+
     if not slug:
         slug = side_project_slugify(title)
-    
+
     category_id_val = _optional_int(category_id)
-    
+
     stats_json = None
     if stats:
         try:
             stats_json = json.dumps(json.loads(stats))
         except json.JSONDecodeError:
             stats_json = None
-    
+
     with get_conn() as conn:
         if not project_id or project_id == "":
             if not posted_date:
                 posted_date = today
             if not revised_date:
                 revised_date = today
-            
+
             cursor = conn.execute("""
-                INSERT INTO side_projects 
+                INSERT INTO side_projects
                 (category_id, title, slug, description, status, metrics, posted_date, revised_date, stats)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -3674,10 +4524,10 @@ def side_project_save(
             project_id_int = int(project_id)
             if not revised_date:
                 revised_date = today
-            
+
             conn.execute("""
-                UPDATE side_projects 
-                SET category_id = ?, title = ?, slug = ?, description = ?, status = ?, 
+                UPDATE side_projects
+                SET category_id = ?, title = ?, slug = ?, description = ?, status = ?,
                     metrics = ?, revised_date = ?, stats = ?
                 WHERE id = ?
             """, (
@@ -3691,12 +4541,12 @@ def side_project_save(
                 stats_json,
                 project_id_int,
             ))
-        
+
         # Delete existing related records
         conn.execute("DELETE FROM side_project_technologies WHERE project_id = ?", (project_id_int,))
         conn.execute("DELETE FROM side_project_features WHERE project_id = ?", (project_id_int,))
         conn.execute("DELETE FROM side_project_technical_details WHERE project_id = ?", (project_id_int,))
-        
+
         # Insert technologies
         if technologies:
             for idx, tech_name in enumerate(technologies):
@@ -3708,7 +4558,7 @@ def side_project_save(
                         INSERT INTO side_project_technologies (project_id, name, icon, display_order)
                         VALUES (?, ?, ?, ?)
                     """, (project_id_int, tech_name.strip(), tech_icon.strip(), idx))
-        
+
         # Insert features
         if features:
             for idx, feature_name in enumerate(features):
@@ -3723,7 +4573,7 @@ def side_project_save(
                         INSERT INTO side_project_features (project_id, name, description, icon, display_order)
                         VALUES (?, ?, ?, ?, ?)
                     """, (project_id_int, feature_name.strip(), feature_desc.strip(), feature_icon.strip(), idx))
-        
+
         # Insert technical details
         if technical_detail_titles:
             for idx, detail_title in enumerate(technical_detail_titles):
@@ -3735,54 +4585,73 @@ def side_project_save(
                         INSERT INTO side_project_technical_details (project_id, title, description, display_order)
                         VALUES (?, ?, ?, ?)
                     """, (project_id_int, detail_title.strip(), detail_desc.strip(), idx))
-        
+
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/side-projects/{project_id_int}", status_code=303)
+
+    return RedirectResponse(url="/admin/side-projects", status_code=303)
 
 
 @app.post("/admin/side-projects/images/upload")
-def side_project_image_upload(
+async def side_project_image_upload(
     project_id: int = Form(...),
     file: UploadFile = File(...),
     is_cover: bool = Form(False),
 ) -> RedirectResponse:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    ext = Path(file.filename).suffix.lower()
-    if ext not in IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported image format: {ext}")
-    
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=f"/admin/side-projects/{project_id}?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
+
     project_img_dir = PROJECTS_MEDIA / str(project_id)
     project_img_dir.mkdir(parents=True, exist_ok=True)
-    
-    safe_filename = secrets.token_urlsafe(8) + ext
+
+    safe_filename = secrets.token_urlsafe(16) + ext
     file_path = project_img_dir / safe_filename
+    
+    # Ensure we're writing within the intended directory
+    try:
+        file_path.resolve().relative_to(project_img_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=f"/admin/side-projects/{project_id}?error=Invalid+file+path",
+            status_code=303
+        )
+    
     url = f"/assets/images/projects/{project_id}/{safe_filename}"
-    
-    with file_path.open("wb") as f:
-        content = file.file.read()
-        f.write(content)
-    
+
+    # Write file
+    try:
+        with file_path.open("wb") as f:
+            f.write(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=f"/admin/side-projects/{project_id}?error=Error+saving+file",
+            status_code=303
+        )
+
     with get_conn() as conn:
         # If setting as cover, unset all other cover images for this project
         if is_cover:
             conn.execute("""
                 UPDATE side_project_images SET is_cover = 0 WHERE project_id = ?
             """, (project_id,))
-        
+
         max_order = conn.execute("""
             SELECT COALESCE(MAX(display_order), 0) FROM side_project_images WHERE project_id = ?
         """, (project_id,)).fetchone()[0]
-        
+
         conn.execute("""
             INSERT INTO side_project_images (project_id, url, alt, is_cover, display_order)
             VALUES (?, ?, ?, ?, ?)
         """, (project_id, url, file.filename, 1 if is_cover else 0, max_order + 1))
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/side-projects/{project_id}", status_code=303)
+
+    return RedirectResponse(url=f"/admin/side-projects/{project_id}?success=Image+uploaded+successfully", status_code=303)
 
 
 @app.post("/admin/side-projects/images/{image_id}/set-cover")
@@ -3797,20 +4666,20 @@ def side_project_image_set_cover(
         ).fetchone()
         if not image:
             raise HTTPException(status_code=404, detail="Image not found")
-        
+
         project_id = image["project_id"]
-        
+
         # Unset all other cover images for this project
         conn.execute("""
             UPDATE side_project_images SET is_cover = 0 WHERE project_id = ?
         """, (project_id,))
-        
+
         # Set this image as cover
         conn.execute("""
             UPDATE side_project_images SET is_cover = 1 WHERE id = ?
         """, (image_id,))
         conn.commit()
-    
+
     return JSONResponse(content={"success": True})
 
 
@@ -3823,11 +4692,11 @@ def side_project_image_delete(image_id: int) -> JSONResponse:
         ).fetchone()
         if not image:
             raise HTTPException(status_code=404, detail="Image not found")
-        
+
         # Delete from database
         conn.execute("DELETE FROM side_project_images WHERE id = ?", (image_id,))
         conn.commit()
-        
+
         # Delete file if it exists
         if image["url"]:
             # Extract path from URL (e.g., "/assets/images/projects/1/abc123.jpg")
@@ -3838,7 +4707,7 @@ def side_project_image_delete(image_id: int) -> JSONResponse:
                     file_path.unlink()
                 except Exception:
                     pass  # Continue even if file deletion fails
-    
+
     return JSONResponse(content={"success": True})
 
 
@@ -3852,7 +4721,7 @@ def side_project_image_update(
             UPDATE side_project_images SET alt = ? WHERE id = ?
         """, (alt.strip(), image_id))
         conn.commit()
-    
+
     return JSONResponse(content={"success": True})
 
 
@@ -3861,7 +4730,7 @@ def side_project_images_browse() -> JSONResponse:
     """List all available images from assets/images/projects directory"""
     images = []
     projects_dir = ROOT / "assets" / "images" / "projects"
-    
+
     if projects_dir.exists() and projects_dir.is_dir():
         # Scan all subdirectories recursively
         for item in projects_dir.rglob("*"):
@@ -3875,10 +4744,10 @@ def side_project_images_browse() -> JSONResponse:
                     "path": str(relative_path),
                     "size": item.stat().st_size
                 })
-    
+
     # Sort by filename
     images.sort(key=lambda x: x["filename"].lower())
-    
+
     return JSONResponse(content={"images": images})
 
 
@@ -3896,17 +4765,17 @@ def side_project_image_add_existing(
             conn.execute("""
                 UPDATE side_project_images SET is_cover = 0 WHERE project_id = ?
             """, (project_id,))
-        
+
         max_order = conn.execute("""
             SELECT COALESCE(MAX(display_order), 0) FROM side_project_images WHERE project_id = ?
         """, (project_id,)).fetchone()[0]
-        
+
         conn.execute("""
             INSERT INTO side_project_images (project_id, url, alt, is_cover, display_order)
             VALUES (?, ?, ?, ?, ?)
         """, (project_id, url, alt.strip(), 1 if is_cover else 0, max_order + 1))
         conn.commit()
-    
+
     return RedirectResponse(url=f"/admin/side-projects/{project_id}", status_code=303)
 
 
@@ -3922,7 +4791,7 @@ def side_project_category_new(
     with get_conn() as conn:
         try:
             conn.execute("""
-                INSERT INTO side_project_categories 
+                INSERT INTO side_project_categories
                 (code, label, description, color, icon, display_order)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (
@@ -3955,7 +4824,7 @@ def side_project_category_update(
     with get_conn() as conn:
         try:
             conn.execute("""
-                UPDATE side_project_categories 
+                UPDATE side_project_categories
                 SET code = ?, label = ?, description = ?, color = ?, icon = ?, display_order = ?
                 WHERE id = ?
             """, (
@@ -3971,6 +4840,30 @@ def side_project_category_update(
         except sqlite3.IntegrityError as exc:
             raise HTTPException(status_code=400, detail=f"Category code '{code}' already exists") from exc
     return RedirectResponse(url="/admin/side-projects/categories", status_code=303)
+
+
+@app.post("/admin/side-projects/categories/reorder")
+def side_project_categories_reorder(
+    request: Request,
+    category_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    from datetime import datetime
+    
+    try:
+        orders = json.loads(category_orders)
+        with get_conn() as conn:
+            now = datetime.now().isoformat()
+            for cat_id, order in orders.items():
+                conn.execute("""
+                    UPDATE side_project_categories
+                    SET display_order = ?, updated_at = ?
+                    WHERE id = ?
+                """, (order, now, int(cat_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
 
 
 @app.get("/admin/side-projects/categories/{category_id}")
@@ -3999,10 +4892,10 @@ def api_side_projects() -> JSONResponse:
                 ORDER BY display_order, label
             """).fetchall()
             categories = [dict(row) for row in categories_rows]
-            
+
             # Get projects with category info - convert Row objects to dicts
             projects_rows = conn.execute("""
-                SELECT 
+                SELECT
                     sp.*,
                     c.code AS category_code,
                     c.label AS category_label,
@@ -4013,7 +4906,7 @@ def api_side_projects() -> JSONResponse:
                 ORDER BY sp.revised_date DESC, sp.posted_date DESC, sp.id DESC
             """).fetchall()
             projects = [dict(row) for row in projects_rows]
-            
+
             # Build projects list with related data
             projects_list = []
             for project in projects:
@@ -4023,28 +4916,28 @@ def api_side_projects() -> JSONResponse:
                     WHERE project_id = ? ORDER BY display_order, name
                 """, (project["id"],)).fetchall()
                 technologies = [dict(row) for row in technologies_rows]
-                
+
                 # Get features - convert Row objects to dicts
                 features_rows = conn.execute("""
                     SELECT name, description, icon FROM side_project_features
                     WHERE project_id = ? ORDER BY display_order, name
                 """, (project["id"],)).fetchall()
                 features = [dict(row) for row in features_rows]
-                
+
                 # Get technical details - convert Row objects to dicts
                 technical_details_rows = conn.execute("""
                     SELECT title, description FROM side_project_technical_details
                     WHERE project_id = ? ORDER BY display_order, title
                 """, (project["id"],)).fetchall()
                 technical_details = [dict(row) for row in technical_details_rows]
-                
+
                 # Get images - convert Row objects to dicts
                 images_rows = conn.execute("""
                     SELECT url, alt FROM side_project_images
                     WHERE project_id = ? ORDER BY display_order, id
                 """, (project["id"],)).fetchall()
                 images = [dict(row) for row in images_rows]
-                
+
                 # Parse stats JSON
                 stats = {}
                 if project.get("stats"):
@@ -4052,7 +4945,7 @@ def api_side_projects() -> JSONResponse:
                         stats = json.loads(project["stats"])
                     except json.JSONDecodeError:
                         stats = {}
-                
+
                 projects_list.append({
                     "id": project["id"],
                     "name": project["title"],
@@ -4069,7 +4962,7 @@ def api_side_projects() -> JSONResponse:
                     "images": [{"url": img.get("url") or "", "alt": img.get("alt") or ""} for img in images],
                     "gallery": [{"url": img.get("url") or "", "alt": img.get("alt") or ""} for img in images]
                 })
-            
+
             # Group projects by category code
             projects_by_category = {}
             for project in projects_list:
@@ -4077,7 +4970,7 @@ def api_side_projects() -> JSONResponse:
                 if cat_code not in projects_by_category:
                     projects_by_category[cat_code] = []
                 projects_by_category[cat_code].append(project)
-            
+
             # Build categories list
             categories_list = [{
                 "code": cat.get("code") or "",
@@ -4086,7 +4979,7 @@ def api_side_projects() -> JSONResponse:
                 "icon": cat.get("icon") or "",
                 "count": len(projects_by_category.get(cat.get("code") or "", []))
             } for cat in categories]
-        
+
         return JSONResponse(content={
             "categories": categories_list,
             "projects": projects_by_category
@@ -4106,7 +4999,7 @@ def magento_modules_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             modules_rows = conn.execute("""
-                SELECT 
+                SELECT
                     mm.*,
                     c.label AS category_label,
                     c.code AS category_code,
@@ -4130,7 +5023,7 @@ def magento_module_categories_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             categories_rows = conn.execute("""
-                SELECT 
+                SELECT
                     c.*,
                     COUNT(mm.id) AS module_count
                 FROM magento_module_categories c
@@ -4152,7 +5045,7 @@ def magento_module_categories_list(request: Request) -> Any:
 def magento_module_new(request: Request) -> Any:
     with get_conn() as conn:
         categories = conn.execute("""
-            SELECT * FROM magento_module_categories 
+            SELECT * FROM magento_module_categories
             ORDER BY display_order, label
         """).fetchall()
     return templates.TemplateResponse(
@@ -4177,42 +5070,42 @@ def magento_module_edit(request: Request, module_id: int) -> Any:
         ).fetchone()
         if not module:
             raise HTTPException(status_code=404, detail="Magento module not found")
-        
+
         categories = conn.execute("""
-            SELECT * FROM magento_module_categories 
+            SELECT * FROM magento_module_categories
             ORDER BY display_order, label
         """).fetchall()
-        
+
         technologies_rows = conn.execute("""
-            SELECT * FROM magento_module_technologies 
-            WHERE module_id = ? 
+            SELECT * FROM magento_module_technologies
+            WHERE module_id = ?
             ORDER BY display_order, name
         """, (module_id,)).fetchall()
-        
+
         features_rows = conn.execute("""
-            SELECT * FROM magento_module_features 
-            WHERE module_id = ? 
+            SELECT * FROM magento_module_features
+            WHERE module_id = ?
             ORDER BY display_order, name
         """, (module_id,)).fetchall()
-        
+
         technical_details_rows = conn.execute("""
-            SELECT * FROM magento_module_technical_details 
-            WHERE module_id = ? 
+            SELECT * FROM magento_module_technical_details
+            WHERE module_id = ?
             ORDER BY display_order, title
         """, (module_id,)).fetchall()
-        
+
         images_rows = conn.execute("""
-            SELECT * FROM magento_module_images 
-            WHERE module_id = ? 
+            SELECT * FROM magento_module_images
+            WHERE module_id = ?
             ORDER BY display_order, id
         """, (module_id,)).fetchall()
-    
+
     # Convert Row objects to dictionaries for JSON serialization
     technologies = [dict(row) for row in technologies_rows]
     features = [dict(row) for row in features_rows]
     technical_details = [dict(row) for row in technical_details_rows]
     images = [dict(row) for row in images_rows]
-    
+
     return templates.TemplateResponse(
         "magento/magento_module_edit.html",
         {
@@ -4250,28 +5143,28 @@ def magento_module_save(
     technical_detail_descriptions: list[str] | None = Form(None),
 ) -> RedirectResponse:
     today = date.today().isoformat()
-    
+
     if not slug:
         slug = magento_slugify(title)
-    
+
     category_id_val = _optional_int(category_id)
-    
+
     stats_json = None
     if stats:
         try:
             stats_json = json.dumps(json.loads(stats))
         except json.JSONDecodeError:
             stats_json = None
-    
+
     with get_conn() as conn:
         if not module_id or module_id == "":
             if not posted_date:
                 posted_date = today
             if not revised_date:
                 revised_date = today
-            
+
             cursor = conn.execute("""
-                INSERT INTO magento_modules 
+                INSERT INTO magento_modules
                 (category_id, title, slug, version, description, status, metrics, posted_date, revised_date, stats)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -4291,10 +5184,10 @@ def magento_module_save(
             module_id_int = int(module_id)
             if not revised_date:
                 revised_date = today
-            
+
             conn.execute("""
-                UPDATE magento_modules 
-                SET category_id = ?, title = ?, slug = ?, version = ?, description = ?, status = ?, 
+                UPDATE magento_modules
+                SET category_id = ?, title = ?, slug = ?, version = ?, description = ?, status = ?,
                     metrics = ?, revised_date = ?, stats = ?
                 WHERE id = ?
             """, (
@@ -4309,12 +5202,12 @@ def magento_module_save(
                 stats_json,
                 module_id_int,
             ))
-        
+
         # Delete existing related records
         conn.execute("DELETE FROM magento_module_technologies WHERE module_id = ?", (module_id_int,))
         conn.execute("DELETE FROM magento_module_features WHERE module_id = ?", (module_id_int,))
         conn.execute("DELETE FROM magento_module_technical_details WHERE module_id = ?", (module_id_int,))
-        
+
         # Insert technologies
         if technologies:
             for idx, tech_name in enumerate(technologies):
@@ -4326,7 +5219,7 @@ def magento_module_save(
                         INSERT INTO magento_module_technologies (module_id, name, icon, display_order)
                         VALUES (?, ?, ?, ?)
                     """, (module_id_int, tech_name.strip(), tech_icon.strip(), idx))
-        
+
         # Insert features
         if features:
             for idx, feature_name in enumerate(features):
@@ -4341,7 +5234,7 @@ def magento_module_save(
                         INSERT INTO magento_module_features (module_id, name, description, icon, display_order)
                         VALUES (?, ?, ?, ?, ?)
                     """, (module_id_int, feature_name.strip(), feature_desc.strip(), feature_icon.strip(), idx))
-        
+
         # Insert technical details
         if technical_detail_titles:
             for idx, detail_title in enumerate(technical_detail_titles):
@@ -4353,54 +5246,73 @@ def magento_module_save(
                         INSERT INTO magento_module_technical_details (module_id, title, description, display_order)
                         VALUES (?, ?, ?, ?)
                     """, (module_id_int, detail_title.strip(), detail_desc.strip(), idx))
-        
+
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/magento/{module_id_int}", status_code=303)
+
+    return RedirectResponse(url="/admin/magento", status_code=303)
 
 
 @app.post("/admin/magento/images/upload")
-def magento_module_image_upload(
+async def magento_module_image_upload(
     module_id: int = Form(...),
     file: UploadFile = File(...),
     is_cover: bool = Form(False),
 ) -> RedirectResponse:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    ext = Path(file.filename).suffix.lower()
-    if ext not in IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported image format: {ext}")
-    
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=f"/admin/magento/{module_id}?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
+
     module_img_dir = MAGENTO_MEDIA / str(module_id)
     module_img_dir.mkdir(parents=True, exist_ok=True)
-    
-    safe_filename = secrets.token_urlsafe(8) + ext
+
+    safe_filename = secrets.token_urlsafe(16) + ext
     file_path = module_img_dir / safe_filename
+    
+    # Ensure we're writing within the intended directory
+    try:
+        file_path.resolve().relative_to(module_img_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=f"/admin/magento/{module_id}?error=Invalid+file+path",
+            status_code=303
+        )
+    
     url = f"/assets/images/magento/{module_id}/{safe_filename}"
-    
-    with file_path.open("wb") as f:
-        content = file.file.read()
-        f.write(content)
-    
+
+    # Write file
+    try:
+        with file_path.open("wb") as f:
+            f.write(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=f"/admin/magento/{module_id}?error=Error+saving+file",
+            status_code=303
+        )
+
     with get_conn() as conn:
         # If setting as cover, unset all other cover images for this module
         if is_cover:
             conn.execute("""
                 UPDATE magento_module_images SET is_cover = 0 WHERE module_id = ?
             """, (module_id,))
-        
+
         max_order = conn.execute("""
             SELECT COALESCE(MAX(display_order), 0) FROM magento_module_images WHERE module_id = ?
         """, (module_id,)).fetchone()[0]
-        
+
         conn.execute("""
             INSERT INTO magento_module_images (module_id, url, alt, is_cover, display_order)
             VALUES (?, ?, ?, ?, ?)
         """, (module_id, url, file.filename, 1 if is_cover else 0, max_order + 1))
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/magento/{module_id}", status_code=303)
+
+    return RedirectResponse(url=f"/admin/magento/{module_id}?success=Image+uploaded+successfully", status_code=303)
 
 
 @app.post("/admin/magento/images/{image_id}/set-cover")
@@ -4409,31 +5321,41 @@ def magento_module_image_set_cover(
     is_cover: str = Form("true"),
 ) -> JSONResponse:
     with get_conn() as conn:
-        # Get module_id from image
+        # Get module_id and current is_cover status from image
         image = conn.execute(
-            "SELECT module_id FROM magento_module_images WHERE id = ?", (image_id,)
+            "SELECT module_id, is_cover FROM magento_module_images WHERE id = ?", (image_id,)
         ).fetchone()
         if not image:
             raise HTTPException(status_code=404, detail="Image not found")
-        
+
         module_id = image["module_id"]
+        current_cover_status = image["is_cover"]
         
-        # Unset all other cover images for this module
-        conn.execute("""
-            UPDATE magento_module_images SET is_cover = 0 WHERE module_id = ?
-        """, (module_id,))
+        # Convert form value to boolean
+        set_as_cover = is_cover.lower() in ("true", "1", "yes", "on")
         
-        # Set this image as cover
-        conn.execute("""
-            UPDATE magento_module_images SET is_cover = 1 WHERE id = ?
-        """, (image_id,))
+        # If setting as cover, unset all other cover images for this module
+        if set_as_cover:
+            conn.execute("""
+                UPDATE magento_module_images SET is_cover = 0 WHERE module_id = ?
+            """, (module_id,))
+            # Set this image as cover
+            conn.execute("""
+                UPDATE magento_module_images SET is_cover = 1 WHERE id = ?
+            """, (image_id,))
+        else:
+            # Unset this image as cover
+            conn.execute("""
+                UPDATE magento_module_images SET is_cover = 0 WHERE id = ?
+            """, (image_id,))
         conn.commit()
-    
-    return JSONResponse(content={"success": True})
+
+    return JSONResponse(content={"success": True, "is_cover": set_as_cover})
 
 
 @app.post("/admin/magento/images/{image_id}/delete")
 def magento_module_image_delete(image_id: int) -> JSONResponse:
+    """Remove image from module but keep the file in the system"""
     with get_conn() as conn:
         # Get image info before deleting
         image = conn.execute(
@@ -4441,22 +5363,14 @@ def magento_module_image_delete(image_id: int) -> JSONResponse:
         ).fetchone()
         if not image:
             raise HTTPException(status_code=404, detail="Image not found")
-        
-        # Delete from database
+
+        # Delete from database only (do NOT delete the file)
         conn.execute("DELETE FROM magento_module_images WHERE id = ?", (image_id,))
         conn.commit()
-        
-        # Delete file if it exists
-        if image["url"]:
-            # Extract path from URL (e.g., "/assets/images/magento/1/abc123.jpg")
-            url_path = image["url"].lstrip("/")
-            file_path = ROOT / url_path
-            if file_path.exists() and file_path.is_file():
-                try:
-                    file_path.unlink()
-                except Exception:
-                    pass  # Continue even if file deletion fails
-    
+
+        # Note: We intentionally do NOT delete the file from the filesystem
+        # The image remains available in the system for potential reuse
+
     return JSONResponse(content={"success": True})
 
 
@@ -4470,33 +5384,48 @@ def magento_module_image_update(
             UPDATE magento_module_images SET alt = ? WHERE id = ?
         """, (alt.strip(), image_id))
         conn.commit()
-    
+
     return JSONResponse(content={"success": True})
 
 
 @app.get("/admin/magento/images/browse")
 def magento_module_images_browse() -> JSONResponse:
-    """List all available images from assets/images/magento-modules directory"""
+    """List all available images from assets/images/magento-modules and other common directories"""
     images = []
-    magento_modules_dir = ROOT / "assets" / "images" / "magento-modules"
     
+    # Scan assets/images/magento-modules directory
+    magento_modules_dir = ROOT / "assets" / "images" / "magento-modules"
     if magento_modules_dir.exists() and magento_modules_dir.is_dir():
-        # Scan all subdirectories recursively
         for item in magento_modules_dir.rglob("*"):
             if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS:
-                # Get relative path from assets/images directory
                 relative_path = item.relative_to(ROOT / "assets" / "images")
                 url = f"/assets/images/{relative_path.as_posix()}"
                 images.append({
                     "url": url,
                     "filename": item.name,
                     "path": str(relative_path),
-                    "size": item.stat().st_size
+                    "size": item.stat().st_size,
+                    "directory": "magento-modules"
                 })
     
-    # Sort by filename
-    images.sort(key=lambda x: x["filename"].lower())
-    
+    # Also scan assets/images/projects directory (common alternative)
+    projects_dir = ROOT / "assets" / "images" / "projects"
+    if projects_dir.exists() and projects_dir.is_dir():
+        for item in projects_dir.rglob("*"):
+            if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS:
+                relative_path = item.relative_to(ROOT / "assets" / "images")
+                url = f"/assets/images/{relative_path.as_posix()}"
+                images.append({
+                    "url": url,
+                    "filename": item.name,
+                    "path": str(relative_path),
+                    "size": item.stat().st_size,
+                    "directory": "projects"
+                })
+
+    # Sort by directory, then filename
+    images.sort(key=lambda x: (x.get("directory", ""), x["filename"].lower()))
+
     return JSONResponse(content={"images": images})
 
 
@@ -4514,17 +5443,17 @@ def magento_module_image_add_existing(
             conn.execute("""
                 UPDATE magento_module_images SET is_cover = 0 WHERE module_id = ?
             """, (module_id,))
-        
+
         max_order = conn.execute("""
             SELECT COALESCE(MAX(display_order), 0) FROM magento_module_images WHERE module_id = ?
         """, (module_id,)).fetchone()[0]
-        
+
         conn.execute("""
             INSERT INTO magento_module_images (module_id, url, alt, is_cover, display_order)
             VALUES (?, ?, ?, ?, ?)
         """, (module_id, url, alt.strip(), 1 if is_cover else 0, max_order + 1))
         conn.commit()
-    
+
     return RedirectResponse(url=f"/admin/magento/{module_id}", status_code=303)
 
 
@@ -4548,7 +5477,7 @@ def magento_module_category_new(
     with get_conn() as conn:
         try:
             conn.execute("""
-                INSERT INTO magento_module_categories 
+                INSERT INTO magento_module_categories
                 (code, label, description, color, icon, display_order)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (
@@ -4581,7 +5510,7 @@ def magento_module_category_update(
     with get_conn() as conn:
         try:
             conn.execute("""
-                UPDATE magento_module_categories 
+                UPDATE magento_module_categories
                 SET code = ?, label = ?, description = ?, color = ?, icon = ?, display_order = ?
                 WHERE id = ?
             """, (
@@ -4597,6 +5526,30 @@ def magento_module_category_update(
         except sqlite3.IntegrityError as exc:
             raise HTTPException(status_code=400, detail=f"Category code '{code}' already exists") from exc
     return RedirectResponse(url="/admin/magento/categories", status_code=303)
+
+
+@app.post("/admin/magento/categories/reorder")
+def magento_module_categories_reorder(
+    request: Request,
+    category_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    from datetime import datetime
+    
+    try:
+        orders = json.loads(category_orders)
+        with get_conn() as conn:
+            now = datetime.now().isoformat()
+            for cat_id, order in orders.items():
+                conn.execute("""
+                    UPDATE magento_module_categories
+                    SET display_order = ?, updated_at = ?
+                    WHERE id = ?
+                """, (order, now, int(cat_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
 
 
 @app.get("/admin/magento/categories/{category_id}")
@@ -4625,10 +5578,10 @@ def api_magento_modules() -> JSONResponse:
                 ORDER BY display_order, label
             """).fetchall()
             categories = [dict(row) for row in categories_rows]
-            
+
             # Get modules with category info - convert Row objects to dicts
             modules_rows = conn.execute("""
-                SELECT 
+                SELECT
                     mm.*,
                     c.code AS category_code,
                     c.label AS category_label,
@@ -4639,7 +5592,7 @@ def api_magento_modules() -> JSONResponse:
                 ORDER BY mm.revised_date DESC, mm.posted_date DESC, mm.id DESC
             """).fetchall()
             modules = [dict(row) for row in modules_rows]
-            
+
             # Build modules list with related data
             modules_list = []
             for module in modules:
@@ -4649,28 +5602,28 @@ def api_magento_modules() -> JSONResponse:
                     WHERE module_id = ? ORDER BY display_order, name
                 """, (module["id"],)).fetchall()
                 technologies = [dict(row) for row in technologies_rows]
-                
+
                 # Get features - convert Row objects to dicts
                 features_rows = conn.execute("""
                     SELECT name, description, icon FROM magento_module_features
                     WHERE module_id = ? ORDER BY display_order, name
                 """, (module["id"],)).fetchall()
                 features = [dict(row) for row in features_rows]
-                
+
                 # Get technical details - convert Row objects to dicts
                 technical_details_rows = conn.execute("""
                     SELECT title, description FROM magento_module_technical_details
                     WHERE module_id = ? ORDER BY display_order, title
                 """, (module["id"],)).fetchall()
                 technical_details = [dict(row) for row in technical_details_rows]
-                
+
                 # Get images - convert Row objects to dicts
                 images_rows = conn.execute("""
                     SELECT url, alt FROM magento_module_images
                     WHERE module_id = ? ORDER BY display_order, id
                 """, (module["id"],)).fetchall()
                 images = [dict(row) for row in images_rows]
-                
+
                 # Parse stats JSON
                 stats = {}
                 if module.get("stats"):
@@ -4678,7 +5631,7 @@ def api_magento_modules() -> JSONResponse:
                         stats = json.loads(module["stats"])
                     except json.JSONDecodeError:
                         stats = {}
-                
+
                 modules_list.append({
                     "id": module["id"],
                     "name": module["title"],
@@ -4696,7 +5649,7 @@ def api_magento_modules() -> JSONResponse:
                     "stats": stats,
                     "gallery": [{"url": img.get("url") or "", "alt": img.get("alt") or ""} for img in images]
                 })
-            
+
             # Group modules by category code
             modules_by_category = {}
             for module in modules_list:
@@ -4704,7 +5657,7 @@ def api_magento_modules() -> JSONResponse:
                 if cat_code not in modules_by_category:
                     modules_by_category[cat_code] = []
                 modules_by_category[cat_code].append(module)
-            
+
             # Build categories list
             categories_list = [{
                 "code": cat.get("code") or "",
@@ -4713,7 +5666,7 @@ def api_magento_modules() -> JSONResponse:
                 "icon": cat.get("icon") or "",
                 "count": len(modules_by_category.get(cat.get("code") or "", []))
             } for cat in categories]
-        
+
         return JSONResponse(content={
             "categories": categories_list,
             "modules": modules_by_category
@@ -4749,7 +5702,7 @@ def photography_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             photos_rows = conn.execute("""
-                SELECT 
+                SELECT
                     p.*,
                     c.label AS category_label,
                     c.code AS category_code,
@@ -4790,7 +5743,7 @@ def photography_categories_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             categories_rows = conn.execute("""
-                SELECT 
+                SELECT
                     c.*,
                     COUNT(p.id) AS photo_count
                 FROM photography_categories c
@@ -4832,11 +5785,88 @@ def photography_category_edit(request: Request, category_id: int) -> Any:
 @app.get("/admin/photography/{photo_id}")
 def photography_edit(request: Request, photo_id: int) -> Any:
     with get_conn() as conn:
-        photo = conn.execute(
+        photo_row = conn.execute(
             "SELECT * FROM photography WHERE id = ?", (photo_id,)
         ).fetchone()
-        if not photo:
+        if not photo_row:
             raise HTTPException(status_code=404, detail="Photo not found")
+        
+        # Convert Row to dict and ensure JSON fields are properly formatted
+        photo = dict(photo_row)
+        
+        from datetime import datetime
+        import os
+        debug_log_path = Path(__file__).parent / "admin.log"
+        try:
+            with open(debug_log_path, "a", encoding="utf-8") as f:
+                f.write(f"\n{'='*80}\n")
+                f.write(f"[{datetime.now().isoformat()}] PHOTOGRAPHY EDIT - Photo ID: {photo_id}\n")
+                f.write(f"Loading photo_details from DB (raw): {repr(str(photo.get('photo_details'))[:200])}\n")
+                f.flush()
+                os.fsync(f.fileno())
+        except:
+            pass
+        
+        # Format JSON fields for display - if they're valid JSON, format them nicely
+        photo_details_value = photo.get("photo_details")
+        if photo_details_value is not None:
+            photo_details_str = str(photo_details_value).strip()
+            if photo_details_str and photo_details_str != "{}":
+                try:
+                    parsed = json.loads(photo_details_str)
+                    photo["photo_details"] = json.dumps(parsed, indent=2, ensure_ascii=False)
+                    try:
+                        with open(debug_log_path, "a", encoding="utf-8") as f:
+                            f.write(f"Successfully parsed and formatted photo_details for display\n")
+                            f.flush()
+                            os.fsync(f.fileno())
+                    except:
+                        pass
+                except (json.JSONDecodeError, TypeError) as e:
+                    # If it's not valid JSON, keep the original value
+                    try:
+                        with open(debug_log_path, "a", encoding="utf-8") as f:
+                            f.write(f"WARNING: Could not parse photo_details as JSON: {e}\n")
+                            f.write(f"WARNING: Keeping original value: {repr(photo_details_str[:200])}\n")
+                            f.flush()
+                            os.fsync(f.fileno())
+                    except:
+                        pass
+                    photo["photo_details"] = photo_details_str
+            else:
+                photo["photo_details"] = "{}"
+                try:
+                    with open(debug_log_path, "a", encoding="utf-8") as f:
+                        f.write(f"photo_details is empty or '{{}}', using default\n")
+                        f.flush()
+                        os.fsync(f.fileno())
+                except:
+                    pass
+        else:
+            photo["photo_details"] = "{}"
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(f"photo_details is None, using default\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+            except:
+                pass
+            
+        technical_details_value = photo.get("technical_details")
+        if technical_details_value is not None:
+            technical_details_str = str(technical_details_value).strip()
+            if technical_details_str and technical_details_str != "{}":
+                try:
+                    parsed = json.loads(technical_details_str)
+                    photo["technical_details"] = json.dumps(parsed, indent=2, ensure_ascii=False)
+                except (json.JSONDecodeError, TypeError):
+                    # If it's not valid JSON, keep the original value
+                    photo["technical_details"] = technical_details_str
+            else:
+                photo["technical_details"] = "{}"
+        else:
+            photo["technical_details"] = "{}"
+        
         categories = conn.execute("""
             SELECT * FROM photography_categories
             ORDER BY display_order, label
@@ -4853,7 +5883,7 @@ def photography_edit(request: Request, photo_id: int) -> Any:
 
 
 @app.post("/admin/photography/save")
-def photography_save(
+async def photography_save(
     request: Request,
     photo_id: str | None = Form(None),
     photo_name: str = Form(...),
@@ -4866,30 +5896,101 @@ def photography_save(
     technical_details: str | None = Form(None),
     image_url: str | None = Form(None),
 ) -> RedirectResponse:
+    from datetime import datetime
+    import os
+    
     photo_pk = _optional_int(photo_id)
     
+    # Log raw form data first
+    debug_log_path = Path(__file__).parent / "admin.log"
+    try:
+        form_data = await request.form()
+        with open(debug_log_path, "a", encoding="utf-8") as f:
+            f.write(f"\n{'='*80}\n")
+            f.write(f"[{datetime.now().isoformat()}] PHOTOGRAPHY SAVE - Photo ID: {photo_pk}\n")
+            f.write(f"Photo Name: {photo_name}\n")
+            f.write(f"RAW FORM DATA - All keys: {list(form_data.keys())}\n")
+            if 'photo_details' in form_data:
+                raw_value = form_data.get('photo_details', '')
+                f.write(f"RAW photo_details from form_data: type={type(raw_value).__name__}, value={repr(str(raw_value)[:500])}\n")
+            else:
+                f.write(f"RAW photo_details: NOT FOUND IN FORM DATA\n")
+            f.write(f"photo_details parameter (type: {type(photo_details).__name__}, length: {len(photo_details) if photo_details else 0}):\n")
+            f.write(f"  {repr(photo_details[:500]) if photo_details else 'None'}\n")
+            f.flush()
+            os.fsync(f.fileno())  # Force write to disk
+    except Exception as e:
+        import sys
+        print(f"ERROR writing to log file: {e}", file=sys.stderr)
+
     # Validate and parse JSON fields
+    # Form always sends these fields, so they're either empty strings or have content
     photo_details_json = "{}"
-    if photo_details:
+    if photo_details and photo_details.strip():
+        photo_details_trimmed = photo_details.strip()
+        if photo_details_trimmed != "{}":
+            try:
+                # Parse and re-stringify to ensure valid JSON
+                parsed = json.loads(photo_details_trimmed)
+                photo_details_json = json.dumps(parsed, ensure_ascii=False)
+                try:
+                    with open(debug_log_path, "a", encoding="utf-8") as f:
+                        f.write(f"SUCCESS: Parsed photo_details, saving: {photo_details_json[:200]}\n")
+                        f.flush()
+                        os.fsync(f.fileno())
+                except:
+                    pass
+            except json.JSONDecodeError as e:
+                # If invalid JSON, log and save as empty object
+                try:
+                    with open(debug_log_path, "a", encoding="utf-8") as f:
+                        f.write(f"ERROR: Invalid JSON in photo_details for photo {photo_pk}: {e}\n")
+                        f.write(f"ERROR: Received value (first 500 chars): {repr(photo_details_trimmed[:500])}\n")
+                        f.flush()
+                        os.fsync(f.fileno())
+                except:
+                    pass
+                photo_details_json = "{}"
+        else:
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(f"INFO: photo_details is empty or just '{{}}', saving as '{{}}'\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+            except:
+                pass
+    else:
         try:
-            parsed = json.loads(photo_details)
-            photo_details_json = json.dumps(parsed, ensure_ascii=False)
-        except json.JSONDecodeError:
-            photo_details_json = "{}"
-    
+            with open(debug_log_path, "a", encoding="utf-8") as f:
+                f.write(f"INFO: photo_details is None or empty, saving as '{{}}'\n")
+                f.flush()
+                os.fsync(f.fileno())
+        except:
+            pass
+
     technical_details_json = "{}"
-    if technical_details:
-        try:
-            parsed = json.loads(technical_details)
-            technical_details_json = json.dumps(parsed, ensure_ascii=False)
-        except json.JSONDecodeError:
-            technical_details_json = "{}"
-    
+    if technical_details and technical_details.strip():
+        technical_details_trimmed = technical_details.strip()
+        if technical_details_trimmed != "{}":
+            try:
+                parsed = json.loads(technical_details_trimmed)
+                technical_details_json = json.dumps(parsed, ensure_ascii=False)
+            except json.JSONDecodeError as e:
+                try:
+                    with open(debug_log_path, "a", encoding="utf-8") as f:
+                        f.write(f"ERROR: Invalid JSON in technical_details for photo {photo_pk}: {e}\n")
+                        f.write(f"ERROR: Received value (first 500 chars): {repr(technical_details_trimmed[:500])}\n")
+                        f.flush()
+                        os.fsync(f.fileno())
+                except:
+                    pass
+                technical_details_json = "{}"
+
     with get_conn() as conn:
         cur = conn.cursor()
         if photo_pk is None:
             cur.execute("""
-                INSERT INTO photography 
+                INSERT INTO photography
                 (photo_name, photo_description, location, year, tags, category_id, photo_details, technical_details, image_url)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -4931,34 +6032,67 @@ def photography_save(
                 photo_pk,
             ))
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/photography/{photo_pk}", status_code=303)
+        
+        # Log what was actually saved
+        cur.execute("SELECT photo_details, technical_details FROM photography WHERE id = ?", (photo_pk,))
+        saved_row = cur.fetchone()
+        if saved_row:
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(f"VERIFIED: Saved to DB - photo_details: {repr(saved_row[0][:200]) if saved_row[0] else 'None'}\n")
+                    f.write(f"VERIFIED: Saved to DB - technical_details: {repr(saved_row[1][:200]) if saved_row[1] else 'None'}\n")
+                    f.write(f"{'='*80}\n")
+                    f.flush()
+                    os.fsync(f.fileno())
+            except:
+                pass
+
+    return RedirectResponse(url="/admin/photography", status_code=303)
 
 
 @app.post("/admin/photography/images/upload")
-def photography_image_upload(
+async def photography_image_upload(
+    request: Request,
     photo_id: int = Form(...),
     file: UploadFile = File(...),
 ) -> RedirectResponse:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=f"/admin/photography/{photo_id}?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
     
-    ext = Path(file.filename).suffix.lower()
-    if ext not in IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported image format: {ext}")
-    
+    # Create safe filename
     photo_img_dir = PHOTOGRAPHY_MEDIA
     photo_img_dir.mkdir(parents=True, exist_ok=True)
     
-    safe_filename = secrets.token_urlsafe(8) + ext
+    safe_filename = secrets.token_urlsafe(16) + ext
     file_path = photo_img_dir / safe_filename
-    url = f"/assets/images/photography/{safe_filename}"
     
-    with file_path.open("wb") as f:
-        content = file.file.read()
-        f.write(content)
+    # Ensure we're writing within the intended directory (prevent path traversal)
+    try:
+        file_path.resolve().relative_to(photo_img_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=f"/admin/photography/{photo_id}?error=Invalid+file+path",
+            status_code=303
+        )
     
-    return RedirectResponse(url=f"/admin/photography/{photo_id}", status_code=303)
+    # Write file
+    try:
+        with file_path.open("wb") as f:
+            f.write(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=f"/admin/photography/{photo_id}?error=Error+saving+file",
+            status_code=303
+        )
+    
+    return RedirectResponse(url=f"/admin/photography/{photo_id}?success=Image+uploaded+successfully", status_code=303)
 
 
 @app.get("/admin/photography/images/browse")
@@ -4966,6 +6100,23 @@ def photography_images_browse() -> JSONResponse:
     """API endpoint to browse existing photography images"""
     images = list_photography_images()
     return JSONResponse(content={"images": images})
+
+
+@app.get("/admin/portfolio/images/browse")
+def portfolio_images_browse() -> JSONResponse:
+    """API endpoint to browse existing portfolio images"""
+    images = []
+    if PORTFOLIO_MEDIA.exists():
+        for ext in IMAGE_EXTENSIONS:
+            for img_file in PORTFOLIO_MEDIA.rglob(f"*{ext}"):
+                rel_path = img_file.relative_to(ROOT)
+                url = "/" + str(rel_path).replace("\\", "/")
+                images.append({
+                    "url": url,
+                    "filename": img_file.name,
+                    "path": str(rel_path),
+                })
+    return JSONResponse(content={"images": sorted(images, key=lambda x: x["filename"])})
 
 
 @app.post("/admin/photography/categories/save")
@@ -4981,7 +6132,7 @@ def photography_category_save(
 ) -> RedirectResponse:
     category_pk = _optional_int(category_id)
     order_value = _coerce_int(display_order) if display_order else 0
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if category_pk is None:
@@ -5020,6 +6171,30 @@ def photography_category_save(
     return RedirectResponse(url="/admin/photography/categories", status_code=303)
 
 
+@app.post("/admin/photography/categories/reorder")
+def photography_categories_reorder(
+    request: Request,
+    category_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    from datetime import datetime
+    
+    try:
+        orders = json.loads(category_orders)
+        with get_conn() as conn:
+            now = datetime.now().isoformat()
+            for cat_id, order in orders.items():
+                conn.execute("""
+                    UPDATE photography_categories
+                    SET display_order = ?, updated_at = ?
+                    WHERE id = ?
+                """, (order, now, int(cat_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
+
+
 @app.get("/api/photography")
 def api_photography() -> JSONResponse:
     """API endpoint to fetch all photography entries for frontend"""
@@ -5032,10 +6207,10 @@ def api_photography() -> JSONResponse:
                 ORDER BY display_order, label
             """).fetchall()
             categories = [dict(row) for row in categories_rows]
-            
+
             # Get photos with category info - convert Row objects to dicts
             photos_rows = conn.execute("""
-                SELECT 
+                SELECT
                     p.*,
                     c.code AS category_code,
                     c.label AS category_label,
@@ -5045,7 +6220,7 @@ def api_photography() -> JSONResponse:
                 ORDER BY p.year DESC, p.created_at DESC, p.id DESC
             """).fetchall()
             photos = [dict(row) for row in photos_rows]
-            
+
             # Parse JSON fields
             photos_list = []
             for photo in photos:
@@ -5055,14 +6230,14 @@ def api_photography() -> JSONResponse:
                         photo_details = json.loads(photo["photo_details"])
                     except json.JSONDecodeError:
                         photo_details = {}
-                
+
                 technical_details = {}
                 if photo.get("technical_details"):
                     try:
                         technical_details = json.loads(photo["technical_details"])
                     except json.JSONDecodeError:
                         technical_details = {}
-                
+
                 photos_list.append({
                     "id": photo["id"],
                     "title": photo["photo_name"],
@@ -5077,7 +6252,7 @@ def api_photography() -> JSONResponse:
                     "settings": technical_details.get("settings", ""),
                     "tags": photo["tags"] or "",
                 })
-            
+
             # Group photos by category code
             photos_by_category = {}
             for photo in photos_list:
@@ -5085,7 +6260,7 @@ def api_photography() -> JSONResponse:
                 if cat_code not in photos_by_category:
                     photos_by_category[cat_code] = []
                 photos_by_category[cat_code].append(photo)
-            
+
             # Build categories list with counts
             categories_list = [{
                 "code": cat.get("code") or "",
@@ -5094,7 +6269,7 @@ def api_photography() -> JSONResponse:
                 "icon": cat.get("icon") or "",
                 "count": len(photos_by_category.get(cat.get("code") or "", []))
             } for cat in categories]
-        
+
         return JSONResponse(content={
             "categories": categories_list,
             "photos": photos_by_category
@@ -5112,21 +6287,21 @@ def api_photography() -> JSONResponse:
 def calculate_duration(start_date: str, end_date: str | None) -> str:
     """Calculate duration between two dates in format: 'X yrs Y mos' or 'X mos'"""
     from datetime import datetime
-    
+
     try:
         start = datetime.strptime(start_date, "%Y-%m-%d")
         if end_date:
             end = datetime.strptime(end_date, "%Y-%m-%d")
         else:
             end = datetime.now()
-        
+
         years = end.year - start.year
         months = end.month - start.month
-        
+
         if months < 0:
             years -= 1
             months += 12
-        
+
         if years > 0:
             if months > 0:
                 return f"{years} yrs {months} mos"
@@ -5143,13 +6318,15 @@ def experience_list(request: Request) -> Any:
         with get_conn() as conn:
             # Get all companies with their job experiences
             companies_rows = conn.execute("""
-                SELECT c.*, COUNT(je.id) as position_count
+                SELECT c.*,
+                       COUNT(je.id) as position_count,
+                       MAX(je.start_date) as latest_start_date
                 FROM experience_companies c
                 LEFT JOIN experience_job_experiences je ON je.company_id = c.id
                 GROUP BY c.id
-                ORDER BY c.name
+                ORDER BY latest_start_date DESC, c.name
             """).fetchall()
-            
+
             companies = []
             for company_row in companies_rows:
                 company = dict(company_row)
@@ -5170,12 +6347,12 @@ def experience_list(request: Request) -> Any:
                     GROUP BY je.id
                     ORDER BY je.start_date DESC
                 """, (company["id"],)).fetchall()
-                
+
                 company["positions"] = [dict(row) for row in positions_rows]
                 companies.append(company)
     except Exception:
         companies = []
-    
+
     return templates.TemplateResponse(
         "experience/experience_list.html",
         {"request": request, "companies": companies},
@@ -5190,7 +6367,7 @@ def experience_new(request: Request) -> Any:
         skills = conn.execute("SELECT * FROM experience_skills_sets ORDER BY name").fetchall()
         tools = conn.execute("SELECT * FROM experience_tools ORDER BY name").fetchall()
         soft_skills = conn.execute("SELECT * FROM experience_soft_skills ORDER BY name").fetchall()
-    
+
     return templates.TemplateResponse(
         "experience/experience_edit.html",
         {
@@ -5226,10 +6403,10 @@ def experience_save(
     """Save job experience"""
     job_pk = _optional_int(job_id)
     company_pk = _optional_int(company_id)
-    
+
     if not company_pk:
         raise HTTPException(status_code=400, detail="Company is required")
-    
+
     # Parse JSON arrays
     achievements_json = "[]"
     if key_achievements:
@@ -5238,7 +6415,7 @@ def experience_save(
             achievements_json = json.dumps(parsed, ensure_ascii=False)
         except json.JSONDecodeError:
             achievements_json = "[]"
-    
+
     responsibilities_json = "[]"
     if key_responsibilities:
         try:
@@ -5246,7 +6423,7 @@ def experience_save(
             responsibilities_json = json.dumps(parsed, ensure_ascii=False)
         except json.JSONDecodeError:
             responsibilities_json = "[]"
-    
+
     # Parse skill/tool IDs
     skill_id_list = []
     if skill_ids:
@@ -5257,7 +6434,7 @@ def experience_save(
                     skill_id_list.append(int(sid))
                 except ValueError:
                     pass
-    
+
     tool_id_list = []
     if tool_ids:
         for tid in tool_ids.split(","):
@@ -5267,7 +6444,7 @@ def experience_save(
                     tool_id_list.append(int(tid))
                 except ValueError:
                     pass
-    
+
     soft_skill_id_list = []
     if soft_skill_ids:
         for sid in soft_skill_ids.split(","):
@@ -5277,13 +6454,13 @@ def experience_save(
                     soft_skill_id_list.append(int(sid))
                 except ValueError:
                     pass
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if job_pk is None:
             cur.execute("""
-                INSERT INTO experience_job_experiences 
-                (company_id, job_title, start_date, end_date, is_current, employment_type, 
+                INSERT INTO experience_job_experiences
+                (company_id, job_title, start_date, end_date, is_current, employment_type,
                  is_remote, is_concurrent, role_overview, key_achievements, key_responsibilities)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -5330,7 +6507,7 @@ def experience_save(
                 responsibilities_json,
                 job_pk,
             ))
-        
+
         # Update skills
         cur.execute("DELETE FROM experience_job_experience_skills WHERE job_experience_id = ?", (job_pk,))
         for skill_id in skill_id_list:
@@ -5338,7 +6515,7 @@ def experience_save(
                 "INSERT INTO experience_job_experience_skills (job_experience_id, skill_id) VALUES (?, ?)",
                 (job_pk, skill_id)
             )
-        
+
         # Update tools
         cur.execute("DELETE FROM experience_job_experience_tools WHERE job_experience_id = ?", (job_pk,))
         for tool_id in tool_id_list:
@@ -5346,7 +6523,7 @@ def experience_save(
                 "INSERT INTO experience_job_experience_tools (job_experience_id, tool_id) VALUES (?, ?)",
                 (job_pk, tool_id)
             )
-        
+
         # Update soft skills
         cur.execute("DELETE FROM experience_job_experience_soft_skills WHERE job_experience_id = ?", (job_pk,))
         for soft_skill_id in soft_skill_id_list:
@@ -5354,10 +6531,10 @@ def experience_save(
                 "INSERT INTO experience_job_experience_soft_skills (job_experience_id, soft_skill_id) VALUES (?, ?)",
                 (job_pk, soft_skill_id)
             )
-        
+
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/experience/{job_pk}", status_code=303)
+
+    return RedirectResponse(url="/admin/experience", status_code=303)
 
 
 @app.post("/admin/experience/projects/save")
@@ -5373,19 +6550,19 @@ def experience_project_save(
     """Save a project/accomplishment for a job experience"""
     project_pk = _optional_int(project_id)
     job_pk = _optional_int(job_experience_id)
-    
+
     if not job_pk:
         raise HTTPException(status_code=400, detail="Job experience is required")
-    
+
     # Validate required fields only if creating new project
     if project_pk is None:
         if not month_year or not month_year.strip():
             raise HTTPException(status_code=400, detail="Month/Year is required")
         if not title or not title.strip():
             raise HTTPException(status_code=400, detail="Title is required")
-    
+
     sort_value = _coerce_int(sort_order)
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if project_pk is None:
@@ -5415,7 +6592,7 @@ def experience_project_save(
                 project_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url=f"/admin/experience/{job_pk}", status_code=303)
 
 
@@ -5426,17 +6603,17 @@ def experience_project_delete(
 ) -> RedirectResponse:
     """Delete a project/accomplishment"""
     project_pk = _optional_int(project_id)
-    
+
     with get_conn() as conn:
         # Get job_experience_id before deleting
         job_row = conn.execute(
             "SELECT job_experience_id FROM experience_job_projects WHERE id = ?", (project_pk,)
         ).fetchone()
         job_id = job_row["job_experience_id"] if job_row else None
-        
+
         conn.execute("DELETE FROM experience_job_projects WHERE id = ?", (project_pk,))
         conn.commit()
-    
+
     if job_id:
         return RedirectResponse(url=f"/admin/experience/{job_id}", status_code=303)
     return RedirectResponse(url="/admin/experience", status_code=303)
@@ -5452,16 +6629,33 @@ def experience_companies_list(request: Request) -> Any:
                 FROM experience_companies c
                 LEFT JOIN experience_job_experiences je ON je.company_id = c.id
                 GROUP BY c.id
-                ORDER BY c.name
+                ORDER BY COALESCE(c.sort_order, 1000000), c.name
             """).fetchall()
             companies = [dict(row) for row in companies_rows]
     except Exception:
         companies = []
-    
+
     return templates.TemplateResponse(
         "experience/companies_list.html",
         {"request": request, "companies": companies, "companies_payload": companies},
     )
+
+
+@app.post("/admin/experience/companies/reorder")
+async def experience_companies_reorder(request: Request) -> JSONResponse:
+    """Persist manual ordering for companies."""
+    payload = await request.json()
+    order = payload.get("order") if isinstance(payload, dict) else payload
+    if not isinstance(order, list) or not all(isinstance(item, int) for item in order):
+        return JSONResponse({"ok": False, "error": "Invalid order payload."}, status_code=400)
+
+    with get_conn() as conn:
+        conn.executemany(
+            "UPDATE experience_companies SET sort_order = ?, updated_at = datetime('now') WHERE id = ?",
+            [(idx + 1, company_id) for idx, company_id in enumerate(order)],
+        )
+
+    return JSONResponse({"ok": True})
 
 
 @app.get("/admin/experience/companies/new")
@@ -5482,7 +6676,7 @@ def experience_company_edit(request: Request, company_id: int) -> Any:
         ).fetchone()
         if not company:
             raise HTTPException(status_code=404, detail="Company not found")
-    
+
     return templates.TemplateResponse(
         "experience/company_edit.html",
         {"request": request, "company": company},
@@ -5501,19 +6695,23 @@ def experience_company_save(
 ) -> RedirectResponse:
     """Save company"""
     company_pk = _optional_int(company_id)
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if company_pk is None:
+            next_sort = cur.execute(
+                "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM experience_companies"
+            ).fetchone()[0]
             cur.execute("""
-                INSERT INTO experience_companies (name, logo_url, description, website, location)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO experience_companies (name, logo_url, description, website, location, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 name.strip(),
                 logo_url.strip() if logo_url else None,
                 description.strip() if description else None,
                 website.strip() if website else None,
                 location.strip() if location else None,
+                next_sort,
             ))
             company_pk = cur.lastrowid
         else:
@@ -5535,7 +6733,7 @@ def experience_company_save(
                 company_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/companies", status_code=303)
 
 
@@ -5571,7 +6769,7 @@ def experience_skills_list(request: Request) -> Any:
             skills = [dict(row) for row in skills_rows]
     except Exception:
         skills = []
-    
+
     return templates.TemplateResponse(
         "experience/skills_list.html",
         {"request": request, "skills": skills, "skills_payload": skills},
@@ -5596,7 +6794,7 @@ def experience_skill_edit(request: Request, skill_id: int) -> Any:
         ).fetchone()
         if not skill:
             raise HTTPException(status_code=404, detail="Skill not found")
-    
+
     return templates.TemplateResponse(
         "experience/skill_edit.html",
         {"request": request, "skill": skill},
@@ -5615,7 +6813,7 @@ def experience_skill_save(
 ) -> RedirectResponse:
     """Save skill"""
     skill_pk = _optional_int(skill_id)
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if skill_pk is None:
@@ -5648,7 +6846,7 @@ def experience_skill_save(
                 skill_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/skills", status_code=303)
 
 
@@ -5661,7 +6859,7 @@ def experience_tools_list(request: Request) -> Any:
             tools = [dict(row) for row in tools_rows]
     except Exception:
         tools = []
-    
+
     return templates.TemplateResponse(
         "experience/tools_list.html",
         {"request": request, "tools": tools, "tools_payload": tools},
@@ -5686,7 +6884,7 @@ def experience_tool_edit(request: Request, tool_id: int) -> Any:
         ).fetchone()
         if not tool:
             raise HTTPException(status_code=404, detail="Tool not found")
-    
+
     return templates.TemplateResponse(
         "experience/tool_edit.html",
         {"request": request, "tool": tool},
@@ -5702,7 +6900,7 @@ def experience_tool_save(
 ) -> RedirectResponse:
     """Save tool"""
     tool_pk = _optional_int(tool_id)
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if tool_pk is None:
@@ -5726,7 +6924,7 @@ def experience_tool_save(
                 tool_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/tools", status_code=303)
 
 
@@ -5739,7 +6937,7 @@ def experience_soft_skills_list(request: Request) -> Any:
             skills = [dict(row) for row in skills_rows]
     except Exception:
         skills = []
-    
+
     return templates.TemplateResponse(
         "experience/soft_skills_list.html",
         {"request": request, "skills": skills, "skills_payload": skills},
@@ -5764,7 +6962,7 @@ def experience_soft_skill_edit(request: Request, skill_id: int) -> Any:
         ).fetchone()
         if not skill:
             raise HTTPException(status_code=404, detail="Soft skill not found")
-    
+
     return templates.TemplateResponse(
         "experience/soft_skill_edit.html",
         {"request": request, "skill": skill},
@@ -5780,7 +6978,7 @@ def experience_soft_skill_save(
 ) -> RedirectResponse:
     """Save soft skill"""
     skill_pk = _optional_int(skill_id)
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if skill_pk is None:
@@ -5804,7 +7002,7 @@ def experience_soft_skill_save(
                 skill_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/soft-skills", status_code=303)
 
 
@@ -5815,26 +7013,26 @@ def experience_soft_skill_delete(
 ) -> RedirectResponse:
     """Delete a soft skill"""
     skill_pk = _optional_int(skill_id)
-    
+
     if not skill_pk:
         raise HTTPException(status_code=400, detail="Soft skill ID is required")
-    
+
     with get_conn() as conn:
         # Check if skill is used in any job experiences
         usage_count = conn.execute("""
-            SELECT COUNT(*) as count FROM experience_job_experience_soft_skills 
+            SELECT COUNT(*) as count FROM experience_job_experience_soft_skills
             WHERE soft_skill_id = ?
         """, (skill_pk,)).fetchone()
-        
+
         if usage_count["count"] > 0:
             return RedirectResponse(
                 url="/admin/experience/soft-skills?error=Cannot delete soft skill that is assigned to job experiences",
                 status_code=303
             )
-        
+
         conn.execute("DELETE FROM experience_soft_skills WHERE id = ?", (skill_pk,))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/soft-skills", status_code=303)
 
 
@@ -5844,13 +7042,13 @@ def experience_education_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             education_rows = conn.execute("""
-                SELECT * FROM experience_education 
+                SELECT * FROM experience_education
                 ORDER BY timeline_date DESC
             """).fetchall()
             education = [dict(row) for row in education_rows]
     except Exception:
         education = []
-    
+
     return templates.TemplateResponse(
         "experience/education_list.html",
         {"request": request, "education": education},
@@ -5875,7 +7073,7 @@ def experience_education_edit(request: Request, edu_id: int) -> Any:
         ).fetchone()
         if not edu:
             raise HTTPException(status_code=404, detail="Education entry not found")
-    
+
     return templates.TemplateResponse(
         "experience/education_edit.html",
         {"request": request, "edu": edu},
@@ -5898,7 +7096,7 @@ def experience_education_save(
 ) -> RedirectResponse:
     """Save education entry"""
     edu_pk = _optional_int(edu_id)
-    
+
     # Parse honors/memberships JSON
     honors_json = "[]"
     if honors_memberships:
@@ -5907,13 +7105,13 @@ def experience_education_save(
             honors_json = json.dumps(parsed, ensure_ascii=False)
         except json.JSONDecodeError:
             honors_json = "[]"
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if edu_pk is None:
             cur.execute("""
-                INSERT INTO experience_education 
-                (certificate_name, subtitle, school_name, location, start_year, end_year, 
+                INSERT INTO experience_education
+                (certificate_name, subtitle, school_name, location, start_year, end_year,
                  timeline_date, description, honors_memberships)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -5955,7 +7153,7 @@ def experience_education_save(
                 edu_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/education", status_code=303)
 
 
@@ -5966,14 +7164,14 @@ def experience_education_delete(
 ) -> RedirectResponse:
     """Delete an education entry"""
     edu_pk = _optional_int(edu_id)
-    
+
     if not edu_pk:
         raise HTTPException(status_code=400, detail="Education ID is required")
-    
+
     with get_conn() as conn:
         conn.execute("DELETE FROM experience_education WHERE id = ?", (edu_pk,))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/experience/education", status_code=303)
 
 
@@ -5986,34 +7184,34 @@ def experience_edit(request: Request, job_id: int) -> Any:
         ).fetchone()
         if not job:
             raise HTTPException(status_code=404, detail="Job experience not found")
-        
+
         # Get projects/accomplishments
         projects = conn.execute(
             "SELECT * FROM experience_job_projects WHERE job_experience_id = ? ORDER BY sort_order, month_year",
             (job_id,)
         ).fetchall()
-        
+
         # Get selected skills, tools, soft skills
         selected_skills = [row["skill_id"] for row in conn.execute(
             "SELECT skill_id FROM experience_job_experience_skills WHERE job_experience_id = ?",
             (job_id,)
         ).fetchall()]
-        
+
         selected_tools = [row["tool_id"] for row in conn.execute(
             "SELECT tool_id FROM experience_job_experience_tools WHERE job_experience_id = ?",
             (job_id,)
         ).fetchall()]
-        
+
         selected_soft_skills = [row["soft_skill_id"] for row in conn.execute(
             "SELECT soft_skill_id FROM experience_job_experience_soft_skills WHERE job_experience_id = ?",
             (job_id,)
         ).fetchall()]
-        
+
         companies = conn.execute("SELECT * FROM experience_companies ORDER BY name").fetchall()
         skills = conn.execute("SELECT * FROM experience_skills_sets ORDER BY name").fetchall()
         tools = conn.execute("SELECT * FROM experience_tools ORDER BY name").fetchall()
         soft_skills = conn.execute("SELECT * FROM experience_soft_skills ORDER BY name").fetchall()
-        
+
         # Convert job Row to dict and parse JSON fields
         job_dict = dict(job) if job else None
         if job_dict:
@@ -6025,7 +7223,7 @@ def experience_edit(request: Request, job_id: int) -> Any:
                     job_dict["key_achievements"] = []
             else:
                 job_dict["key_achievements"] = []
-            
+
             # Parse key_responsibilities JSON string to list
             if job_dict.get("key_responsibilities"):
                 try:
@@ -6034,10 +7232,10 @@ def experience_edit(request: Request, job_id: int) -> Any:
                     job_dict["key_responsibilities"] = []
             else:
                 job_dict["key_responsibilities"] = []
-        
+
         # Convert projects Row objects to dicts
         projects_list = [dict(row) for row in projects] if projects else []
-    
+
     return templates.TemplateResponse(
         "experience/experience_edit.html",
         {
@@ -6065,12 +7263,13 @@ def api_experience() -> JSONResponse:
             try:
                 # Get companies
                 companies_rows = conn.execute("""
-                    SELECT * FROM experience_companies ORDER BY name
+                    SELECT * FROM experience_companies
+                    ORDER BY COALESCE(sort_order, 1000000), name
                 """).fetchall()
                 companies = [dict(row) for row in companies_rows]
             except sqlite3.OperationalError:
                 companies = []
-            
+
             # Get job experiences with all related data
             try:
                 jobs_rows = conn.execute("""
@@ -6081,20 +7280,20 @@ def api_experience() -> JSONResponse:
                 """).fetchall()
             except sqlite3.OperationalError:
                 jobs_rows = []
-            
+
             jobs_list = []
             for job_row in jobs_rows:
                 job = dict(job_row)
                 job_id = job["id"]
-                
+
                 # Get projects
                 projects_rows = conn.execute("""
-                    SELECT * FROM experience_job_projects 
-                    WHERE job_experience_id = ? 
+                    SELECT * FROM experience_job_projects
+                    WHERE job_experience_id = ?
                     ORDER BY sort_order, month_year
                 """, (job_id,)).fetchall()
                 job["projects"] = [dict(row) for row in projects_rows]
-                
+
                 # Get skills
                 skills_rows = conn.execute("""
                     SELECT s.* FROM experience_skills_sets s
@@ -6103,7 +7302,7 @@ def api_experience() -> JSONResponse:
                     ORDER BY s.name
                 """, (job_id,)).fetchall()
                 job["skills"] = [dict(row) for row in skills_rows]
-                
+
                 # Get tools
                 tools_rows = conn.execute("""
                     SELECT t.* FROM experience_tools t
@@ -6112,7 +7311,7 @@ def api_experience() -> JSONResponse:
                     ORDER BY t.name
                 """, (job_id,)).fetchall()
                 job["tools"] = [dict(row) for row in tools_rows]
-                
+
                 # Get soft skills
                 soft_skills_rows = conn.execute("""
                     SELECT ss.* FROM experience_soft_skills ss
@@ -6121,7 +7320,7 @@ def api_experience() -> JSONResponse:
                     ORDER BY ss.name
                 """, (job_id,)).fetchall()
                 job["soft_skills"] = [dict(row) for row in soft_skills_rows]
-                
+
                 # Parse JSON fields
                 if job.get("key_achievements"):
                     try:
@@ -6130,7 +7329,7 @@ def api_experience() -> JSONResponse:
                         job["key_achievements"] = []
                 else:
                     job["key_achievements"] = []
-                
+
                 if job.get("key_responsibilities"):
                     try:
                         job["key_responsibilities"] = json.loads(job["key_responsibilities"])
@@ -6138,16 +7337,16 @@ def api_experience() -> JSONResponse:
                         job["key_responsibilities"] = []
                 else:
                     job["key_responsibilities"] = []
-                
+
                 # Calculate duration
                 job["duration"] = calculate_duration(job["start_date"], job.get("end_date"))
-                
+
                 jobs_list.append(job)
-            
+
             # Get education
             try:
                 education_rows = conn.execute("""
-                    SELECT * FROM experience_education 
+                    SELECT * FROM experience_education
                     ORDER BY timeline_date DESC
                 """).fetchall()
                 education_list = []
@@ -6163,7 +7362,7 @@ def api_experience() -> JSONResponse:
                     education_list.append(edu)
             except sqlite3.OperationalError:
                 education_list = []
-            
+
             # Group jobs by company
             companies_dict = {}
             for company in companies:
@@ -6175,19 +7374,19 @@ def api_experience() -> JSONResponse:
                     "location": company.get("location") or "",
                     "positions": []
                 }
-            
+
             # Add jobs to companies (jobs_list is already sorted by start_date DESC)
             for job in jobs_list:
                 company_id = job["company_id"]
                 if company_id in companies_dict:
                     companies_dict[company_id]["positions"].append(job)
-            
+
             # Calculate total duration per company and ensure positions are sorted
             for company_id, company_data in companies_dict.items():
                 if company_data["positions"]:
                     # Ensure positions are sorted by start_date DESC (newest first)
                     company_data["positions"].sort(key=lambda x: x["start_date"], reverse=True)
-                    
+
                     # Find earliest start and latest end
                     starts = [pos["start_date"] for pos in company_data["positions"]]
                     ends = [pos.get("end_date") for pos in company_data["positions"] if pos.get("end_date")]
@@ -6196,13 +7395,13 @@ def api_experience() -> JSONResponse:
                     company_data["total_duration"] = calculate_duration(earliest_start, latest_end)
                 else:
                     company_data["total_duration"] = ""
-            
+
             # Sort companies by most recent job start_date (newest first)
             companies_list = list(companies_dict.values())
             companies_list.sort(key=lambda c: (
                 max([pos["start_date"] for pos in c["positions"]]) if c["positions"] else "0000-01-01"
             ), reverse=True)
-            
+
             return JSONResponse(content={
                 "companies": companies_list,
                 "education": education_list
@@ -6220,16 +7419,16 @@ def api_cms_blocks() -> JSONResponse:
         with get_conn() as conn:
             # Select all columns including image_position, image_description, and gallery_images
             blocks_rows = conn.execute("""
-                SELECT block_id, title, content, content_format, description, image, 
+                SELECT block_id, title, content, content_format, description, image,
                        image_position, image_description, gallery_images
-                FROM cms_blocks 
+                FROM cms_blocks
                 WHERE is_active = 1
                 ORDER BY sort_order, title
             """).fetchall()
             blocks = {}
             for row in blocks_rows:
                 row_dict = dict(row)  # Convert Row to dict for easier access
-                
+
                 # Parse gallery_images JSON if present
                 gallery_images = []
                 if row_dict.get("gallery_images"):
@@ -6239,7 +7438,7 @@ def api_cms_blocks() -> JSONResponse:
                             gallery_images = []
                     except (json.JSONDecodeError, ValueError):
                         gallery_images = []
-                
+
                 blocks[row_dict["block_id"]] = {
                     "block_id": row_dict["block_id"],
                     "title": row_dict["title"],
@@ -6270,7 +7469,7 @@ def api_cms_settings() -> JSONResponse:
         with get_conn() as conn:
             settings_rows = conn.execute("""
                 SELECT setting_key, setting_value, setting_type
-                FROM cms_site_settings 
+                FROM cms_site_settings
                 ORDER BY setting_key
             """).fetchall()
             settings = {}
@@ -6321,11 +7520,11 @@ def api_cms_contact() -> JSONResponse:
                 conn.commit()
             except sqlite3.OperationalError:
                 pass
-            
+
             contact_rows = conn.execute("""
-                SELECT field_name, label, value, field_type, icon, description, 
+                SELECT field_name, label, value, field_type, icon, description,
                        show_in_get_in_touch, get_in_touch_title, get_in_touch_description
-                FROM cms_contact_info 
+                FROM cms_contact_info
                 WHERE is_public = 1
                 ORDER BY sort_order, field_name
             """).fetchall()
@@ -6352,7 +7551,7 @@ def api_cms_contact() -> JSONResponse:
                     get_in_touch_description = row["get_in_touch_description"] or ""
                 except (KeyError, IndexError):
                     pass
-                
+
                 contact_fields.append({
                     "field_name": row["field_name"],
                     "label": row["label"],
@@ -6392,14 +7591,15 @@ def api_blog_posts() -> JSONResponse:
     try:
         with get_conn() as conn:
             posts_rows = conn.execute("""
-                SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date, 
-                       bp.tags, bp.featured, bp.read_time, bp.cover_image, bp.created_at, bp.updated_at,
+                SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date,
+                       bp.tags, bp.featured, bp.read_time, bp.cover_image, bp.created_at, bp.updated_at, bp.status,
                        bc.label as category, bc.code as category_code, bc.id as category_id
                 FROM blog_posts bp
                 LEFT JOIN blog_categories bc ON bp.category_id = bc.id
+                WHERE bp.status = 'Published' OR bp.status IS NULL
                 ORDER BY bp.date DESC, bp.created_at DESC
             """).fetchall()
-            
+
             posts = []
             for row in posts_rows:
                 post = dict(row)
@@ -6412,7 +7612,7 @@ def api_blog_posts() -> JSONResponse:
                 else:
                     post["tags"] = []
                 posts.append(post)
-        
+
         return JSONResponse(content={"posts": posts})
     except Exception as e:
         return JSONResponse(content={"posts": [], "error": str(e)}, status_code=500)
@@ -6424,8 +7624,8 @@ def blog_list(request: Request) -> Any:
     try:
         with get_conn() as conn:
             posts_rows = conn.execute("""
-                SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date, 
-                       bp.tags, bp.featured, bp.read_time, bp.cover_image, bp.created_at, bp.updated_at,
+                SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date,
+                       bp.tags, bp.featured, bp.read_time, bp.cover_image, bp.created_at, bp.updated_at, bp.status,
                        bc.label as category, bc.id as category_id
                 FROM blog_posts bp
                 LEFT JOIN blog_categories bc ON bp.category_id = bc.id
@@ -6441,10 +7641,9 @@ def blog_list(request: Request) -> Any:
                         post["tags"] = []
                 else:
                     post["tags"] = []
-                # Set default status since column doesn't exist in schema
-                if "status" not in post:
+                if not post.get("status"):
                     post["status"] = "Published"
-            
+
             # Fetch categories for filter dropdown
             categories_rows = conn.execute("""
                 SELECT id, code, label, icon
@@ -6455,11 +7654,63 @@ def blog_list(request: Request) -> Any:
     except Exception as e:
         posts = []
         categories = []
-    
+
     return templates.TemplateResponse(
         "blog/blog_list.html",
         {"request": request, "posts": posts, "categories": categories},
     )
+
+
+@app.post("/admin/blog/regenerate")
+def blog_regenerate(request: Request) -> RedirectResponse:
+    blog_mgr = BLOG_MANAGER if HAS_BLOG_MANAGER and BLOG_MANAGER else None
+    if not blog_mgr:
+        blog_mgr = _load_blog_manager()
+
+    with get_conn() as conn:
+        rows = conn.execute("""
+            SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date,
+                   bp.tags, bp.cover_image, bp.content_html, bp.content_markdown, bp.status,
+                   bc.label as category
+            FROM blog_posts bp
+            LEFT JOIN blog_categories bc ON bp.category_id = bc.id
+            WHERE bp.status = 'Published'
+            ORDER BY bp.id
+        """).fetchall()
+
+    for row in rows:
+        tags_list = []
+        if row["tags"]:
+            try:
+                tags_list = json.loads(row["tags"])
+            except Exception:
+                tags_list = [tag.strip() for tag in row["tags"].split(",") if tag.strip()]
+
+        metadata = {
+            "title": row["title"],
+            "slug": row["slug"],
+            "excerpt": row["excerpt"] or "",
+            "author": row["author"] or "Bradley R. Clampitt",
+            "date": row["date"] or "",
+            "category": row["category"] or "",
+            "tags": tags_list,
+            "cover_image": row["cover_image"] or "",
+        }
+
+        html_body = row["content_html"] or ""
+        if blog_mgr and row["content_markdown"]:
+            try:
+                html_body = blog_mgr.markdown_to_html(row["content_markdown"])
+            except Exception as e:
+                print(f"Warning: Failed to reprocess markdown for {row['slug']}: {e}")
+
+        if blog_mgr:
+            try:
+                blog_mgr.generate_post_html_from_db(metadata, html_body, row["slug"])
+            except Exception as e:
+                print(f"Warning: Failed to regenerate blog post {row['slug']}: {e}")
+
+    return RedirectResponse(url=f"{request.url_for('blog_list')}?success=posts_regenerated", status_code=303)
 
 
 @app.get("/admin/blog/new")
@@ -6472,7 +7723,7 @@ def blog_new(request: Request) -> Any:
             ORDER BY display_order, label
         """).fetchall()
         categories = [dict(row) for row in categories_rows]
-    
+
     return templates.TemplateResponse(
         "blog/blog_edit.html",
         {"request": request, "post": None, "categories": categories},
@@ -6495,7 +7746,7 @@ def blog_categories_list(request: Request) -> Any:
             categories = [dict(row) for row in categories_rows]
     except Exception as e:
         categories = []
-    
+
     return templates.TemplateResponse(
         "blog/blog_categories_list.html",
         {"request": request, "categories": categories},
@@ -6515,7 +7766,7 @@ def blog_category_save(
     """Save blog category"""
     category_pk = _optional_int(category_id)
     display_order_int = _optional_int(display_order) or 0
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if category_pk is None:
@@ -6548,8 +7799,32 @@ def blog_category_save(
                 category_pk,
             ))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/blog/categories", status_code=303)
+
+
+@app.post("/admin/blog/categories/reorder")
+def blog_categories_reorder(
+    request: Request,
+    category_orders: str = Form(...),  # JSON string: {"1": 1, "2": 2, ...}
+) -> JSONResponse:
+    import json
+    from datetime import datetime
+    
+    try:
+        orders = json.loads(category_orders)
+        with get_conn() as conn:
+            now = datetime.now().isoformat()
+            for cat_id, order in orders.items():
+                conn.execute("""
+                    UPDATE blog_categories
+                    SET display_order = ?, updated_at = ?
+                    WHERE id = ?
+                """, (order, now, int(cat_id)))
+            conn.commit()
+        return JSONResponse(content={"success": True})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
 
 
 @app.post("/admin/blog/categories/delete")
@@ -6559,26 +7834,26 @@ def blog_category_delete(
 ) -> RedirectResponse:
     """Delete a blog category"""
     category_pk = _optional_int(category_id)
-    
+
     if not category_pk:
         raise HTTPException(status_code=400, detail="Category ID is required")
-    
+
     with get_conn() as conn:
         # Check if category is used in any posts
         usage_count = conn.execute("""
-            SELECT COUNT(*) as count FROM blog_posts 
+            SELECT COUNT(*) as count FROM blog_posts
             WHERE category_id = ?
         """, (category_pk,)).fetchone()
-        
+
         if usage_count["count"] > 0:
             return RedirectResponse(
                 url="/admin/blog/categories?error=Cannot delete category that is assigned to blog posts",
                 status_code=303
             )
-        
+
         conn.execute("DELETE FROM blog_categories WHERE id = ?", (category_pk,))
         conn.commit()
-    
+
     return RedirectResponse(url="/admin/blog/categories", status_code=303)
 
 
@@ -6591,7 +7866,7 @@ def blog_edit(request: Request, post_id: int) -> Any:
         ).fetchone()
         if not post:
             raise HTTPException(status_code=404, detail="Blog post not found")
-        
+
         # Get categories for dropdown
         categories_rows = conn.execute("""
             SELECT id, code, label, description, icon, display_order
@@ -6599,7 +7874,7 @@ def blog_edit(request: Request, post_id: int) -> Any:
             ORDER BY display_order, label
         """).fetchall()
         categories = [dict(row) for row in categories_rows]
-        
+
         post_dict = dict(post)
         # Parse tags JSON
         if post_dict.get("tags"):
@@ -6609,7 +7884,7 @@ def blog_edit(request: Request, post_id: int) -> Any:
                 post_dict["tags"] = []
         else:
             post_dict["tags"] = []
-    
+
     return templates.TemplateResponse(
         "blog/blog_edit.html",
         {"request": request, "post": post_dict, "categories": categories},
@@ -6635,18 +7910,18 @@ def blog_save(
     """Save blog post"""
     post_pk = _optional_int(post_id)
     category_pk = _optional_int(category_id)
-    
+
     # Generate slug if not provided
     if not slug or not slug.strip():
         slug = magento_slugify(title)
-    
+
     # Process tags
     tags_list = []
     if tags:
         # Handle comma-separated tags
         tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
     tags_json = json.dumps(tags_list) if tags_list else None
-    
+
     # Process markdown to HTML using BlogManager
     # Reload BlogManager module to ensure we have the latest code changes
     content_html = ""
@@ -6681,11 +7956,11 @@ def blog_save(
             # Fallback if BlogManager not available
             import markdown
             content_html = markdown.markdown(content_markdown.strip(), extensions=['extra', 'attr_list', 'md_in_html'])
-    
+
     # Calculate read time
     words = len(content_markdown.split())
     read_time = f"{max(1, round(words / 220))} min read"
-    
+
     with get_conn() as conn:
         cur = conn.cursor()
         if post_pk is None:
@@ -6711,7 +7986,7 @@ def blog_save(
             # Get old slug before updating (to delete old HTML file if slug changed)
             old_post_row = conn.execute("SELECT slug FROM blog_posts WHERE id = ?", (post_pk,)).fetchone()
             old_slug = old_post_row[0] if old_post_row else None
-            
+
             cur.execute("""
                 UPDATE blog_posts SET
                     slug = ?,
@@ -6745,7 +8020,7 @@ def blog_save(
                 status,
                 post_pk,
             ))
-            
+
             # Delete old HTML file if slug changed
             # Use reloaded instance if available, otherwise cached
             blog_mgr_for_delete = blog_manager_instance if blog_manager_instance else (BLOG_MANAGER if HAS_BLOG_MANAGER and BLOG_MANAGER else None)
@@ -6757,24 +8032,24 @@ def blog_save(
                         print(f"Deleted old HTML file: {old_html_file}")
                     except Exception as e:
                         print(f"Warning: Failed to delete old HTML file {old_html_file}: {e}")
-        
+
         # Get the post ID (for new posts, get the last insert rowid)
         if post_pk is None:
             post_pk = cur.lastrowid
-        
+
         # Get category label if category_id exists
         category_label = None
         if category_pk:
             category_row = conn.execute("SELECT label FROM blog_categories WHERE id = ?", (category_pk,)).fetchone()
             if category_row:
                 category_label = category_row[0]
-        
+
         conn.commit()
-        
+
         # Generate static HTML file only if status is "Published"
         # Use the reloaded blog_manager_instance if available, otherwise fall back to cached BLOG_MANAGER
         blog_mgr = blog_manager_instance if blog_manager_instance else (BLOG_MANAGER if HAS_BLOG_MANAGER and BLOG_MANAGER else None)
-        
+
         if blog_mgr and status == 'Published':
             try:
                 # Prepare metadata dict for HTML generation
@@ -6790,14 +8065,14 @@ def blog_save(
                     'readTime': read_time,
                     'cover_image': cover_image.strip() if cover_image else None,
                 }
-                
+
                 # Generate HTML file
                 success, output_path = blog_mgr.generate_post_html_from_db(
                     metadata,
                     content_html,
                     slug.strip()
                 )
-                
+
                 if not success:
                     print(f"Warning: Failed to generate HTML file for post {post_pk}")
                     return RedirectResponse(url=f"/admin/blog?error=html_generation_failed", status_code=303)
@@ -6808,15 +8083,25 @@ def blog_save(
                 import traceback
                 traceback.print_exc()
                 return RedirectResponse(url=f"/admin/blog?error=html_generation_error", status_code=303)
-        
+        elif status != 'Published':
+            # Remove generated HTML when switching a post to Draft (or any non-published state)
+            posts_html_dir = blog_mgr.posts_html_dir if blog_mgr else (ROOT / "blog" / "posts")
+            draft_html_file = posts_html_dir / f"{slug.strip()}.html"
+            if draft_html_file.exists():
+                try:
+                    draft_html_file.unlink()
+                    print(f"Deleted draft HTML file: {draft_html_file}")
+                except Exception as e:
+                    print(f"Warning: Failed to delete draft HTML file {draft_html_file}: {e}")
+
         # Regenerate posts.json from database (only Published posts) - always regenerate after save
         try:
             regenerate_posts_json(conn)
         except Exception as e:
             print(f"Warning: Failed to regenerate posts.json: {e}")
-    
+
     return RedirectResponse(url=f"/admin/blog?success=saved&post_id={post_pk}", status_code=303)
-    
+
     return RedirectResponse(url="/admin/blog", status_code=303)
 
 
@@ -6824,7 +8109,7 @@ def regenerate_posts_json(conn: sqlite3.Connection) -> None:
     """Regenerate blog/posts.json from database, excluding drafts"""
     try:
         posts_rows = conn.execute("""
-            SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date, 
+            SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date,
                    bp.tags, bp.featured, bp.read_time, bp.cover_image,
                    bc.label as category
             FROM blog_posts bp
@@ -6832,7 +8117,7 @@ def regenerate_posts_json(conn: sqlite3.Connection) -> None:
             WHERE bp.status = 'Published' OR bp.status IS NULL
             ORDER BY bp.date DESC, bp.created_at DESC
         """).fetchall()
-        
+
         posts = []
         for row in posts_rows:
             post = dict(row)
@@ -6844,7 +8129,7 @@ def regenerate_posts_json(conn: sqlite3.Connection) -> None:
                     post["tags"] = []
             else:
                 post["tags"] = []
-            
+
             # Format for posts.json
             posts.append({
                 "id": post["id"],
@@ -6859,12 +8144,12 @@ def regenerate_posts_json(conn: sqlite3.Connection) -> None:
                 "readTime": post.get("read_time") or "",
                 "coverImage": post.get("cover_image") or "",
             })
-        
+
         # Write posts.json
         posts_json_path = BLOG_RESOURCES / "posts.json"
         with open(posts_json_path, 'w', encoding='utf-8') as f:
             json.dump({"posts": posts}, f, indent=2)
-        
+
         print(f"Regenerated posts.json with {len(posts)} published posts")
     except Exception as e:
         print(f"Error regenerating posts.json: {e}")
@@ -6879,27 +8164,45 @@ async def blog_image_upload(
     is_cover: bool = Form(False),
 ) -> RedirectResponse:
     """Upload an image for a blog post"""
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    ext = Path(file.filename).suffix.lower()
-    if ext not in IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported image format: {ext}")
-    
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=f"/admin/blog/{post_id}?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
+
     # Create blog images directory for this post
     post_img_dir = BLOG_MEDIA / str(post_id)
     post_img_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Generate safe filename
-    safe_filename = secrets.token_urlsafe(8) + ext
+    safe_filename = secrets.token_urlsafe(16) + ext
     file_path = post_img_dir / safe_filename
+    
+    # Ensure we're writing within the intended directory
+    try:
+        file_path.resolve().relative_to(post_img_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=f"/admin/blog/{post_id}?error=Invalid+file+path",
+            status_code=303
+        )
+    
     url = f"/assets/images/blog/{post_id}/{safe_filename}"
-    
+
     # Save file
-    with file_path.open("wb") as f:
-        content = await file.read()
-        f.write(content)
-    
+    try:
+        with file_path.open("wb") as f:
+            f.write(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=f"/admin/blog/{post_id}?error=Error+saving+file",
+            status_code=303
+        )
+
     # If this is a cover image, update the blog post
     if is_cover:
         with get_conn() as conn:
@@ -6907,8 +8210,34 @@ async def blog_image_upload(
                 UPDATE blog_posts SET cover_image = ? WHERE id = ?
             """, (url, post_id))
             conn.commit()
-    
-    return RedirectResponse(url=f"/admin/blog/{post_id}", status_code=303)
+
+    return RedirectResponse(url=f"/admin/blog/{post_id}?success=Image+uploaded+successfully", status_code=303)
+
+
+@app.get("/admin/projects/images/browse")
+def projects_images_browse() -> JSONResponse:
+    """List all available images from assets/images/portfolio directory"""
+    images = []
+    portfolio_dir = ROOT / "assets" / "images" / "portfolio"
+
+    if portfolio_dir.exists() and portfolio_dir.is_dir():
+        # Scan all subdirectories recursively
+        for item in portfolio_dir.rglob("*"):
+            if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS:
+                # Get relative path from assets/images directory
+                relative_path = item.relative_to(ROOT / "assets" / "images")
+                url = f"/assets/images/{relative_path.as_posix()}"
+                images.append({
+                    "url": url,
+                    "filename": item.name,
+                    "path": str(relative_path),
+                    "size": item.stat().st_size
+                })
+
+    # Sort by filename
+    images.sort(key=lambda x: x["filename"].lower())
+
+    return JSONResponse(content={"images": images})
 
 
 @app.get("/admin/blog/images/browse")
@@ -6916,7 +8245,7 @@ def blog_images_browse() -> JSONResponse:
     """List all available images from assets/images/blog directory"""
     images = []
     blog_dir = BLOG_MEDIA
-    
+
     if blog_dir.exists() and blog_dir.is_dir():
         # Scan all subdirectories recursively
         for item in blog_dir.rglob("*"):
@@ -6930,10 +8259,10 @@ def blog_images_browse() -> JSONResponse:
                     "path": str(relative_path),
                     "size": item.stat().st_size
                 })
-    
+
     # Sort by filename
     images.sort(key=lambda x: x["filename"].lower())
-    
+
     return JSONResponse(content={"images": images})
 
 
@@ -6941,7 +8270,7 @@ def blog_images_browse() -> JSONResponse:
 def cms_blocks_images_browse() -> JSONResponse:
     """List all available images from assets/images/personal and assets/images directories"""
     images = []
-    
+
     # Scan assets/images/personal directory
     personal_dir = ROOT / "assets" / "images" / "personal"
     if personal_dir.exists() and personal_dir.is_dir():
@@ -6956,7 +8285,7 @@ def cms_blocks_images_browse() -> JSONResponse:
                     "size": item.stat().st_size,
                     "directory": "personal"
                 })
-    
+
     # Scan assets/images directory (root level only, not subdirectories)
     images_dir = ROOT / "assets" / "images"
     if images_dir.exists() and images_dir.is_dir():
@@ -6971,10 +8300,10 @@ def cms_blocks_images_browse() -> JSONResponse:
                     "size": item.stat().st_size,
                     "directory": "root"
                 })
-    
+
     # Sort by directory, then filename
     images.sort(key=lambda x: (x["directory"], x["filename"].lower()))
-    
+
     return JSONResponse(content={"images": images})
 
 
@@ -6984,35 +8313,53 @@ async def cms_blocks_image_upload(
     file: UploadFile = File(...),
 ) -> RedirectResponse:
     """Upload an image for a CMS block"""
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    ext = Path(file.filename).suffix.lower()
-    if ext not in IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported image format: {ext}")
-    
+    # Validate image upload
+    content, ext, error_msg = await _validate_image_upload(file)
+    if error_msg:
+        return RedirectResponse(
+            url=f"/admin/cms/blocks/{block_id}?error={error_msg.replace(' ', '+')}",
+            status_code=303
+        )
+
     # Create CMS blocks images directory
     cms_img_dir = ROOT / "assets" / "images" / "cms-blocks"
     cms_img_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Generate safe filename
-    safe_filename = secrets.token_urlsafe(8) + ext
+    safe_filename = secrets.token_urlsafe(16) + ext
     file_path = cms_img_dir / safe_filename
+    
+    # Ensure we're writing within the intended directory
+    try:
+        file_path.resolve().relative_to(cms_img_dir.resolve())
+    except ValueError:
+        return RedirectResponse(
+            url=f"/admin/cms/blocks/{block_id}?error=Invalid+file+path",
+            status_code=303
+        )
+    
     url = f"/assets/images/cms-blocks/{safe_filename}"
-    
+
     # Save file
-    with file_path.open("wb") as f:
-        content = await file.read()
-        f.write(content)
-    
+    try:
+        with file_path.open("wb") as f:
+            f.write(content)
+    except Exception as e:
+        import sys
+        print(f"Error writing file: {e}", file=sys.stderr)
+        return RedirectResponse(
+            url=f"/admin/cms/blocks/{block_id}?error=Error+saving+file",
+            status_code=303
+        )
+
     # Update the CMS block with the image URL
     with get_conn() as conn:
         conn.execute("""
             UPDATE cms_blocks SET image = ? WHERE id = ?
         """, (url, block_id))
         conn.commit()
-    
-    return RedirectResponse(url=f"/admin/cms/blocks/{block_id}", status_code=303)
+
+    return RedirectResponse(url=f"/admin/cms/blocks/{block_id}?success=Image+uploaded+successfully", status_code=303)
 
 
 @app.post("/admin/blog/images/set-cover")
@@ -7026,7 +8373,7 @@ def blog_image_set_cover(
             UPDATE blog_posts SET cover_image = ? WHERE id = ?
         """, (cover_image, post_id))
         conn.commit()
-    
+
     return RedirectResponse(url=f"/admin/blog/{post_id}", status_code=303)
 
 
@@ -7040,7 +8387,7 @@ def blog_image_remove_cover(
             UPDATE blog_posts SET cover_image = NULL WHERE id = ?
         """, (post_id,))
         conn.commit()
-    
+
     return RedirectResponse(url=f"/admin/blog/{post_id}", status_code=303)
 
 
@@ -7051,19 +8398,19 @@ def blog_delete(
 ) -> RedirectResponse:
     """Delete a blog post"""
     post_pk = _optional_int(post_id)
-    
+
     if not post_pk:
         raise HTTPException(status_code=400, detail="Blog post ID is required")
-    
+
     with get_conn() as conn:
         # Get slug before deleting
         post_row = conn.execute("SELECT slug FROM blog_posts WHERE id = ?", (post_pk,)).fetchone()
         slug = post_row[0] if post_row else None
-        
+
         # Delete from database
         conn.execute("DELETE FROM blog_posts WHERE id = ?", (post_pk,))
         conn.commit()
-    
+
     # Delete HTML file if it exists
     if slug and HAS_BLOG_MANAGER and BLOG_MANAGER:
         html_file = BLOG_MANAGER.posts_html_dir / f"{slug}.html"
@@ -7073,7 +8420,7 @@ def blog_delete(
                 print(f"Deleted HTML file: {html_file}")
             except Exception as e:
                 print(f"Warning: Failed to delete HTML file {html_file}: {e}")
-    
+
     return RedirectResponse(url="/admin/blog", status_code=303)
 
 
@@ -7088,13 +8435,13 @@ async def blog_preview(
     """
     if not content_markdown or not content_markdown.strip():
         return {"html": "<p class='text-slate-500 italic'>No content to preview.</p>"}
-    
+
     if not HAS_BLOG_MANAGER or not BLOG_MANAGER:
         return {
             "html": "<p class='text-red-600'>BlogManager not available. Preview unavailable.</p>",
             "error": "BlogManager not available"
         }
-    
+
     try:
         # Process markdown using BlogManager (same as frontend)
         processed_html = BLOG_MANAGER.markdown_to_html(content_markdown.strip())
@@ -7106,4 +8453,3 @@ async def blog_preview(
             "html": f"<p class='text-red-600'>Error processing markdown: {str(e)}</p>",
             "error": str(e)
         }
-

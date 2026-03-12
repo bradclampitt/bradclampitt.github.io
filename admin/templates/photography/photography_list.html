@@ -16,21 +16,43 @@
             </a>
         </div>
 
+        <!-- Filters and Sorting -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
+            <!-- Search Input -->
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Search Photos</label>
+                <input type="text" 
+                       placeholder="Type to search by name, category, location, or year..."
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                       x-model="searchQuery"
+                       @input="currentPage = 1">
+            </div>
+            
+            <!-- Sort by -->
+            <div class="flex-1 sm:flex-initial sm:min-w-[200px]">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Sort by</label>
+                <select class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-blue-500" x-model="sortBy">
+                    <option value="photo_name">Photo Name</option>
+                    <option value="year">Year</option>
+                    <option value="category">Category</option>
+                    <option value="location">Location</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Responsive Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-            <template x-for="photo in paginatedPhotos()" :key="photo.id">
+            <template x-for="photo in filteredAndPaginatedPhotos()" :key="photo.id">
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
                     <!-- Image -->
-                    <div class="aspect-video bg-slate-100 overflow-hidden">
-                        <template x-if="photo.image_url">
-                            <img :src="photo.image_url" :alt="photo.photo_name" class="w-full h-full object-cover">
-                        </template>
-                        <template x-if="!photo.image_url">
-                            <div class="w-full h-full flex items-center justify-center text-slate-400">
-                                <i class="fas fa-image text-4xl"></i>
-                            </div>
-                        </template>
+                    <div class="aspect-video bg-slate-100 overflow-hidden cursor-pointer" @click="openImageModal(photo)" x-show="photo.image_url">
+                        <img :src="photo.image_url" :alt="photo.photo_name" class="w-full h-full object-cover hover:opacity-90 transition-opacity">
                     </div>
+                    <template x-if="!photo.image_url">
+                        <div class="aspect-video bg-slate-100 flex items-center justify-center text-slate-400">
+                            <i class="fas fa-image text-4xl"></i>
+                        </div>
+                    </template>
                     
                     <!-- Content -->
                     <div class="p-4">
@@ -82,9 +104,9 @@
         </div>
 
         <!-- Empty State -->
-        <div x-show="!paginatedPhotos().length" class="text-center py-12">
+        <div x-show="!filteredAndPaginatedPhotos().length" class="text-center py-12">
             <i class="fas fa-images text-4xl text-slate-300 mb-4"></i>
-            <p class="text-slate-500">No photos yet.</p>
+            <p class="text-slate-500" x-text="searchQuery && searchQuery.trim() ? 'No photos match your search.' : 'No photos yet.'"></p>
         </div>
 
         <!-- Pagination -->
@@ -115,6 +137,77 @@
             </div>
         </div>
     </section>
+    
+    <!-- Image Modal -->
+    <div x-show="showImageModal" 
+         x-cloak
+         @click.away="closeImageModal()"
+         @keydown.escape.window="closeImageModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+         style="display: none;">
+        <div class="relative w-[80vw] h-[80vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
+            <!-- Header with close button -->
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-white">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-semibold text-slate-900 truncate" x-text="modalPhoto?.photo_name || 'Photo'"></h3>
+                    <template x-if="modalPhoto?.category_label">
+                        <p class="text-sm text-slate-500" x-text="modalPhoto.category_label"></p>
+                    </template>
+                </div>
+                <button @click="closeImageModal()" 
+                        class="ml-4 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Image Container -->
+            <div class="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-4">
+                <template x-if="modalPhoto?.image_url">
+                    <img :src="modalPhoto.image_url" 
+                         :alt="modalPhoto.photo_name" 
+                         class="max-w-full max-h-full object-contain">
+                </template>
+            </div>
+            
+            <!-- Footer with photo details -->
+            <template x-if="modalPhoto">
+                <div class="p-4 border-t border-slate-200 bg-white">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <template x-if="modalPhoto.location">
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Location</p>
+                                <p class="font-medium text-slate-900" x-text="modalPhoto.location"></p>
+                            </div>
+                        </template>
+                        <template x-if="modalPhoto.year">
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Year</p>
+                                <p class="font-medium text-slate-900" x-text="modalPhoto.year"></p>
+                            </div>
+                        </template>
+                        <template x-if="modalPhoto.category_label">
+                            <div>
+                                <p class="text-slate-500 text-xs mb-1">Category</p>
+                                <p class="font-medium text-slate-900" x-text="modalPhoto.category_label"></p>
+                            </div>
+                        </template>
+                        <div class="flex items-end gap-2">
+                            <a :href="'/admin/photography/' + modalPhoto.id" 
+                               class="inline-flex items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -124,16 +217,68 @@ function photographyTable(initial) {
         perPage: 24,
         currentPage: 1,
         photos: initial.photos || [],
+        searchQuery: '',
+        sortBy: 'photo_name',
+        showImageModal: false,
+        modalPhoto: null,
         init() {
             this.$watch('perPage', () => { this.currentPage = 1; });
+            this.$watch('searchQuery', () => { this.currentPage = 1; });
+            this.$watch('sortBy', () => { this.currentPage = 1; });
+        },
+        filteredPhotos() {
+            let filtered = [...this.photos];
+            
+            // Apply search query filter
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const query = this.searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(photo => 
+                    (photo.photo_name || '').toLowerCase().includes(query) ||
+                    (photo.category_label || '').toLowerCase().includes(query) ||
+                    (photo.location || '').toLowerCase().includes(query) ||
+                    (photo.year || '').toString().includes(query)
+                );
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(this.sortBy) {
+                    case 'year':
+                        aVal = (a.year || '').toString();
+                        bVal = (b.year || '').toString();
+                        return bVal.localeCompare(aVal); // Descending (newest first)
+                    case 'category':
+                        aVal = (a.category_label || '').toLowerCase();
+                        bVal = (b.category_label || '').toLowerCase();
+                        break;
+                    case 'location':
+                        aVal = (a.location || '').toLowerCase();
+                        bVal = (b.location || '').toLowerCase();
+                        break;
+                    case 'photo_name':
+                    default:
+                        aVal = (a.photo_name || '').toLowerCase();
+                        bVal = (b.photo_name || '').toLowerCase();
+                        break;
+                }
+                
+                if (aVal < bVal) return -1;
+                if (aVal > bVal) return 1;
+                return 0;
+            });
+            
+            return filtered;
         },
         totalPages() {
-            const total = this.photos.length;
+            const total = this.filteredPhotos().length;
             return Math.max(1, Math.ceil(total / this.perPage));
         },
-        paginatedPhotos() {
+        filteredAndPaginatedPhotos() {
+            const filtered = this.filteredPhotos();
             const start = (this.currentPage - 1) * this.perPage;
-            return this.photos.slice(start, start + this.perPage);
+            return filtered.slice(start, start + this.perPage);
         },
         goToPage(page) {
             const total = this.totalPages();
@@ -163,12 +308,27 @@ function photographyTable(initial) {
             return pages;
         },
         rangeSummary() {
-            if (!this.photos.length) {
+            const filtered = this.filteredPhotos();
+            if (!filtered.length) {
                 return 'Showing 0 items';
             }
             const start = (this.currentPage - 1) * this.perPage + 1;
-            const end = Math.min(start + this.perPage - 1, this.photos.length);
-            return `Showing ${start}-${end} of ${this.photos.length} items`;
+            const end = Math.min(start + this.perPage - 1, filtered.length);
+            return `Showing ${start}-${end} of ${filtered.length} items`;
+        },
+        openImageModal(photo) {
+            if (photo && photo.image_url) {
+                this.modalPhoto = photo;
+                this.showImageModal = true;
+                // Prevent body scroll when modal is open
+                document.body.style.overflow = 'hidden';
+            }
+        },
+        closeImageModal() {
+            this.showImageModal = false;
+            this.modalPhoto = null;
+            // Restore body scroll
+            document.body.style.overflow = '';
         },
     };
 }
