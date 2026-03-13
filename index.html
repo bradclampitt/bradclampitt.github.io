@@ -6,6 +6,23 @@
     <title>Bradley R. Clampitt - Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- sql.js for static site (GitHub Pages) - load CMS/skills/references from unified.sqlite -->
+    <script src="assets/js/sql-wasm.js"></script>
+    <script>
+    window.isStaticSite = function() {
+        var host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '';
+        return host === 'bradclampitt.github.io' || (host && host.endsWith('.github.io'));
+    };
+    window.getIndexDb = async function() {
+        if (window.__indexDb) return window.__indexDb;
+        var SQL = await initSqlJs({ locateFile: function(file) { return '/assets/js/' + file; } });
+        var r = await fetch('/admin/database/unified.sqlite');
+        if (!r.ok) throw new Error('Failed to load database');
+        var buf = await r.arrayBuffer();
+        window.__indexDb = new SQL.Database(new Uint8Array(buf));
+        return window.__indexDb;
+    };
+    </script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -29,19 +46,27 @@
     },
     async loadContactInfo() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/contact'
-                : '/api/cms/contact';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.contactFields = data.contact_fields || [];
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT field_name, label, value, field_type, icon, COALESCE(description,\'\') as description, COALESCE(show_in_get_in_touch,0) as show_in_get_in_touch, COALESCE(get_in_touch_title,\'\') as get_in_touch_title, COALESCE(get_in_touch_description,\'\') as get_in_touch_description FROM cms_contact_info WHERE is_public = 1 ORDER BY sort_order, field_name');
+                const contactFields = [];
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    contactFields.push({ field_name: row.field_name, label: row.label, value: row.value, field_type: row.field_type, icon: row.icon || '', description: row.description || '', show_in_get_in_touch: row.show_in_get_in_touch || 0, get_in_touch_title: row.get_in_touch_title || '', get_in_touch_description: row.get_in_touch_description || '' });
+                }
+                stmt.free();
+                this.contactFields = contactFields;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/contact' : '/api/cms/contact';
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.contactFields = data.contact_fields || [];
+                }
             }
         } catch (error) {
             console.error('Error loading contact info:', error);
@@ -55,19 +80,31 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') {
+                        try { val = JSON.parse(val); } catch (e) {}
+                    }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.siteSettings = data.settings || {};
+                }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -77,19 +114,29 @@
     },
     async loadCMSBlocks() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/blocks'
-                : '/api/cms/blocks';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.cmsBlocks = data.blocks || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT block_id, title, content, content_format, description, image, image_position, image_description, gallery_images FROM cms_blocks WHERE is_active = 1 ORDER BY sort_order, title');
+                const blocks = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let gallery = [];
+                    if (row.gallery_images) { try { gallery = JSON.parse(row.gallery_images); if (!Array.isArray(gallery)) gallery = []; } catch (e) {} }
+                    blocks[row.block_id] = { block_id: row.block_id, title: row.title, content: row.content, content_format: row.content_format || 'html', description: row.description || '', image: row.image || '', image_position: row.image_position || 'right', image_description: row.image_description || '', gallery_images: gallery };
+                }
+                stmt.free();
+                this.cmsBlocks = blocks;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/blocks' : '/api/cms/blocks';
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.cmsBlocks = data.blocks || {};
+                }
             }
         } catch (error) {
             console.error('Error loading CMS blocks:', error);
@@ -373,50 +420,51 @@
                         },
                         async fetchSkills() {
                             try {
-                                // Use admin server URL for API calls in development
-                                const host = window.location.hostname || '';
-                                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-                                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-                                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-                                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                                    ? 'http://127.0.0.1:8000/api/tech-skills'
-                                    : '/api/tech-skills';
-
-                                console.log('Fetching tech skills from:', apiUrl);
-                                const response = await fetch(apiUrl);
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                if (window.isStaticSite && window.isStaticSite()) {
+                                    const db = await window.getIndexDb();
+                                    const catStmt = db.prepare('SELECT id, name, display_order FROM tech_skill_categories ORDER BY display_order, name');
+                                    const categories = [];
+                                    while (catStmt.step()) {
+                                        const r = catStmt.getAsObject();
+                                        categories.push({ id: r.id, name: r.name, order: r.display_order });
+                                    }
+                                    catStmt.free();
+                                    this.categories = categories;
+                                    if (this.categories.length > 0) this.tab = this.categoryToKey(this.categories[0].name);
+                                    const skillStmt = db.prepare('SELECT ts.skill_name, ts.logo_url, ts.skill_level, ts.years_usage, ts.num_projects, ts.description, c.name as category_name FROM tech_skills ts LEFT JOIN tech_skill_categories c ON ts.category_id = c.id ORDER BY c.display_order, c.name, ts.skill_name');
+                                    const convertedSkills = {};
+                                    while (skillStmt.step()) {
+                                        const r = skillStmt.getAsObject();
+                                        const catName = r.category_name || 'Uncategorized';
+                                        if (!convertedSkills[catName]) convertedSkills[catName] = [];
+                                        convertedSkills[catName].push({ name: r.skill_name, logo: r.logo_url || '', level: r.skill_level, years: r.years_usage || '', projects: r.num_projects || '', description: r.description || '' });
+                                    }
+                                    skillStmt.free();
+                                    const byKey = {};
+                                    for (const [catName, list] of Object.entries(convertedSkills)) {
+                                        byKey[this.categoryToKey(catName)] = list;
+                                    }
+                                    this.skills = byKey;
+                                } else {
+                                    const host = window.location.hostname || '';
+                                    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                                    const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                                    const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                                    const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/tech-skills' : '/api/tech-skills';
+                                    const response = await fetch(apiUrl);
+                                    if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                                    const data = await response.json();
+                                    this.categories = (data.categories || []).sort((a, b) => a.order - b.order);
+                                    if (this.categories.length > 0) this.tab = this.categoryToKey(this.categories[0].name);
+                                    const convertedSkills = {};
+                                    for (const [categoryName, skillList] of Object.entries(data.skills || {})) {
+                                        convertedSkills[this.categoryToKey(categoryName)] = skillList.map(skill => ({ name: skill.name, logo: skill.logo, level: skill.level, years: skill.years, projects: skill.projects, description: skill.description }));
+                                    }
+                                    this.skills = convertedSkills;
                                 }
-                                const data = await response.json();
-
-                                // Store categories ordered by display_order
-                                this.categories = (data.categories || []).sort((a, b) => a.order - b.order);
-
-                                // Set default tab to first category
-                                if (this.categories.length > 0) {
-                                    this.tab = this.categoryToKey(this.categories[0].name);
-                                }
-
-                                // Convert API response to frontend format using category keys
-                                const convertedSkills = {};
-                                for (const [categoryName, skillList] of Object.entries(data.skills || {})) {
-                                    const tabKey = this.categoryToKey(categoryName);
-                                    convertedSkills[tabKey] = skillList.map(skill => ({
-                                        name: skill.name,
-                                        logo: skill.logo,
-                                        level: skill.level,
-                                        years: skill.years,
-                                        projects: skill.projects,
-                                        description: skill.description
-                                    }));
-                                }
-
-                                this.skills = convertedSkills;
                                 this.loading = false;
                             } catch (error) {
                                 console.error('Error fetching tech skills:', error);
-                                // Fallback to empty skills object
                                 this.skills = {};
                                 this.categories = [];
                                 this.loading = false;
@@ -528,23 +576,30 @@
                                 },
                                 async fetchReferences() {
                                     try {
-                                        // Use admin server URL for API calls in development
-                                        const host = window.location.hostname || '';
-                                        const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-                                        const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-                                        const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-                                        const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                                            ? 'http://127.0.0.1:8000/api/references'
-                                            : '/api/references';
-
-                                        console.log('Fetching references from:', apiUrl);
-                                        const response = await fetch(apiUrl);
-                                        if (!response.ok) {
-                                            throw new Error(`HTTP error! status: ${response.status}`);
+                                        if (window.isStaticSite && window.isStaticSite()) {
+                                            const db = await window.getIndexDb();
+                                            const stmt = db.prepare('SELECT id, person_name, company, connection_type, reference_text, title FROM ref_entries ORDER BY created_at DESC, id DESC');
+                                            const refs = [];
+                                            while (stmt.step()) {
+                                                const r = stmt.getAsObject();
+                                                let connectionTypes = [];
+                                                if (r.connection_type) { try { connectionTypes = JSON.parse(r.connection_type); } catch (e) {} }
+                                                const initials = (r.person_name || '').split(/\s+/).slice(0, 2).map(function(n) { return n[0] ? n[0].toUpperCase() : ''; }).join('');
+                                                refs.push({ id: r.id, name: r.person_name, title: r.title || '', company: r.company || '', relationship: connectionTypes.join(', '), quote: r.reference_text, avatar: 'https://placehold.co/60x60/6366f1/fff?text=' + initials });
+                                            }
+                                            stmt.free();
+                                            this.references = refs;
+                                        } else {
+                                            const host = window.location.hostname || '';
+                                            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                                            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                                            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                                            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/references' : '/api/references';
+                                            const response = await fetch(apiUrl);
+                                            if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                                            const data = await response.json();
+                                            this.references = data.references || [];
                                         }
-                                        const data = await response.json();
-                                        this.references = data.references || [];
                                         this.loading = false;
                                     } catch (error) {
                                         console.error('Error fetching references:', error);

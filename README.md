@@ -1,428 +1,312 @@
 # GitHub Profile Portfolio
 
-**A modern, full-stack portfolio website showcasing professional work, blog posts, technical documentation, and more.**
+**A modern, full-stack portfolio site for GitHub Pages: static frontend with sql.js, FastAPI admin for content, and a single SQLite database.**
 
-Last Updated: December 2025
-
----
-
-## 🎯 Overview
-
-This repository contains a **hybrid portfolio system** designed for GitHub Pages:
-
-- **Frontend**: Static HTML/CSS/JS files served via GitHub Pages (using sql.js to load SQLite databases)
-- **Backend**: FastAPI admin panel running on a Proxmox server for content management
-- **Database**: Unified SQLite database with namespaced tables for all sections
-
-The frontend is completely static and can be hosted anywhere, while the backend admin panel provides a powerful CMS for managing all content.
+Last Updated: March 2026
 
 ---
 
-## ✨ Features
+## Overview
 
-### Content Sections
+This repo is a **hybrid portfolio** built for **GitHub Pages**:
 
-1. **📝 Blog** - Technical blog posts with markdown support, categories, and featured posts
-2. **💼 Portfolio** - Project showcase with clients, tech tags, features, and images
-3. **📄 Documents** - Knowledge base, articles, guides, and resumes
-4. **👥 References** - Professional references and testimonials
-5. **🛠️ Tech Skills** - Technical skills organized by categories
-6. **🚀 Side Projects** - Personal and open-source projects
-7. **🛒 Magento Modules** - Custom Magento 2 extensions and modules
-8. **📸 Photography** - Photography portfolio and galleries
-9. **💼 Experience** - Work experience, education, and professional background
-10. **⚙️ CMS** - Site-wide settings and content blocks
+- **Frontend**: Static HTML/CSS/JS served by GitHub Pages. Pages load `admin/database/unified.sqlite` in the browser via **sql.js** (SQLite in WebAssembly) and query it for portfolio, documents, blog, etc. No server or backend required for the live site.
+- **Backend**: Optional **FastAPI** admin panel (run locally or on your own server) for creating and editing content. All content is stored in the same unified SQLite database.
+- **Database**: One **unified SQLite** file (`admin/database/unified.sqlite`) with namespaced tables for every section. The file is committed so GitHub Pages can serve it; it contains no secrets or private data.
 
-### Technical Highlights
-
-- **Unified Database**: Single SQLite database with namespaced tables for all sections
-- **Static Frontend**: Zero server-side requirements, works on GitHub Pages
-- **Modern Admin Panel**: FastAPI-based CMS with rich text editing
-- **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Markdown Support**: Full markdown processing with syntax highlighting
-- **Image Management**: Organized media storage with upload capabilities
-- **SEO Friendly**: Semantic HTML and proper meta tags
+The live site is 100% static; the admin panel is for you (or anyone who clones the repo) to manage content.
 
 ---
 
-## 🏗️ Architecture
+## Features
 
-### Repository Structure
+### Content sections
+
+1. **Blog** – Posts with markdown, categories, featured posts  
+2. **Portfolio** – Projects with clients, tech tags, features, images  
+3. **Documents** – Knowledge base, guides, articles (e.g. `documents/posts/*.html`)  
+4. **References** – Testimonials and references  
+5. **Tech skills** – Skills by category  
+6. **Side projects** – Personal and open-source projects  
+7. **Magento modules** – Custom Magento 2 extensions  
+8. **Photography** – Galleries and images  
+9. **Experience** – Work history, education, background  
+10. **CMS** – Site-wide settings and blocks  
+
+### Technical highlights
+
+- **Unified SQLite**: One database, namespaced tables; committed for GitHub Pages + sql.js  
+- **Static frontend**: No server required on GitHub Pages  
+- **FastAPI admin**: Rich editing, markdown, image uploads  
+- **Tailwind CSS**: Responsive, utility-first styling  
+- **Alpine.js**: Lightweight interactivity  
+- **Markdown**: Processed with syntax highlighting (e.g. Prism, Marked.js)  
+
+---
+
+## Repository structure
 
 ```
-github_v2/
+bradclampitt.github.io/
 ├── admin/                          # Backend admin panel (FastAPI)
-│   ├── app.py                     # Main FastAPI application
-│   ├── config.py                  # Centralized configuration
+│   ├── app.py                      # Main FastAPI app
+│   ├── config.py                   # Paths and config
+│   ├── admin-panel.sh              # Start/stop script
 │   ├── database/
-│   │   ├── unified.sqlite         # Unified database (production)
-│   │   ├── demo.sqlite            # Demo database (for GitHub)
-│   │   ├── schema.sql             # Combined schema
-│   │   └── migrations/            # Migration scripts
-│   ├── resources/                 # Section-specific resources
-│   │   ├── blog/
-│   │   ├── documents/
-│   │   └── ... (all sections)
-│   ├── templates/                 # Jinja2 templates
-│   ├── static/                    # Admin CSS/JS
-│   └── requirements.txt           # Python dependencies
+│   │   ├── unified.sqlite          # Unified DB (in repo for GitHub Pages)
+│   │   ├── schema.sql              # Full schema
+│   │   └── connection.py           # DB connection helper
+│   ├── resources/
+│   │   ├── blog/                   # Blog templates, posts.json, etc.
+│   │   └── documents/              # Document templates
+│   ├── templates/                  # Jinja2 admin templates
+│   ├── static/                     # Admin CSS/JS
+│   └── requirements.txt
 │
-├── assets/                         # Static assets
-│   ├── css/                       # Compiled Tailwind CSS
-│   ├── js/                        # JavaScript libraries (sql.js, Alpine.js)
-│   └── images/                    # Media files organized by section
+├── assets/
+│   ├── css/                        # Tailwind output (tailwind-built.css built locally)
+│   ├── js/                         # sql.js, sidebar-loader.js, etc.
+│   ├── includes/                   # Reusable HTML (e.g. sidebar.html)
+│   └── images/                     # Media by section (blog, portfolio, documents, …)
 │
-├── docs/                          # Documentation
-│   ├── CONSOLIDATION_OPTIONS.md   # Architecture consolidation docs
-│   └── ...
+├── blog/
+│   └── posts/                      # Generated blog post HTML
 │
-├── *.html                         # Frontend pages (blog.html, portfolio.html, etc.)
-├── shared/                        # Shared Python modules
-├── package.json                   # Node.js dependencies (Tailwind)
-└── README.md                      # This file
+├── documents/
+│   ├── document.html               # Document viewer (slug-based)
+│   └── posts/                      # Document article HTML
+│
+├── docs/
+│   ├── SETUP_GUIDE.md              # Full server/setup guide
+│   ├── ROLLBACK_PLAN.md            # Deploy rollback steps
+│   └── references/                 # Reference docs
+│
+├── shared/                         # Shared Python (e.g. markdown_processor.py)
+│
+├── index.html                      # Home
+├── blog.html                       # Blog listing
+├── portfolio.html                  # Portfolio (loads unified.sqlite via sql.js)
+├── project.html                    # Single project (slug)
+├── documents.html                  # Documents listing
+├── experience.html, resume.html, references.html
+├── magento.html, photography.html, side-projects.html, personal.html, contact.html
+├── 404.html
+├── _config.yml, _redirects         # GitHub Pages / Jekyll (if used)
+├── package.json, tailwind.config.js # Tailwind build
+└── README.md
 ```
 
-### Database Architecture
+### Database layout (unified SQLite)
 
-The system uses a **unified SQLite database** with namespaced tables:
+Namespaced tables in `admin/database/unified.sqlite`:
 
-- `blog_categories`, `blog_posts` - Blog content
-- `doc_categories`, `documents`, `document_images` - Documents
-- `portfolio_tabs`, `projects`, `project_images` - Portfolio
-- `ref_*` - References
-- `tech_skill_*` - Tech skills
-- `side_project_*` - Side projects
-- `magento_*` - Magento modules
-- `photography_*` - Photography
-- `experience_*` - Experience
-- `cms_*` - CMS settings
+- **Blog**: `blog_categories`, `blog_posts`  
+- **Documents**: `doc_tabs`, `documents`, `document_images`, etc.  
+- **Portfolio**: `portfolio_tabs`, `portfolio_projects`, `portfolio_project_*`, `clients`  
+- **References**: `ref_*`  
+- **Tech skills**: `tech_skill_*`  
+- **Side projects**: `side_project_*`  
+- **Magento**: `magento_*`  
+- **Photography**: `photography_*`  
+- **Experience**: `experience_*`  
+- **CMS**: `cms_*`  
 
-This approach provides:
-- Single database to manage and backup
-- Clear separation between sections
-- Easy cross-section queries when needed
-- Simplified admin codebase
+One file to backup and deploy; clear separation by section.
 
 ---
 
-## 🚀 Quick Start
+## Quick start
 
 ### Prerequisites
 
-- **Node.js** 16+ (for Tailwind CSS)
-- **Python** 3.8+ (for admin panel)
-- **Git** (for version control)
+- **Node.js** 16+ (Tailwind)
+- **Python** 3.8+ (admin only)
+- **Git**
 
-### Frontend Setup (GitHub Pages)
+### Frontend (GitHub Pages)
 
-1. **Install Node.js dependencies**:
-```bash
-npm install
-```
+1. **Install and build**:
+   ```bash
+   npm install
+   npm run build
+   ```
+2. **Commit and push** – GitHub Pages serves the repo; the site loads `unified.sqlite` in the browser via sql.js.
 
-2. **Build Tailwind CSS**:
-```bash
-npm run build
-```
+### Admin panel (local or your server)
 
-3. **Commit and push** to GitHub - GitHub Pages will automatically serve the static files.
-
-### Backend Setup (Local/Proxmox Server)
-
-1. **Navigate to admin directory**:
-```bash
-cd admin
-```
-
-2. **Create virtual environment**:
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. **Install Python dependencies**:
-```bash
-pip install -r requirements.txt
-```
-
-4. **Start the admin server**:
-```bash
-# Using the management script (recommended)
-./admin-panel.sh start
-
-# Or manually
-uvicorn app:app --reload --port 8000 --host 127.0.0.1
-```
-
-5. **Access admin panel**: `http://localhost:8000/admin`
+1. **Go to admin**:
+   ```bash
+   cd admin
+   ```
+2. **Create venv and install**:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate   # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. **Start server**:
+   ```bash
+   ./admin-panel.sh start
+   ```
+4. **Open**: `http://localhost:8000/admin`  
+   Or run manually: `uvicorn app:app --reload --port 8000 --host 127.0.0.1`
 
 ---
 
-## 📖 Usage Guide
+## Install from GitHub (full setup)
 
-### Admin Panel
-
-The admin panel provides a unified interface for managing all content:
-
-- **Dashboard**: Overview of all sections and statistics
-- **Blog Management**: Create/edit blog posts with markdown support
-- **Portfolio Management**: Manage projects, clients, and tech tags
-- **Document Management**: Create knowledge base articles and guides
-- **And more**: Each section has its own management interface
-
-### Frontend Pages
-
-The frontend pages load data from the SQLite database using `sql.js`:
-
-- `index.html` - Homepage
-- `blog.html` - Blog listing and posts
-- `portfolio.html` - Portfolio projects
-- `documents.html` - Documents and knowledge base
-- `experience.html` - Work experience
-- `references.html` - Professional references
-- `tech-skills.html` - Technical skills
-- `side-projects.html` - Side projects
-- `magento.html` - Magento modules
-- `photography.html` - Photography portfolio
-
-### Database Management
-
-**Production Database** (on Proxmox server):
-- Located at: `admin/database/unified.sqlite`
-- Contains real production data
-- **NOT committed to GitHub** (excluded via `.gitignore`)
-
-**Demo Database** (for GitHub):
-- Located at: `admin/database/demo.sqlite`
-- Contains sample data for portfolio demonstration
-- **Committed to GitHub** for showcasing functionality
-
-### Media Management
+1. **Clone**:
+   ```bash
+   git clone https://github.com/bradclampitt/bradclampitt.github.io.git
+   cd bradclampitt.github.io
+   ```
+2. **Frontend**:
+   ```bash
+   npm install
+   npm run build
+   ```
+3. **Database**: The repo includes `admin/database/unified.sqlite`. To start from an empty DB instead:
+   ```bash
+   sqlite3 admin/database/unified.sqlite < admin/database/schema.sql
+   ```
+4. **Admin**:
+   ```bash
+   cd admin
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ./admin-panel.sh start
+   ```
+5. **Admin UI**: `http://localhost:8000/admin`  
+   When you change the schema, update `admin/database/schema.sql` for future installs.
 
 ---
 
-# Install from Github Repo
+## Usage
 
-Follow these steps to run the admin panel locally and build the frontend after cloning this repo.
+### Admin panel
 
-1. **Clone the repository**:
-```bash
-git clone <your-repo-url>
-cd github_v2
-```
+- **Dashboard**: Overview of sections  
+- **Blog / Portfolio / Documents / References / Tech skills / Side projects / Magento / Photography / Experience / CMS**: Each has its own list and edit screens  
 
-2. **Install Node.js dependencies (frontend)**:
-```bash
-npm install
-```
+Content is written to `admin/database/unified.sqlite`. The same file is used by the static site on GitHub Pages (via sql.js).
 
-3. **Build Tailwind CSS**:
-```bash
-npm run build
-```
+### Frontend pages (static)
 
-4. **Create the unified database from the schema**:
-```bash
-sqlite3 admin/database/unified.sqlite < admin/database/schema.sql
-```
+- `index.html` – Home  
+- `blog.html` – Blog list; `blog/posts/*.html` – posts  
+- `portfolio.html` – Projects; `project.html?slug=...` – single project  
+- `documents.html` – Document list; `documents/document.html?slug=...` – single document  
+- `experience.html`, `resume.html`, `references.html`, `magento.html`, `photography.html`, `side-projects.html`, `personal.html`, `contact.html`  
 
-5. **Set up Python and install dependencies (admin panel)**:
-```bash
-cd admin
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\\Scripts\\activate
-pip install -r requirements.txt
-```
+Portfolio and documents (and any page that needs live data) fetch `admin/database/unified.sqlite` and query it with sql.js in the browser.
 
-6. **Start the admin server**:
-```bash
-./admin-panel.sh start
-```
+### Media
 
-7. **Open the admin panel**:
-```
-http://localhost:8000/admin
-```
-
-Note: When schema changes are made, update `admin/database/schema.sql` so new installs stay accurate.
-
-All media files are stored in `assets/images/` organized by section:
-- `assets/images/blog/` - Blog post images
-- `assets/images/portfolio/` - Portfolio project images
-- `assets/images/documents/` - Document images
-- `assets/images/photography/` - Photography images
-- And so on...
+Media lives under `assets/images/` by section (e.g. `blog/`, `portfolio/`, `documents/`, `photography/`).
 
 ---
 
-## 🔧 Development
+## File distribution
 
-### Adding a New Section
+### In the GitHub repo
 
-1. **Create section folder** in `admin/resources/{section-name}/`
-2. **Add schema** to `admin/database/schema.sql` with namespaced tables
-3. **Create admin routes** in `admin/app.py` or modularize into `admin/routes/`
-4. **Create frontend page** (e.g., `{section-name}.html`)
-5. **Update navigation** in all HTML files
+- All HTML, CSS, JS, and assets  
+- `admin/` code and templates (no venv, no `__pycache__`)  
+- `admin/database/unified.sqlite` – committed so GitHub Pages can serve it (sql.js loads it client-side)  
+- `admin/database/schema.sql`  
+- `docs/` (e.g. SETUP_GUIDE.md, ROLLBACK_PLAN.md)  
+- `.gitignore` excludes: `venv/`, `node_modules/`, `*.log`, `_archived/`, `blog/archive/`, `assets/css/tailwind-built.css`, etc. Other `.sqlite` files are ignored; only `admin/database/unified.sqlite` is allowed.
 
-### Database Migrations
+### Not in the repo (local / server only)
 
-Database migrations are handled via scripts in `admin/database/migrations/`:
+- `admin/venv/`, `__pycache__/`, `*.log`  
+- `_archived/`, `blog/archive/`  
+- Built file: `assets/css/tailwind-built.css` (generated by `npm run build`)  
 
-```bash
-cd admin
-python database/migrations/migrate_unified.py
-```
-
-### Tailwind CSS Development
-
-Watch for changes and rebuild CSS:
-
-```bash
-npm run build:watch
-```
-
-Or build once:
-
-```bash
-npm run build
-```
+The database in the repo is the same one the live site uses; it contains no secrets. For a private copy, keep a separate DB and do not commit it (or use a different branch).
 
 ---
 
-## 📁 File Distribution
+## Technology stack
 
-### Files on Proxmox Server (NOT in GitHub)
-
-These files contain production data or are environment-specific:
-
-- `admin/database/unified.sqlite` - Production database
-- `admin/venv/` - Python virtual environment
-- `admin/__pycache__/` - Python cache files
-- `admin/*.log` - Log files
-- `*.sqlite` - Any production database files
-
-### Files in GitHub Repository
-
-All code, templates, schemas, and static files are committed:
-
-- All Python code (`admin/app.py`, `admin/config.py`, etc.)
-- All templates (`admin/templates/`)
-- Database schemas (`admin/database/schema.sql`)
-- Frontend HTML files (`*.html`)
-- Static assets (`assets/`)
-- Documentation (`docs/`)
-- Demo database (`admin/database/demo.sqlite`)
+| Layer    | Tech |
+|----------|------|
+| Frontend | HTML5, Tailwind CSS, Alpine.js, sql.js (SQLite in browser), Marked.js, Prism.js |
+| Backend  | FastAPI, Jinja2, Python 3.8+ |
+| Data     | SQLite (unified, namespaced tables) |
+| Hosting  | GitHub Pages (static) |
+| Build    | Node.js (Tailwind), npm |
 
 ---
 
-## 🛠️ Technology Stack
+## Content workflow
 
-### Frontend
-- **HTML5** - Semantic markup
-- **Tailwind CSS** - Utility-first CSS framework
-- **Alpine.js** - Lightweight JavaScript framework
-- **sql.js** - SQLite compiled to WebAssembly for client-side database queries
-- **Marked.js** - Markdown parser
-- **Prism.js** - Syntax highlighting
-
-### Backend
-- **FastAPI** - Modern Python web framework
-- **SQLite** - Lightweight database
-- **Jinja2** - Template engine
-- **Python 3.8+** - Programming language
-
-### Tools
-- **Node.js** - For Tailwind CSS compilation
-- **Git** - Version control
-- **GitHub Pages** - Static hosting
+1. Run the admin panel locally (or on your server).  
+2. Create and edit content in the admin; it’s saved to `admin/database/unified.sqlite`.  
+3. Commit changes (including `unified.sqlite` if you want the live site to reflect them).  
+4. Push to GitHub – Pages serves the updated static site and DB.
 
 ---
 
-## 📝 Content Management Workflow
+## Security and practices
 
-1. **Start admin panel** on Proxmox server
-2. **Create/edit content** via admin interface
-3. **Content is saved** to `admin/database/unified.sqlite`
-4. **Export demo database** (optional, for GitHub demo)
-5. **Commit changes** to Git (excluding production database)
-6. **Push to GitHub** - Frontend automatically updates
+- **unified.sqlite** in the repo is intended for public, non-sensitive content.  
+- Admin panel should run only on localhost or a trusted network.  
+- Venv, logs, and env files are gitignored.  
+- Use parameterized queries (no raw SQL from user input).
 
 ---
 
-## 🔒 Security & Best Practices
+## Documentation
 
-- **Production databases are NOT committed** to GitHub
-- **Virtual environment is excluded** from Git
-- **Environment variables** stored securely on server
-- **Admin panel** runs only on localhost/private network
-- **Input validation** on all admin forms
-- **SQL injection protection** via parameterized queries
+- **[SETUP_GUIDE.md](./docs/SETUP_GUIDE.md)** – Full server/setup (e.g. Proxmox, Nginx, Tailwind, admin)  
+- **[ROLLBACK_PLAN.md](./docs/ROLLBACK_PLAN.md)** – How to roll back a deploy (tags, force-push)  
+- **[admin/README.md](./admin/README.md)** – Admin panel usage and scripts  
+- **docs/references/** – Reference-style docs  
 
 ---
 
-## 📚 Documentation
+## Contributing and reuse
 
-- **[Consolidation Options](./docs/CONSOLIDATION_OPTIONS.md)** - Architecture consolidation analysis
-- **[Admin README](./admin/README.md)** - Admin panel documentation
-- Section-specific READMEs in `admin/resources/{section}/`
+This is a personal portfolio repo. You’re welcome to fork or use it as a template for your own GitHub Pages profile; adjust content and branding as needed.
 
 ---
 
-## 🤝 Contributing
-
-This is a personal portfolio repository. However, if you find it useful as a reference or want to fork it for your own use, feel free!
-
----
-
-## 📄 License
-
-This project is for personal/portfolio use. Feel free to use it as inspiration for your own projects.
-
----
-
-## 👤 Author
+## Author
 
 **Bradley R. Clampitt**
 
-- Portfolio: [GitHub Profile](https://github.com/yourusername)
-- Built with modern web technologies and best practices
+- GitHub: [bradclampitt](https://github.com/bradclampitt)  
+- Live site: [bradclampitt.github.io](https://bradclampitt.github.io) (when deployed from this repo)
 
 ---
 
-## 🙏 Acknowledgments
+## Changelog
 
-- Built with assistance from AI tools (ChatGPT) for learning and development
-- Uses open-source libraries and frameworks (see dependencies)
-- Inspired by modern portfolio and CMS design patterns
-
----
-
-## 📅 Changelog
+### March 2026
+- v2 deploy to GitHub Pages: unified SQLite in repo for sql.js client-side loading  
+- Cleanup: removed obsolete docs and duplicate blog/admin paths; consolidated documents under `documents/posts/`  
+- Added `docs/ROLLBACK_PLAN.md`, `assets/includes/` (sidebar), `sidebar-loader.js`  
+- `.gitignore` updated: only `admin/database/unified.sqlite` allowed for SQLite  
 
 ### December 2025
-- ✅ Consolidated all sections into unified `admin/` structure
-- ✅ Migrated to single unified SQLite database with namespaced tables
-- ✅ Improved code organization and maintainability
-- ✅ Added comprehensive documentation
+- Unified SQLite database with namespaced tables  
+- Consolidated admin under single FastAPI app and `admin/` structure  
 
 ### November 2025
-- Initial setup with separate section databases
-- Blog management system implementation
-- Portfolio and documents management
+- Initial multi-section setup; blog, portfolio, documents management  
 
 ---
 
-## 🎯 Future Enhancements
+## Possible future improvements
 
-- [ ] Modularize admin routes into separate files
-- [ ] Add API endpoints for programmatic access
-- [ ] Implement search across all sections
-- [ ] Add analytics and tracking
-- [ ] Improve mobile admin experience
-- [ ] Add dark mode support
-- [ ] Implement caching strategies
+- [ ] Split admin routes into modules  
+- [ ] Optional API for programmatic access  
+- [ ] Search across sections  
+- [ ] Dark mode, improved mobile admin  
+- [ ] Caching strategy for heavy pages  
 
 ---
 
-**Note**: This repository serves as both a functional portfolio website and a demonstration of full-stack development capabilities, including database design, API development, and modern frontend practices.
+This repo works as both a live portfolio on GitHub Pages and a template for static sites backed by a single SQLite file and an optional FastAPI admin.
