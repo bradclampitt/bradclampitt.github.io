@@ -6,6 +6,8 @@
     <title>References - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -23,19 +25,26 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) { const data = await response.json(); this.siteSettings = data.settings || {}; }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -216,23 +225,30 @@
                         loading: true,
                         async fetchReferences() {
                             try {
-                                // Use admin server URL for API calls in development
-                                const host = window.location.hostname || '';
-                                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-                                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-                                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-                                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                                    ? 'http://127.0.0.1:8000/api/references'
-                                    : '/api/references';
-
-                                console.log('Fetching references from:', apiUrl);
-                                const response = await fetch(apiUrl);
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                if (window.isStaticSite && window.isStaticSite()) {
+                                    const db = await window.getIndexDb();
+                                    const stmt = db.prepare('SELECT id, person_name, company, connection_type, reference_text, title FROM ref_entries ORDER BY created_at DESC, id DESC');
+                                    const refs = [];
+                                    while (stmt.step()) {
+                                        const r = stmt.getAsObject();
+                                        let connectionTypes = [];
+                                        if (r.connection_type) { try { connectionTypes = JSON.parse(r.connection_type); } catch (e) {} }
+                                        const initials = (r.person_name || '').split(/\s+/).slice(0, 2).map(function(n) { return n[0] ? n[0].toUpperCase() : ''; }).join('');
+                                        refs.push({ id: r.id, name: r.person_name, title: r.title || '', company: r.company || '', relationship: connectionTypes.join(', '), quote: r.reference_text, avatar: 'https://placehold.co/60x60/6366f1/fff?text=' + initials });
+                                    }
+                                    stmt.free();
+                                    this.references = refs;
+                                } else {
+                                    const host = window.location.hostname || '';
+                                    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                                    const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                                    const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                                    const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/references' : '/api/references';
+                                    const response = await fetch(apiUrl);
+                                    if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                                    const data = await response.json();
+                                    this.references = data.references || [];
                                 }
-                                const data = await response.json();
-                                this.references = data.references || [];
                                 this.loading = false;
                             } catch (error) {
                                 console.error('Error fetching references:', error);

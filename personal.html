@@ -6,6 +6,9 @@
     <title>Personal - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <!-- sql.js + static-site helpers for GitHub Pages -->
+    <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -35,19 +38,29 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.siteSettings = data.settings || {};
+                }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -57,68 +70,34 @@
     },
     async loadCMSBlocks() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/blocks'
-                : '/api/cms/blocks';
-
-            console.log('Loading CMS blocks from:', apiUrl);
-            const response = await fetch(apiUrl + '?t=' + Date.now()); // Add cache busting
-            console.log('API Response status:', response.status, response.ok);
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('API Response data:', data);
-                this.cmsBlocks = data.blocks || {};
-                console.log('Loaded CMS blocks:', Object.keys(this.cmsBlocks));
-
-                // Debug: log specific blocks
-                console.log('Checking for life-in-photos:', this.cmsBlocks['life-in-photos']);
-                console.log('Checking for values-philosophy:', this.cmsBlocks['values-philosophy']);
-
-                if (this.cmsBlocks['life-in-photos']) {
-                    console.log('Life in Photos Block:', {
-                        title: this.cmsBlocks['life-in-photos'].title,
-                        gallery_images: this.cmsBlocks['life-in-photos'].gallery_images,
-                        gallery_images_length: this.cmsBlocks['life-in-photos'].gallery_images?.length || 0,
-                        full_block: this.cmsBlocks['life-in-photos']
-                    });
-                } else {
-                    console.warn('life-in-photos block not found in cmsBlocks');
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT block_id, title, content, content_format, description, image, image_position, image_description, gallery_images FROM cms_blocks WHERE is_active = 1 ORDER BY sort_order, title');
+                const blocks = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let gallery = [];
+                    if (row.gallery_images) { try { gallery = JSON.parse(row.gallery_images); if (!Array.isArray(gallery)) gallery = []; } catch (e) {} }
+                    blocks[row.block_id] = { block_id: row.block_id, title: row.title, content: row.content, content_format: row.content_format || 'html', description: row.description || '', image: row.image || '', image_position: row.image_position || 'right', image_description: row.image_description || '', gallery_images: gallery };
                 }
-
-                if (this.cmsBlocks['values-philosophy']) {
-                    console.log('Values & Philosophy Block:', {
-                        title: this.cmsBlocks['values-philosophy'].title,
-                        content_length: this.cmsBlocks['values-philosophy'].content?.length || 0,
-                        full_block: this.cmsBlocks['values-philosophy']
-                    });
-                } else {
-                    console.warn('values-philosophy block not found in cmsBlocks');
-                }
-
-                console.log('All available CMS blocks:', Object.keys(this.cmsBlocks));
+                stmt.free();
+                this.cmsBlocks = blocks;
             } else {
-                console.error('API response not OK:', response.status, response.statusText);
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/blocks' : '/api/cms/blocks';
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.cmsBlocks = data.blocks || {};
+                }
             }
         } catch (error) {
             console.error('Error loading CMS blocks:', error);
-            console.error('Error stack:', error.stack);
         } finally {
             this.loadingBlocks = false;
-            // Debug: Log final state
-            setTimeout(() => {
-                console.log('Final state - loadingBlocks:', this.loadingBlocks);
-                console.log('Final state - cmsBlocks exists:', !!this.cmsBlocks);
-                console.log('Final state - life-in-photos:', !!this.cmsBlocks['life-in-photos']);
-                console.log('Final state - values-philosophy:', !!this.cmsBlocks['values-philosophy']);
-            }, 100);
         }
     }
 }">

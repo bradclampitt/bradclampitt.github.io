@@ -6,6 +6,8 @@
     <title>Experience - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -22,19 +24,26 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) { const data = await response.json(); this.siteSettings = data.settings || {}; }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -423,29 +432,100 @@
                         filteredEducation: [],
                         async init() {
                             try {
-                                // Use admin server URL for API calls in development
-                                const host = window.location.hostname || '';
-                                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-                                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-                                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-                                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                                    ? 'http://127.0.0.1:8000/api/experience'
-                                    : '/api/experience';
-
-                                console.log('Fetching experience data from:', apiUrl);
-                                const response = await fetch(apiUrl);
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                let data = {};
+                                if (window.isStaticSite && window.isStaticSite()) {
+                                    const db = await window.getIndexDb();
+                                    function calcDuration(startDate, endDate) {
+                                        if (!startDate) return '';
+                                        try {
+                                            var start = new Date(startDate + 'T00:00:00');
+                                            var end = endDate ? new Date(endDate + 'T00:00:00') : new Date();
+                                            var years = end.getFullYear() - start.getFullYear();
+                                            var months = end.getMonth() - start.getMonth();
+                                            if (months < 0) { years--; months += 12; }
+                                            if (years > 0) return months > 0 ? years + ' yrs ' + months + ' mos' : years + ' yrs';
+                                            return months + ' mos';
+                                        } catch (e) { return ''; }
+                                    }
+                                    var companiesRows = []; var companiesStmt = db.prepare('SELECT * FROM experience_companies ORDER BY COALESCE(sort_order, 1000000), name');
+                                    while (companiesStmt.step()) companiesRows.push(companiesStmt.getAsObject());
+                                    companiesStmt.free();
+                                    var jobsRows = []; var jobsStmt = db.prepare('SELECT je.*, c.name as company_name, c.logo_url, c.description as company_description, c.location as company_location FROM experience_job_experiences je LEFT JOIN experience_companies c ON c.id = je.company_id ORDER BY je.start_date DESC');
+                                    while (jobsStmt.step()) jobsRows.push(jobsStmt.getAsObject());
+                                    jobsStmt.free();
+                                    var jobsList = [];
+                                    for (var i = 0; i < jobsRows.length; i++) {
+                                        var j = jobsRows[i];
+                                        var keyAch = []; var keyResp = [];
+                                        if (j.key_achievements) { try { keyAch = JSON.parse(j.key_achievements); } catch (e) {} }
+                                        if (j.key_responsibilities) { try { keyResp = JSON.parse(j.key_responsibilities); } catch (e) {} }
+                                        var projStmt = db.prepare('SELECT * FROM experience_job_projects WHERE job_experience_id = ? ORDER BY sort_order, month_year');
+                                        projStmt.bind([j.id]); var projects = [];
+                                        while (projStmt.step()) projects.push(projStmt.getAsObject());
+                                        projStmt.free();
+                                        var skStmt = db.prepare('SELECT s.* FROM experience_skills_sets s JOIN experience_job_experience_skills jes ON jes.skill_id = s.id WHERE jes.job_experience_id = ? ORDER BY s.name');
+                                        skStmt.bind([j.id]); var skills = []; while (skStmt.step()) skills.push(skStmt.getAsObject()); skStmt.free();
+                                        var tStmt = db.prepare('SELECT t.* FROM experience_tools t JOIN experience_job_experience_tools jet ON jet.tool_id = t.id WHERE jet.job_experience_id = ? ORDER BY t.name');
+                                        tStmt.bind([j.id]); var tools = []; while (tStmt.step()) tools.push(tStmt.getAsObject()); tStmt.free();
+                                        var ssStmt = db.prepare('SELECT ss.* FROM experience_soft_skills ss JOIN experience_job_experience_soft_skills jess ON jess.soft_skill_id = ss.id WHERE jess.job_experience_id = ? ORDER BY ss.name');
+                                        ssStmt.bind([j.id]); var soft_skills = []; while (ssStmt.step()) soft_skills.push(ssStmt.getAsObject()); ssStmt.free();
+                                        jobsList.push({
+                                            id: j.id, company_id: j.company_id, job_title: j.job_title, start_date: j.start_date, end_date: j.end_date, is_current: j.is_current,
+                                            employment_type: j.employment_type || '', is_remote: j.is_remote || 0, is_concurrent: j.is_concurrent || 0, role_overview: j.role_overview || '',
+                                            key_achievements: keyAch, key_responsibilities: keyResp, projects: projects, skills: skills, tools: tools, soft_skills: soft_skills,
+                                            duration: calcDuration(j.start_date, j.end_date)
+                                        });
+                                    }
+                                    var companiesDict = {};
+                                    for (var c = 0; c < companiesRows.length; c++) {
+                                        var co = companiesRows[c];
+                                        companiesDict[co.id] = { id: co.id, name: co.name, logo: co.logo_url || '', description: co.description || '', location: co.location || '', positions: [] };
+                                    }
+                                    for (var k = 0; k < jobsList.length; k++) {
+                                        var j = jobsList[k];
+                                        if (j.company_id && companiesDict[j.company_id]) companiesDict[j.company_id].positions.push(j);
+                                    }
+                                    var companiesList = [];
+                                    for (var id in companiesDict) {
+                                        var co = companiesDict[id];
+                                        if (co.positions.length) {
+                                            co.positions.sort(function(a, b) { return (b.start_date || '').localeCompare(a.start_date || ''); });
+                                            var starts = co.positions.map(function(p) { return p.start_date; }).filter(Boolean);
+                                            var minStart = starts.length ? starts.sort()[0] : null;
+                                            var hasCurrent = co.positions.some(function(p) { return p.is_current; });
+                                            var maxEnd = hasCurrent ? null : co.positions.map(function(p) { return p.end_date; }).filter(Boolean).sort().pop() || null;
+                                            co.total_duration = minStart ? calcDuration(minStart, maxEnd) : '';
+                                        } else co.total_duration = '';
+                                        companiesList.push(co);
+                                    }
+                                    companiesList.sort(function(a, b) {
+                                        var ad = (a.positions[0] && a.positions[0].start_date) || '0000-01-01';
+                                        var bd = (b.positions[0] && b.positions[0].start_date) || '0000-01-01';
+                                        return bd.localeCompare(ad);
+                                    });
+                                    var eduStmt = db.prepare('SELECT * FROM experience_education ORDER BY timeline_date DESC');
+                                    var educationList = [];
+                                    while (eduStmt.step()) {
+                                        var e = eduStmt.getAsObject();
+                                        var hon = []; if (e.honors_memberships) { try { hon = JSON.parse(e.honors_memberships); } catch (err) {} }
+                                        educationList.push({ certificate_name: e.certificate_name || '', subtitle: e.subtitle || '', school_name: e.school_name || '', location: e.location || '', start_year: e.start_year || '', end_year: e.end_year || '', timeline_date: e.timeline_date || '', description: e.description || '', honors_memberships: hon });
+                                    }
+                                    eduStmt.free();
+                                    data = { companies: companiesList, education: educationList };
+                                } else {
+                                    const host = window.location.hostname || '';
+                                    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                                    const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                                    const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                                    const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/experience' : '/api/experience';
+                                    const response = await fetch(apiUrl);
+                                    if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                                    data = await response.json();
                                 }
-                                const data = await response.json();
-
                                 if (data.error) {
                                     this.error = data.error;
-                                    console.error('API Error:', data.error);
                                     return;
                                 }
-
                                 // Transform companies data to match expected structure
                                 this.jobs = (data.companies || []).map(company => {
                                     const positions = (company.positions || []).map(pos => {

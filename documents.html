@@ -10,8 +10,9 @@
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
     <script src="assets/js/sidebar-loader.js"></script>
-    <!-- sql.js -->
+    <!-- sql.js + static-site helpers for GitHub Pages -->
     <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Marked.js for markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Font Awesome for icons -->
@@ -26,19 +27,26 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) { const data = await response.json(); this.siteSettings = data.settings || {}; }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);

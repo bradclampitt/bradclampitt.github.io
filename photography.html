@@ -6,6 +6,8 @@
     <title>Photography - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -33,19 +35,26 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) { const data = await response.json(); this.siteSettings = data.settings || {}; }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -55,24 +64,61 @@
     },
     async loadPhotos() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/photography'
-                : '/api/photography';
-
-            const response = await fetch(apiUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const catStmt = db.prepare('SELECT id, code, label, color, icon, display_order FROM photography_categories ORDER BY display_order, label');
+                const categories = [];
+                while (catStmt.step()) {
+                    const r = catStmt.getAsObject();
+                    categories.push({ id: r.id, code: r.code || '', label: r.label || '', color: r.color || '', icon: r.icon || '', display_order: r.display_order });
+                }
+                catStmt.free();
+                const photoStmt = db.prepare('SELECT p.id, p.photo_name, p.photo_description, p.location, p.year, p.image_url, p.tags, p.photo_details, p.technical_details, c.code AS category_code, c.label AS category_label FROM photography p LEFT JOIN photography_categories c ON c.id = p.category_id ORDER BY p.year DESC, p.created_at DESC, p.id DESC');
+                const photosByCategory = {};
+                while (photoStmt.step()) {
+                    const r = photoStmt.getAsObject();
+                    let photoDetails = {}; let technicalDetails = {};
+                    if (r.photo_details) { try { photoDetails = JSON.parse(r.photo_details); } catch (e) {} }
+                    if (r.technical_details) { try { technicalDetails = JSON.parse(r.technical_details); } catch (e) {} }
+                    const photo = {
+                        id: r.id,
+                        title: r.photo_name || '',
+                        description: r.photo_description || '',
+                        photo_name: r.photo_name || '',
+                        photo_description: r.photo_description || '',
+                        location: r.location || photoDetails.location || '',
+                        year: r.year || photoDetails.year || '',
+                        category: r.category_label || '',
+                        category_code: r.category_code || 'uncategorized',
+                        image: r.image_url || '',
+                        image_url: r.image_url || '',
+                        camera: technicalDetails.camera || '',
+                        lens: technicalDetails.lens || '',
+                        settings: technicalDetails.settings || '',
+                        tags: r.tags || ''
+                    };
+                    const code = photo.category_code || 'uncategorized';
+                    if (!photosByCategory[code]) photosByCategory[code] = [];
+                    photosByCategory[code].push(photo);
+                }
+                photoStmt.free();
+                const categoriesList = categories.map(function(cat) {
+                    return { code: cat.code, label: cat.label, color: cat.color, icon: cat.icon, count: (photosByCategory[cat.code] || []).length };
+                });
+                this.categories = categoriesList;
+                this.photos = photosByCategory;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/photography' : '/api/photography';
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                const data = await response.json();
+                this.categories = data.categories || [];
+                this.photos = data.photos || {};
             }
-            const data = await response.json();
-            this.categories = data.categories || [];
-            this.photos = data.photos || {};
-
-            // Set default category to first available
             if (this.categories.length > 0 && !this.photos[this.activeCategory]) {
                 this.activeCategory = this.categories[0].code || 'wine';
             }

@@ -6,6 +6,8 @@
     <title>Magento Modules - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -22,19 +24,26 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) { const data = await response.json(); this.siteSettings = data.settings || {}; }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -217,28 +226,58 @@
                 },
                 async loadModules() {
                     try {
-                        // Use admin server URL for API calls in development
+                        if (window.isStaticSite && window.isStaticSite()) {
+                            const db = await window.getIndexDb();
+                            const catStmt = db.prepare('SELECT id, code, label, color, icon, display_order FROM magento_module_categories ORDER BY display_order, label');
+                            const categories = [];
+                            while (catStmt.step()) categories.push(catStmt.getAsObject());
+                            catStmt.free();
+                            const modStmt = db.prepare('SELECT mm.*, c.code AS category_code, c.label AS category_label FROM magento_modules mm LEFT JOIN magento_module_categories c ON mm.category_id = c.id ORDER BY mm.revised_date DESC, mm.posted_date DESC, mm.id DESC');
+                            const modulesByCategory = {};
+                            while (modStmt.step()) {
+                                const m = modStmt.getAsObject();
+                                const techStmt = db.prepare('SELECT name, icon FROM magento_module_technologies WHERE module_id = ? ORDER BY display_order, name');
+                                techStmt.bind([m.id]);
+                                const technologies = []; while (techStmt.step()) technologies.push(techStmt.getAsObject()); techStmt.free();
+                                const featStmt = db.prepare('SELECT name, description, icon FROM magento_module_features WHERE module_id = ? ORDER BY display_order, name');
+                                featStmt.bind([m.id]);
+                                const features = []; while (featStmt.step()) features.push(featStmt.getAsObject()); featStmt.free();
+                                const tdStmt = db.prepare('SELECT title, description FROM magento_module_technical_details WHERE module_id = ? ORDER BY display_order, title');
+                                tdStmt.bind([m.id]);
+                                const technicalDetails = []; while (tdStmt.step()) technicalDetails.push(tdStmt.getAsObject()); tdStmt.free();
+                                const imgStmt = db.prepare('SELECT url, alt FROM magento_module_images WHERE module_id = ? ORDER BY display_order, id');
+                                imgStmt.bind([m.id]);
+                                const images = []; while (imgStmt.step()) images.push(imgStmt.getAsObject()); imgStmt.free();
+                                let stats = {}; if (m.stats) { try { stats = JSON.parse(m.stats); } catch (e) {} }
+                                const catCode = m.category_code || 'uncategorized';
+                                if (!modulesByCategory[catCode]) modulesByCategory[catCode] = [];
+                                modulesByCategory[catCode].push({
+                                    id: m.id, name: m.title || '', version: m.version || '', category: m.category_label || 'Uncategorized', category_code: catCode,
+                                    status: m.status || 'in development', lastUpdated: m.revised_date || m.posted_date || '', description: m.description || '', metrics: m.metrics || '',
+                                    technologies: technologies.map(t => ({ name: t.name || '', icon: t.icon || '' })),
+                                    features: features.map(f => ({ name: f.name || '', icon: f.icon || '', description: f.description || '' })),
+                                    technicalDetails: technicalDetails.map(td => ({ title: td.title || '', description: td.description || '' })),
+                                    images: images.map(i => ({ url: i.url || '', alt: i.alt || '' })), stats, gallery: images.map(i => ({ url: i.url || '', alt: i.alt || '' }))
+                                });
+                            }
+                            modStmt.free();
+                            this.categories = categories.map(c => ({ code: c.code || '', label: c.label || '', color: c.color || '', icon: c.icon || '', count: (modulesByCategory[c.code] || []).length }));
+                            this.modules = modulesByCategory;
+                            if (this.categories.length > 0 && !this.modules[this.activeTab]) this.activeTab = this.categories[0].code;
+                            this.loading = false;
+                            return;
+                        }
                         const host = window.location.hostname || '';
                         const isLocalHost = host === 'localhost' || host === '127.0.0.1';
                         const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
                         const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-                        const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                            ? 'http://127.0.0.1:8000/api/magento-modules'
-                            : '/api/magento-modules';
-
-                        console.log('Fetching magento modules from:', apiUrl);
+                        const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/magento-modules' : '/api/magento-modules';
                         const response = await fetch(apiUrl);
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
+                        if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
                         const data = await response.json();
                         this.categories = data.categories || [];
                         this.modules = data.modules || {};
-                        // Set default tab to first category if available
-                        if (this.categories.length > 0 && !this.modules[this.activeTab]) {
-                            this.activeTab = this.categories[0].code;
-                        }
+                        if (this.categories.length > 0 && !this.modules[this.activeTab]) this.activeTab = this.categories[0].code;
                     } catch (error) {
                         console.error('Error loading modules:', error);
                         this.modules = {};

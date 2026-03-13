@@ -6,6 +6,8 @@
     <title>Blog - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
+    <script src="assets/js/sql-wasm.js"></script>
+    <script src="assets/js/static-site.js"></script>
     <!-- Alpine.js -->
     <script src="assets/js/alpine.js" defer></script>
     <!-- Sidebar Loader - Loads shared sidebar navigation -->
@@ -26,19 +28,26 @@
     },
     async loadSiteSettings() {
         try {
-            const host = window.location.hostname || '';
-            const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-            const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-            const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-            const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                ? 'http://127.0.0.1:8000/api/cms/settings'
-                : '/api/cms/settings';
-
-            const response = await fetch(apiUrl);
-            if (response.ok) {
-                const data = await response.json();
-                this.siteSettings = data.settings || {};
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT setting_key, setting_value, setting_type FROM cms_site_settings ORDER BY setting_key');
+                const settings = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let val = row.setting_value;
+                    if (row.setting_type === 'json') { try { val = JSON.parse(val); } catch (e) {} }
+                    settings[row.setting_key] = val;
+                }
+                stmt.free();
+                this.siteSettings = settings;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/settings' : '/api/cms/settings';
+                const response = await fetch(apiUrl);
+                if (response.ok) { const data = await response.json(); this.siteSettings = data.settings || {}; }
             }
         } catch (error) {
             console.error('Error loading site settings:', error);
@@ -352,21 +361,49 @@
 
             async loadPosts() {
                 try {
-                    const host = window.location.hostname || '';
-                    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-                    const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-                    const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-
-                    const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork)
-                        ? 'http://127.0.0.1:8000/api/blog/posts'
-                        : '/api/blog/posts';
-
-                    const response = await fetch(apiUrl);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                    if (window.isStaticSite && window.isStaticSite()) {
+                        const db = await window.getIndexDb();
+                        const stmt = db.prepare(`SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.author, bp.date, bp.tags, bp.featured, bp.read_time, bp.cover_image, bp.created_at, bp.updated_at, bp.status,
+                            bc.label as category, bc.code as category_code, bc.id as category_id
+                            FROM blog_posts bp LEFT JOIN blog_categories bc ON bp.category_id = bc.id
+                            WHERE bp.status = 'Published' OR bp.status IS NULL ORDER BY bp.date DESC, bp.created_at DESC`);
+                        const posts = [];
+                        while (stmt.step()) {
+                            const row = stmt.getAsObject();
+                            let tags = [];
+                            if (row.tags) { try { tags = JSON.parse(row.tags); } catch (e) {} }
+                            posts.push({
+                                id: row.id,
+                                slug: row.slug,
+                                title: row.title,
+                                excerpt: row.excerpt || '',
+                                author: row.author || '',
+                                date: row.date,
+                                tags: tags,
+                                featured: row.featured || 0,
+                                read_time: row.read_time || '',
+                                cover_image: row.cover_image || '',
+                                created_at: row.created_at,
+                                updated_at: row.updated_at,
+                                status: row.status,
+                                category: row.category || '',
+                                category_code: row.category_code || '',
+                                category_id: row.category_id
+                            });
+                        }
+                        stmt.free();
+                        this.posts = posts;
+                    } else {
+                        const host = window.location.hostname || '';
+                        const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                        const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                        const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                        const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/blog/posts' : '/api/blog/posts';
+                        const response = await fetch(apiUrl);
+                        if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
+                        const data = await response.json();
+                        this.posts = data.posts || [];
                     }
-                    const data = await response.json();
-                    this.posts = data.posts || [];
                     const categoryValues = this.posts
                         .map(post => (post.category || '').toString().toLowerCase().trim())
                         .filter(Boolean);
