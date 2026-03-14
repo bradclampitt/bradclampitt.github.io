@@ -14,7 +14,7 @@ This repo is a **hybrid portfolio** built for **GitHub Pages**:
 - **Backend**: Optional **FastAPI** admin panel (run locally or on your own server) for creating and editing content. All content is stored in the same unified SQLite database.
 - **Database**: One **unified SQLite** file (`admin/database/unified.sqlite`) with namespaced tables for every section. The file is committed so GitHub Pages can serve it; it contains no secrets or private data.
 
-The live site is 100% static; the admin panel is for you (or anyone who clones the repo) to manage content.
+The live site is 100% static; the admin panel is for myself (the admin or anyone who clones the repo) to manage content.
 
 ---
 
@@ -56,16 +56,18 @@ bradclampitt.github.io/
 │   │   ├── unified.sqlite          # Unified DB (in repo for GitHub Pages)
 │   │   ├── schema.sql              # Full schema
 │   │   └── connection.py           # DB connection helper
+│   │
 │   ├── resources/
 │   │   ├── blog/                   # Blog templates, posts.json, etc.
 │   │   └── documents/              # Document templates
+│   │
 │   ├── templates/                  # Jinja2 admin templates
 │   ├── static/                     # Admin CSS/JS
 │   └── requirements.txt
 │
 ├── assets/
 │   ├── css/                        # Tailwind output (tailwind-built.css built locally)
-│   ├── js/                         # sql.js, sidebar-loader.js, etc.
+│   ├── js/                         # sql-wasm.js, static-site.js, sidebar-loader.js
 │   ├── includes/                   # Reusable HTML (e.g. sidebar.html)
 │   └── images/                     # Media by section (blog, portfolio, documents, …)
 │
@@ -199,7 +201,7 @@ Content is written to `admin/database/unified.sqlite`. The same file is used by 
 - `documents.html` – Document list; `documents/document.html?slug=...` – single document  
 - `experience.html`, `resume.html`, `references.html`, `magento.html`, `photography.html`, `side-projects.html`, `personal.html`, `contact.html`  
 
-Portfolio and documents (and any page that needs live data) fetch `admin/database/unified.sqlite` and query it with sql.js in the browser.
+On the **live site** (e.g. `bradclampitt.github.io`), pages use **static-site.js** to detect the host; they then load `admin/database/unified.sqlite` via **sql.js** (sql-wasm.js) and query it in the browser. When the admin server is running locally, the same pages can call `/api/*` instead. Blog, portfolio, documents, experience, magento, side-projects, photography, references, CMS settings, and contact all support this hybrid behavior.
 
 ### Media
 
@@ -289,6 +291,7 @@ This is a personal portfolio repo. You’re welcome to fork or use it as a templ
 - Cleanup: removed obsolete docs and duplicate blog/admin paths; consolidated documents under `documents/posts/`  
 - Added `docs/ROLLBACK_PLAN.md`, `assets/includes/` (sidebar), `sidebar-loader.js`  
 - `.gitignore` updated: only `admin/database/unified.sqlite` allowed for SQLite  
+- **Static-site fallbacks**: Added `assets/js/static-site.js` (host detection, `getIndexDb()`). Pages that need data (experience, blog, magento, side-projects, photography, portfolio, documents, references, contact, CMS settings) now load from the DB on GitHub Pages and use the API when the admin server is available.  
 
 ### December 2025
 - Unified SQLite database with namespaced tables  
@@ -301,11 +304,13 @@ This is a personal portfolio repo. You’re welcome to fork or use it as a templ
 
 ## Possible future improvements
 
-- [ ] Split admin routes into modules  
-- [ ] Optional API for programmatic access  
-- [ ] Search across sections  
-- [ ] Dark mode, improved mobile admin  
-- [ ] Caching strategy for heavy pages  
+Ways to do these within a GitHub Pages (static) profile and optional local/admin setup:
+
+- [ ] **Split admin routes into modules** – Admin-only. Refactor `admin/app.py` into FastAPI routers or Blueprints (e.g. `routers/blog.py`, `routers/portfolio.py`). No impact on the static site.
+- [ ] **Optional API for programmatic access** – (1) **Static**: Export key data to JSON at build/deploy time (e.g. `data/experience.json`, `data/blog-posts.json`) and commit them; the live site or external tools can fetch via raw GitHub or the deployed URL. (2) **When admin runs**: Document existing FastAPI `/api/*` endpoints for local or server use.
+- [ ] **Search across sections** – Client-side only (no server on GitHub Pages). Options: (1) Use sql.js + the existing `unified.sqlite` and run full-text or simple `LIKE` queries in the browser. (2) At build time, generate a static search index (e.g. Lunr.js or FlexSearch JSON), commit it, and run search in JS on the live site.
+- [ ] **Dark mode, improved mobile admin** – Dark mode: CSS (`prefers-color-scheme`) and/or a toggle with `localStorage`; works on static pages and admin. Mobile admin: improve responsive layout and touch targets in `admin/templates/`; admin is only used when the FastAPI app is running (local or your server).
+- [ ] **Caching strategy for heavy pages** – (1) Rely on browser caching for `unified.sqlite` and assets (GitHub Pages sends ETag/Last-Modified). (2) Optional: for the heaviest sections, export pre-built JSON (e.g. `data/experience.json`) at deploy time and have those pages fetch JSON instead of loading the full DB. (3) Optional: service worker to cache the DB and assets for repeat visits.
 
 ---
 

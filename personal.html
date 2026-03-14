@@ -597,7 +597,7 @@
                                     <span x-text="(selectedImageIndex + 1) + ' / ' + images.length"></span>
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 mb-2" x-text="currentImage?.alt || 'Image'"></h3>
-                                <p class="text-gray-700 leading-relaxed" x-text="currentImage?.description || ''"></p>
+                                <p class="text-gray-700 leading-relaxed" x-html="currentImage?.description || ''"></p>
                             </div>
                         </div>
                     </div>
