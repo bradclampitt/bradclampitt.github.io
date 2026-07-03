@@ -257,8 +257,10 @@
             </p>
         </div>
         {% endif %}
-        {% if project %}
-        <div class="bg-white rounded-lg shadow p-6" x-data="imageGallery({{ images | tojson | safe }}, {{ project.id }})">
+    </form>
+
+    {% if project %}
+    <div class="bg-white rounded-lg shadow p-6" x-data='imageGallery({{ images | tojson | safe }}, {{ project.id }})'>
             <h2 class="text-xl font-semibold text-slate-900 mb-4">Images <span class="text-sm font-normal text-slate-500">(Optional)</span></h2>
             
             <!-- Upload Form -->
@@ -309,8 +311,10 @@
                     <span class="text-sm text-slate-500" x-show="browserLoading">Loading images...</span>
                 </div>
             </div>
+
+            <div class="border-t border-slate-200 my-8"></div>
             
-            <!-- Image Browser Modal -->
+            <!-- Image Gallery -->
             <div x-show="showBrowserModal" 
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0"
@@ -398,7 +402,9 @@
             </div>
 
             <!-- Image Gallery -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" x-show="images.length > 0">
+            <div x-show="images.length > 0" class="space-y-3">
+                <p class="text-sm text-slate-600">Attached images appear below. Use the buttons on each image to set a cover image or remove it.</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <template x-for="(img, index) in images" :key="img.id">
                     <div class="relative group border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                         <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden cursor-pointer" @click="openModal(index)">
@@ -416,7 +422,7 @@
                                 </div>
                             </template>
                         </div>
-                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute top-2 right-2 flex gap-1 transition-opacity">
                             <button @click.stop="setCover(index)" 
                                     :class="img.is_cover ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-blue-50'"
                                     class="p-1.5 rounded shadow-sm" title="Set as cover">
@@ -432,6 +438,7 @@
                         </div>
                     </div>
                 </template>
+                </div>
             </div>
 
             <!-- Empty State -->
@@ -511,7 +518,6 @@
             </div>
         </div>
         {% endif %}
-    </form>
 </div>
 
 <script type="application/json" id="project-data">

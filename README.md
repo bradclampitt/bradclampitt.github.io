@@ -22,16 +22,16 @@ The live site is 100% static; the admin panel is for myself (the admin or anyone
 
 ### Content sections
 
-1. **Blog** – Posts with markdown, categories, featured posts  
-2. **Portfolio** – Projects with clients, tech tags, features, images  
-3. **Documents** – Knowledge base, guides, articles (e.g. `documents/posts/*.html`)  
-4. **References** – Testimonials and references  
-5. **Tech skills** – Skills by category  
-6. **Side projects** – Personal and open-source projects  
-7. **Magento modules** – Custom Magento 2 extensions  
-8. **Photography** – Galleries and images  
-9. **Experience** – Work history, education, background  
-10. **CMS** – Site-wide settings and blocks  
+1. **Blog** - Posts with markdown, categories, featured posts  
+2. **Portfolio** - Projects with clients, tech tags, features, images  
+3. **Documents** - Knowledge base, guides, articles (e.g. `documents/posts/*.html`)  
+4. **References** - Testimonials and references  
+5. **Tech skills** - Skills by category  
+6. **Side projects** - Personal and open-source projects  
+7. **Magento modules** - Custom Magento 2 extensions  
+8. **Photography** - Galleries and images  
+9. **Experience** - Work history, education, background  
+10. **CMS** - Site-wide settings and blocks  
 
 ### Technical highlights
 
@@ -132,7 +132,7 @@ One file to backup and deploy; clear separation by section.
    npm install
    npm run build
    ```
-2. **Commit and push** – GitHub Pages serves the repo; the site loads `unified.sqlite` in the browser via sql.js.
+2. **Commit and push** - GitHub Pages serves the repo; the site loads `unified.sqlite` in the browser via sql.js.
 
 ### Admin panel (local or your server)
 
@@ -195,10 +195,10 @@ Content is written to `admin/database/unified.sqlite`. The same file is used by 
 
 ### Frontend pages (static)
 
-- `index.html` – Home  
-- `blog.html` – Blog list; `blog/posts/*.html` – posts  
-- `portfolio.html` – Projects; `project.html?slug=...` – single project  
-- `documents.html` – Document list; `documents/document.html?slug=...` – single document  
+- `index.html` - Home  
+- `blog.html` - Blog list; `blog/posts/*.html` - posts  
+- `portfolio.html` - Projects; `project.html?slug=...` - single project  
+- `documents.html` - Document list; `documents/document.html?slug=...` - single document  
 - `experience.html`, `resume.html`, `references.html`, `magento.html`, `photography.html`, `side-projects.html`, `personal.html`, `contact.html`  
 
 On the **live site** (e.g. `bradclampitt.github.io`), pages use **static-site.js** to detect the host; they then load `admin/database/unified.sqlite` via **sql.js** (sql-wasm.js) and query it in the browser. When the admin server is running locally, the same pages can call `/api/*` instead. Blog, portfolio, documents, experience, magento, side-projects, photography, references, CMS settings, and contact all support this hybrid behavior.
@@ -215,7 +215,7 @@ Media lives under `assets/images/` by section (e.g. `blog/`, `portfolio/`, `docu
 
 - All HTML, CSS, JS, and assets  
 - `admin/` code and templates (no venv, no `__pycache__`)  
-- `admin/database/unified.sqlite` – committed so GitHub Pages can serve it (sql.js loads it client-side)  
+- `admin/database/unified.sqlite` - committed so GitHub Pages can serve it (sql.js loads it client-side)  
 - `admin/database/schema.sql`  
 - `docs/` (e.g. SETUP_GUIDE.md, ROLLBACK_PLAN.md)  
 - `.gitignore` excludes: `venv/`, `node_modules/`, `*.log`, `_archived/`, `blog/archive/`, `assets/css/tailwind-built.css`, etc. Other `.sqlite` files are ignored; only `admin/database/unified.sqlite` is allowed.
@@ -247,7 +247,7 @@ The database in the repo is the same one the live site uses; it contains no secr
 1. Run the admin panel locally (or on your server).  
 2. Create and edit content in the admin; it’s saved to `admin/database/unified.sqlite`.  
 3. Commit changes (including `unified.sqlite` if you want the live site to reflect them).  
-4. Push to GitHub – Pages serves the updated static site and DB.
+4. Push to GitHub - Pages serves the updated static site and DB.
 
 ---
 
@@ -262,10 +262,10 @@ The database in the repo is the same one the live site uses; it contains no secr
 
 ## Documentation
 
-- **[SETUP_GUIDE.md](./docs/SETUP_GUIDE.md)** – Full server/setup (e.g. Proxmox, Nginx, Tailwind, admin)  
-- **[ROLLBACK_PLAN.md](./docs/ROLLBACK_PLAN.md)** – How to roll back a deploy (tags, force-push)  
-- **[admin/README.md](./admin/README.md)** – Admin panel usage and scripts  
-- **docs/references/** – Reference-style docs  
+- **[SETUP_GUIDE.md](./docs/SETUP_GUIDE.md)** - Full server/setup (e.g. Proxmox, Nginx, Tailwind, admin)  
+- **[ROLLBACK_PLAN.md](./docs/ROLLBACK_PLAN.md)** - How to roll back a deploy (tags, force-push)  
+- **[admin/README.md](./admin/README.md)** - Admin panel usage and scripts  
+- **docs/references/** - Reference-style docs  
 
 ---
 
@@ -306,11 +306,11 @@ This is a personal portfolio repo. You’re welcome to fork or use it as a templ
 
 Ways to do these within a GitHub Pages (static) profile and optional local/admin setup:
 
-- [ ] **Split admin routes into modules** – Admin-only. Refactor `admin/app.py` into FastAPI routers or Blueprints (e.g. `routers/blog.py`, `routers/portfolio.py`). No impact on the static site.
-- [ ] **Optional API for programmatic access** – (1) **Static**: Export key data to JSON at build/deploy time (e.g. `data/experience.json`, `data/blog-posts.json`) and commit them; the live site or external tools can fetch via raw GitHub or the deployed URL. (2) **When admin runs**: Document existing FastAPI `/api/*` endpoints for local or server use.
-- [ ] **Search across sections** – Client-side only (no server on GitHub Pages). Options: (1) Use sql.js + the existing `unified.sqlite` and run full-text or simple `LIKE` queries in the browser. (2) At build time, generate a static search index (e.g. Lunr.js or FlexSearch JSON), commit it, and run search in JS on the live site.
-- [ ] **Dark mode, improved mobile admin** – Dark mode: CSS (`prefers-color-scheme`) and/or a toggle with `localStorage`; works on static pages and admin. Mobile admin: improve responsive layout and touch targets in `admin/templates/`; admin is only used when the FastAPI app is running (local or your server).
-- [ ] **Caching strategy for heavy pages** – (1) Rely on browser caching for `unified.sqlite` and assets (GitHub Pages sends ETag/Last-Modified). (2) Optional: for the heaviest sections, export pre-built JSON (e.g. `data/experience.json`) at deploy time and have those pages fetch JSON instead of loading the full DB. (3) Optional: service worker to cache the DB and assets for repeat visits.
+- [ ] **Split admin routes into modules** - Admin-only. Refactor `admin/app.py` into FastAPI routers or Blueprints (e.g. `routers/blog.py`, `routers/portfolio.py`). No impact on the static site.
+- [ ] **Optional API for programmatic access** - (1) **Static**: Export key data to JSON at build/deploy time (e.g. `data/experience.json`, `data/blog-posts.json`) and commit them; the live site or external tools can fetch via raw GitHub or the deployed URL. (2) **When admin runs**: Document existing FastAPI `/api/*` endpoints for local or server use.
+- [ ] **Search across sections** - Client-side only (no server on GitHub Pages). Options: (1) Use sql.js + the existing `unified.sqlite` and run full-text or simple `LIKE` queries in the browser. (2) At build time, generate a static search index (e.g. Lunr.js or FlexSearch JSON), commit it, and run search in JS on the live site.
+- [ ] **Dark mode, improved mobile admin** - Dark mode: CSS (`prefers-color-scheme`) and/or a toggle with `localStorage`; works on static pages and admin. Mobile admin: improve responsive layout and touch targets in `admin/templates/`; admin is only used when the FastAPI app is running (local or your server).
+- [ ] **Caching strategy for heavy pages** - (1) Rely on browser caching for `unified.sqlite` and assets (GitHub Pages sends ETag/Last-Modified). (2) Optional: for the heaviest sections, export pre-built JSON (e.g. `data/experience.json`) at deploy time and have those pages fetch JSON instead of loading the full DB. (3) Optional: service worker to cache the DB and assets for repeat visits.
 
 ---
 
