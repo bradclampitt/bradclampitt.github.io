@@ -2,7 +2,7 @@
 
 **A modern, full-stack portfolio site for GitHub Pages: static frontend with sql.js, FastAPI admin for content, and a single SQLite database.**
 
-Last Updated: March 2026
+Last Updated: July 2026
 
 ---
 
