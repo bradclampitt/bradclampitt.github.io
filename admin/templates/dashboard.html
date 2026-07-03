@@ -4,188 +4,115 @@
 {% block header_title %}Dashboard Overview{% endblock %}
 
 {% block content %}
-<div class="space-y-10">
-    <section class="card-grid">
-        <a href="{{ url_for('clients_list') }}" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Clients</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ clients_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Active relationships across all projects.</p>
-        </a>
-        <a href="{{ url_for('projects_list') }}" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Portfolios</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ projects_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Tracked portfolio entries in the system.</p>
-        </a>
-        <a href="/admin/documents" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Documents</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ documents_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Knowledge base and document entries.</p>
-        </a>
-        <a href="/admin/documents/categories" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Categories</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ doc_categories_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Document categories.</p>
-        </a>
-        <a href="/admin/tech-skills" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Tech Skills</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ tech_skills_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Technical skills and technologies.</p>
-        </a>
-        <a href="/admin/experience" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Job Experiences</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ job_experiences_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Work experience entries.</p>
-        </a>
-        <a href="/admin/experience/companies" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Companies</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ companies_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Companies in experience history.</p>
-        </a>
-        <a href="/admin/tech-skills/skills-sets" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Skills Sets</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ skills_sets_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Technical skill sets.</p>
-        </a>
-        <a href="/admin/tech-skills/tools" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Tools</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ tools_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Development tools and software.</p>
-        </a>
-        <a href="/admin/tech-skills/soft-skills" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Soft Skills</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ soft_skills_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Personal attributes and soft skills.</p>
-        </a>
-        <a href="/admin/experience/education" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Education</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ education_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Education and certifications.</p>
-        </a>
-        <a href="/admin/blog" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Blog Posts</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ blog_posts_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">{{ blog_featured_count }} featured · {{ blog_categories_count }} categories</p>
-        </a>
-        <a href="/admin/side-projects" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Side Projects</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ side_projects_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">{{ side_project_categories_count }} categories</p>
-        </a>
-        <a href="/admin/magento" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Magento Modules</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ magento_modules_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">{{ magento_categories_count }} categories</p>
-        </a>
-        <a href="/admin/photography" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Photography</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ photography_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">{{ photography_categories_count }} categories</p>
-        </a>
-        <a href="/admin/references" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">References</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ references_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Professional references and testimonials.</p>
-        </a>
-        <a href="/admin/cms/blocks" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">CMS Blocks</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ cms_blocks_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">{{ cms_blocks_active_count }} active</p>
-        </a>
-        <a href="/admin/cms/settings" class="glass-panel p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <p class="text-sm uppercase tracking-widest text-slate-500">CMS Settings</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ cms_settings_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Site configuration settings.</p>
-        </a>
-        <article class="glass-panel p-6">
-            <p class="text-sm uppercase tracking-widest text-slate-500">Contact Info</p>
-            <div class="mt-3 flex items-end gap-2">
-                <span class="text-4xl font-semibold text-slate-900">{{ cms_contact_count }}</span>
-                <span class="text-sm text-slate-500">Total</span>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">Contact information fields.</p>
-        </article>
-        <article class="glass-panel p-6 col-span-full lg:col-span-2">
-            <p class="text-sm uppercase tracking-widest text-slate-500 mb-4">Status Snapshot</p>
-            <div class="flex flex-wrap gap-3">
-                {% if status_counts %}
-                    {% for status, total in status_counts.items() %}
-                        <span class="status-pill bg-blue-50 text-blue-700">{{ status }} · {{ total }}</span>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-sm text-slate-500">Add statuses on a project to see distribution here.</p>
-                {% endif %}
-            </div>
-        </article>
-    </section>
+<div class="space-y-8" x-data="{
+    activityTab: 'projects',
+    modulesOpen: {
+        portfolio: true,
+        content: true,
+        experience: false,
+        cms: true
+    },
+    toggleModule(section) {
+        this.modulesOpen[section] = !this.modulesOpen[section];
+    }
+}">
 
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    {# ── Summary + quick actions ── #}
+    <section class="glass-panel p-6 space-y-5">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest Project Activity</h3>
-                <p class="text-sm text-slate-500">Recently edited or launched projects.</p>
+                <h2 class="text-xl font-semibold text-slate-900">Portfolio admin</h2>
+                <p class="text-sm text-slate-500">Manage site content, CMS blocks, and publish updates to GitHub Pages.</p>
             </div>
-            <a href="{{ url_for('projects_list') }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all projects
+            <a href="https://bradclampitt.github.io/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                View live site
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5M21 3l-9 9m0 0h5.25M12 12V3" />
                 </svg>
             </a>
         </div>
-        <div class="mt-6 overflow-x-auto">
+
+        <div class="dashboard-summary-grid">
+            <a href="{{ url_for('projects_list') }}" class="dashboard-stat">
+                <p class="text-xs uppercase tracking-widest text-slate-500">Portfolio</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-900">{{ projects_count }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ clients_count }} clients</p>
+            </a>
+            <a href="/admin/blog" class="dashboard-stat">
+                <p class="text-xs uppercase tracking-widest text-slate-500">Blog</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-900">{{ blog_posts_count }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ blog_featured_count }} featured</p>
+            </a>
+            <a href="/admin/tech-skills" class="dashboard-stat">
+                <p class="text-xs uppercase tracking-widest text-slate-500">Tech skills</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-900">{{ tech_skills_count }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ tech_skill_categories_count }} categories</p>
+            </a>
+            <a href="/admin/references" class="dashboard-stat">
+                <p class="text-xs uppercase tracking-widest text-slate-500">References</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-900">{{ references_count }}</p>
+                <p class="mt-1 text-xs text-slate-500">Testimonials</p>
+            </a>
+            <a href="/admin/cms/blocks" class="dashboard-stat">
+                <p class="text-xs uppercase tracking-widest text-slate-500">CMS blocks</p>
+                <p class="mt-1 text-2xl font-semibold text-slate-900">{{ cms_blocks_active_count }}</p>
+                <p class="mt-1 text-xs text-slate-500">of {{ cms_blocks_count }} active</p>
+            </a>
+        </div>
+
+        <div>
+            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">Quick actions</p>
+            <div class="dashboard-quick-actions">
+                {% if cms_block_edit_ids.get('about-me') %}
+                <a href="/admin/cms/blocks/{{ cms_block_edit_ids['about-me'] }}" class="dashboard-quick-action">
+                    <i class="fas fa-user-edit text-blue-500"></i>
+                    Edit About Me
+                </a>
+                {% endif %}
+                {% if cms_block_edit_ids.get('availability') %}
+                <a href="/admin/cms/blocks/{{ cms_block_edit_ids['availability'] }}" class="dashboard-quick-action">
+                    <i class="fas fa-briefcase text-blue-500"></i>
+                    Edit Availability
+                </a>
+                {% endif %}
+                <a href="/admin/cms/contact" class="dashboard-quick-action">
+                    <i class="fas fa-address-book text-blue-500"></i>
+                    Contact info
+                </a>
+                <a href="/admin/cms/settings" class="dashboard-quick-action">
+                    <i class="fas fa-sliders-h text-blue-500"></i>
+                    Site settings
+                </a>
+                <a href="/admin/blog/new" class="dashboard-quick-action">
+                    <i class="fas fa-pen text-blue-500"></i>
+                    New blog post
+                </a>
+                <a href="{{ url_for('projects_list') }}" class="dashboard-quick-action">
+                    <i class="fas fa-folder-open text-blue-500"></i>
+                    Portfolio projects
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {# ── Recent activity (tabbed) ── #}
+    <section class="glass-panel p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Recent activity</h3>
+                <p class="text-sm text-slate-500">Latest edits across your main content areas.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="dashboard-tab" :class="{ 'is-active': activityTab === 'projects' }" @click="activityTab = 'projects'">Projects</button>
+                <button type="button" class="dashboard-tab" :class="{ 'is-active': activityTab === 'documents' }" @click="activityTab = 'documents'">Documents</button>
+                <button type="button" class="dashboard-tab" :class="{ 'is-active': activityTab === 'blog' }" @click="activityTab = 'blog'">Blog</button>
+                <button type="button" class="dashboard-tab" :class="{ 'is-active': activityTab === 'side_projects' }" @click="activityTab = 'side_projects'">Side projects</button>
+                <button type="button" class="dashboard-tab" :class="{ 'is-active': activityTab === 'magento' }" @click="activityTab = 'magento'">Magento</button>
+                <button type="button" class="dashboard-tab" :class="{ 'is-active': activityTab === 'references' }" @click="activityTab = 'references'">References</button>
+            </div>
+        </div>
+
+        <div class="mt-6 overflow-x-auto" x-show="activityTab === 'projects'" x-cloak>
             <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
                 <thead>
                     <tr>
@@ -210,80 +137,24 @@
                             {% if project.status %}
                                 <span class="status-pill bg-emerald-50 text-emerald-700">{{ project.status }}</span>
                             {% else %}
-                                <span class="text-xs uppercase tracking-wide text-slate-400">No Status</span>
+                                <span class="text-xs uppercase tracking-wide text-slate-400">No status</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="py-6 text-center text-slate-500">No projects yet. Start by creating your first portfolio entry.</td>
+                        <td colspan="5" class="py-6 text-center text-slate-500">No projects yet. Create your first portfolio entry.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <div class="mt-4 text-right">
+                <a href="{{ url_for('projects_list') }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all projects →</a>
+            </div>
         </div>
-    </section>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-        <section class="glass-panel p-6">
-            <h3 class="text-lg font-semibold text-slate-900">Tabs Breakdown</h3>
-            <p class="text-sm text-slate-500 mb-4">How many projects live under each tab.</p>
-            <div class="space-y-4">
-                {% for tab in tab_breakdown %}
-                <div>
-                    <div class="flex items-center justify-between text-sm font-semibold text-slate-600">
-                        <span>{{ tab["label"] }}</span>
-                        <span>{{ tab["total"] }}</span>
-                    </div>
-                    <div class="mt-2 h-2 rounded-full bg-slate-100">
-                        {% set pct = 0 %}
-                        {% if projects_count %}
-                            {% set pct = (tab["total"] / projects_count) * 100 %}
-                        {% endif %}
-                        {% set width_pct = '%.1f'|format(pct) %}
-                        <div class="h-full rounded-full bg-blue-500" style="--width: {{ width_pct }}%; width: var(--width)"></div>
-                    </div>
-                </div>
-                {% else %}
-                <p class="text-sm text-slate-500">Tabs will appear here as soon as you tag your projects.</p>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section class="glass-panel p-6">
-            <h3 class="text-lg font-semibold text-slate-900">Top Clients</h3>
-            <p class="text-sm text-slate-500 mb-4">Clients with the most projects.</p>
-            <div class="space-y-4">
-                {% for client in client_activity %}
-                <div class="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
-                    <div>
-                        <p class="font-semibold text-slate-900">{{ client["name"] }}</p>
-                        <p class="text-xs uppercase tracking-wide text-slate-400">Projects</p>
-                    </div>
-                    <span class="text-2xl font-semibold text-blue-600">{{ client["projects_total"] }}</span>
-                </div>
-                {% else %}
-                <p class="text-sm text-slate-500">Clients will populate here as soon as you add them.</p>
-                {% endfor %}
-            </div>
-        </section>
-    </div>
-
-    {% if latest_documents %}
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest Documents</h3>
-                <p class="text-sm text-slate-500">Recently edited or created documents.</p>
-            </div>
-            <a href="/admin/documents" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all documents
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-                </svg>
-            </a>
-        </div>
-        <div class="mt-6 overflow-x-auto">
+        <div class="mt-6 overflow-x-auto" x-show="activityTab === 'documents'" x-cloak>
+            {% if latest_documents %}
             <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
                 <thead>
                     <tr>
@@ -305,25 +176,16 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    </section>
-    {% endif %}
-
-    {% if latest_blog_posts %}
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest Blog Posts</h3>
-                <p class="text-sm text-slate-500">Recently published or updated blog posts.</p>
+            {% else %}
+            <p class="py-6 text-center text-sm text-slate-500">No documents yet.</p>
+            {% endif %}
+            <div class="mt-4 text-right">
+                <a href="/admin/documents" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all documents →</a>
             </div>
-            <a href="/admin/blog" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all posts
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-                </svg>
-            </a>
         </div>
-        <div class="mt-6 overflow-x-auto">
+
+        <div class="mt-6 overflow-x-auto" x-show="activityTab === 'blog'" x-cloak>
+            {% if latest_blog_posts %}
             <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
                 <thead>
                     <tr>
@@ -349,25 +211,16 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    </section>
-    {% endif %}
-
-    {% if latest_side_projects %}
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest Side Projects</h3>
-                <p class="text-sm text-slate-500">Recently added or updated side projects.</p>
+            {% else %}
+            <p class="py-6 text-center text-sm text-slate-500">No blog posts yet.</p>
+            {% endif %}
+            <div class="mt-4 text-right">
+                <a href="/admin/blog" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all posts →</a>
             </div>
-            <a href="/admin/side-projects" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all projects
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-                </svg>
-            </a>
         </div>
-        <div class="mt-6 overflow-x-auto">
+
+        <div class="mt-6 overflow-x-auto" x-show="activityTab === 'side_projects'" x-cloak>
+            {% if latest_side_projects %}
             <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
                 <thead>
                     <tr>
@@ -393,25 +246,16 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    </section>
-    {% endif %}
-
-    {% if latest_magento_modules %}
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest Magento Modules</h3>
-                <p class="text-sm text-slate-500">Recently added or updated Magento modules.</p>
+            {% else %}
+            <p class="py-6 text-center text-sm text-slate-500">No side projects yet.</p>
+            {% endif %}
+            <div class="mt-4 text-right">
+                <a href="/admin/side-projects" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all side projects →</a>
             </div>
-            <a href="/admin/magento" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all modules
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-                </svg>
-            </a>
         </div>
-        <div class="mt-6 overflow-x-auto">
+
+        <div class="mt-6 overflow-x-auto" x-show="activityTab === 'magento'" x-cloak>
+            {% if latest_magento_modules %}
             <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
                 <thead>
                     <tr>
@@ -437,66 +281,16 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    </section>
-    {% endif %}
-
-    {% if latest_photography %}
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest Photography</h3>
-                <p class="text-sm text-slate-500">Recently added or updated photography entries.</p>
+            {% else %}
+            <p class="py-6 text-center text-sm text-slate-500">No Magento modules yet.</p>
+            {% endif %}
+            <div class="mt-4 text-right">
+                <a href="/admin/magento" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all modules →</a>
             </div>
-            <a href="/admin/photography" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all photos
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-                </svg>
-            </a>
         </div>
-        <div class="mt-6 overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
-                <thead>
-                    <tr>
-                        <th class="py-3 text-left">Photo</th>
-                        <th class="py-3 text-left">Category</th>
-                        <th class="py-3 text-left">Location</th>
-                        <th class="py-3 text-left">Year</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    {% for photo in latest_photography %}
-                    <tr class="text-slate-700">
-                        <td class="py-3">
-                            <p class="font-semibold text-slate-900">{{ photo.photo_name }}</p>
-                        </td>
-                        <td class="py-3 text-slate-600">{{ photo.category or '-' }}</td>
-                        <td class="py-3">{{ photo.location or '-' }}</td>
-                        <td class="py-3">{{ photo.year or '-' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
-    {% endif %}
 
-    {% if latest_references %}
-    <section class="glass-panel p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h3 class="text-lg font-semibold text-slate-900">Latest References</h3>
-                <p class="text-sm text-slate-500">Recently added or updated references.</p>
-            </div>
-            <a href="/admin/references" class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-                View all references
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-                </svg>
-            </a>
-        </div>
-        <div class="mt-6 overflow-x-auto">
+        <div class="mt-6 overflow-x-auto" x-show="activityTab === 'references'" x-cloak>
+            {% if latest_references %}
             <table class="min-w-full divide-y divide-slate-200 text-sm data-table">
                 <thead>
                     <tr>
@@ -519,8 +313,204 @@
                     {% endfor %}
                 </tbody>
             </table>
+            {% else %}
+            <p class="py-6 text-center text-sm text-slate-500">No references yet.</p>
+            {% endif %}
+            <div class="mt-4 text-right">
+                <a href="/admin/references" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all references →</a>
+            </div>
         </div>
     </section>
-    {% endif %}
+
+    {# ── Analytics sidebar + grouped modules ── #}
+    <div class="grid gap-6 xl:grid-cols-3">
+        <div class="space-y-6 xl:col-span-1">
+            <section class="glass-panel p-6">
+                <h3 class="text-lg font-semibold text-slate-900">Project status</h3>
+                <p class="text-sm text-slate-500 mb-4">Status labels on recent portfolio work.</p>
+                <div class="flex flex-wrap gap-2">
+                    {% if status_counts %}
+                        {% for status, total in status_counts.items() %}
+                            <span class="status-pill bg-blue-50 text-blue-700">{{ status }} · {{ total }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-sm text-slate-500">Add statuses on projects to see distribution here.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="glass-panel p-6">
+                <h3 class="text-lg font-semibold text-slate-900">Tabs breakdown</h3>
+                <p class="text-sm text-slate-500 mb-4">Projects per portfolio tab.</p>
+                <div class="space-y-4">
+                    {% for tab in tab_breakdown %}
+                    <div>
+                        <div class="flex items-center justify-between text-sm font-semibold text-slate-600">
+                            <span>{{ tab["label"] }}</span>
+                            <span>{{ tab["total"] }}</span>
+                        </div>
+                        <div class="mt-2 h-2 rounded-full bg-slate-100">
+                            {% set pct = 0 %}
+                            {% if projects_count %}
+                                {% set pct = (tab["total"] / projects_count) * 100 %}
+                            {% endif %}
+                            {% set width_pct = '%.1f'|format(pct) %}
+                            <div class="h-full rounded-full bg-blue-500" style="width: {{ width_pct }}%"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-slate-500">Tabs appear here once projects are tagged.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="glass-panel p-6">
+                <h3 class="text-lg font-semibold text-slate-900">Top clients</h3>
+                <p class="text-sm text-slate-500 mb-4">Clients with the most projects.</p>
+                <div class="space-y-3">
+                    {% for client in client_activity %}
+                    <div class="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-3">
+                        <div>
+                            <p class="font-semibold text-slate-900">{{ client["name"] }}</p>
+                            <p class="text-xs uppercase tracking-wide text-slate-400">Projects</p>
+                        </div>
+                        <span class="text-xl font-semibold text-blue-600">{{ client["projects_total"] }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-slate-500">Clients populate here once added.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <div class="space-y-4 xl:col-span-2">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">All modules</h3>
+                    <p class="text-sm text-slate-500">Browse every admin area with record counts.</p>
+                </div>
+            </div>
+
+            <div class="dashboard-module-section">
+                <button type="button" class="dashboard-module-toggle" @click="toggleModule('portfolio')">
+                    <span><i class="fas fa-briefcase mr-2 text-blue-500"></i>Portfolio</span>
+                    <svg class="h-4 w-4 text-slate-400 transition-transform" :class="{ 'rotate-180': modulesOpen.portfolio }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="modulesOpen.portfolio" x-transition>
+                    <a href="{{ url_for('clients_list') }}" class="dashboard-module-link">
+                        <span>Clients</span>
+                        <span class="count">{{ clients_count }}</span>
+                    </a>
+                    <a href="{{ url_for('projects_list') }}" class="dashboard-module-link">
+                        <span>Portfolio projects</span>
+                        <span class="count">{{ projects_count }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-module-section">
+                <button type="button" class="dashboard-module-toggle" @click="toggleModule('content')">
+                    <span><i class="fas fa-file-alt mr-2 text-blue-500"></i>Content</span>
+                    <svg class="h-4 w-4 text-slate-400 transition-transform" :class="{ 'rotate-180': modulesOpen.content }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="modulesOpen.content" x-transition>
+                    <a href="/admin/documents" class="dashboard-module-link">
+                        <span>Documents</span>
+                        <span class="count">{{ documents_count }}</span>
+                    </a>
+                    <a href="/admin/documents/categories" class="dashboard-module-link">
+                        <span>Document categories</span>
+                        <span class="count">{{ doc_categories_count }}</span>
+                    </a>
+                    <a href="/admin/blog" class="dashboard-module-link">
+                        <span>Blog posts</span>
+                        <span class="count">{{ blog_posts_count }}</span>
+                    </a>
+                    <a href="/admin/side-projects" class="dashboard-module-link">
+                        <span>Side projects</span>
+                        <span class="count">{{ side_projects_count }}</span>
+                    </a>
+                    <a href="/admin/magento" class="dashboard-module-link">
+                        <span>Magento modules</span>
+                        <span class="count">{{ magento_modules_count }}</span>
+                    </a>
+                    <a href="/admin/photography" class="dashboard-module-link">
+                        <span>Photography</span>
+                        <span class="count">{{ photography_count }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-module-section">
+                <button type="button" class="dashboard-module-toggle" @click="toggleModule('experience')">
+                    <span><i class="fas fa-user-tie mr-2 text-blue-500"></i>Experience &amp; skills</span>
+                    <svg class="h-4 w-4 text-slate-400 transition-transform" :class="{ 'rotate-180': modulesOpen.experience }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="modulesOpen.experience" x-transition>
+                    <a href="/admin/experience" class="dashboard-module-link">
+                        <span>Job experiences</span>
+                        <span class="count">{{ job_experiences_count }}</span>
+                    </a>
+                    <a href="/admin/experience/companies" class="dashboard-module-link">
+                        <span>Companies</span>
+                        <span class="count">{{ companies_count }}</span>
+                    </a>
+                    <a href="/admin/experience/education" class="dashboard-module-link">
+                        <span>Education</span>
+                        <span class="count">{{ education_count }}</span>
+                    </a>
+                    <a href="/admin/tech-skills" class="dashboard-module-link">
+                        <span>Tech skills</span>
+                        <span class="count">{{ tech_skills_count }}</span>
+                    </a>
+                    <a href="/admin/tech-skills/skills-sets" class="dashboard-module-link">
+                        <span>Skills sets</span>
+                        <span class="count">{{ skills_sets_count }}</span>
+                    </a>
+                    <a href="/admin/tech-skills/tools" class="dashboard-module-link">
+                        <span>Tools</span>
+                        <span class="count">{{ tools_count }}</span>
+                    </a>
+                    <a href="/admin/tech-skills/soft-skills" class="dashboard-module-link">
+                        <span>Soft skills</span>
+                        <span class="count">{{ soft_skills_count }}</span>
+                    </a>
+                    <a href="/admin/references" class="dashboard-module-link">
+                        <span>References</span>
+                        <span class="count">{{ references_count }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-module-section">
+                <button type="button" class="dashboard-module-toggle" @click="toggleModule('cms')">
+                    <span><i class="fas fa-cog mr-2 text-blue-500"></i>CMS &amp; site</span>
+                    <svg class="h-4 w-4 text-slate-400 transition-transform" :class="{ 'rotate-180': modulesOpen.cms }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="modulesOpen.cms" x-transition>
+                    <a href="/admin/cms/blocks" class="dashboard-module-link">
+                        <span>CMS blocks</span>
+                        <span class="count">{{ cms_blocks_count }}</span>
+                    </a>
+                    <a href="/admin/cms/settings" class="dashboard-module-link">
+                        <span>Site settings</span>
+                        <span class="count">{{ cms_settings_count }}</span>
+                    </a>
+                    <a href="/admin/cms/contact" class="dashboard-module-link">
+                        <span>Contact info</span>
+                        <span class="count">{{ cms_contact_count }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

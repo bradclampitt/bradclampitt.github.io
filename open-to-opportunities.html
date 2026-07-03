@@ -4,20 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- SEO / Social sharing -->
-    <meta name="description" content="Professional references and testimonials from colleagues and clients." />
+    <meta name="description" content="Bradley R. Clampitt is open to full-time opportunities. View target roles, work arrangement preferences, timeline, and what he is looking for in his next role." />
     <meta name="author" content="Bradley R. Clampitt" />
-    <link rel="canonical" href="https://bradclampitt.github.io/references.html" />
+    <link rel="canonical" href="https://bradclampitt.github.io/open-to-opportunities.html" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Bradley R. Clampitt" />
-    <meta property="og:title" content="References - Bradley R. Clampitt" />
-    <meta property="og:description" content="Professional references and testimonials from colleagues and clients." />
-    <meta property="og:url" content="https://bradclampitt.github.io/references.html" />
+    <meta property="og:title" content="Open to Opportunities - Bradley R. Clampitt" />
+    <meta property="og:description" content="Bradley R. Clampitt is open to full-time opportunities. View target roles, work arrangement preferences, timeline, and what he is looking for in his next role." />
+    <meta property="og:url" content="https://bradclampitt.github.io/open-to-opportunities.html" />
     <meta property="og:image" content="https://bradclampitt.github.io/assets/images/profile/bradley-clampitt-headshot.jpg" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="References - Bradley R. Clampitt" />
-    <meta name="twitter:description" content="Professional references and testimonials from colleagues and clients." />
+    <meta name="twitter:title" content="Open to Opportunities - Bradley R. Clampitt" />
+    <meta name="twitter:description" content="Bradley R. Clampitt is open to full-time opportunities. View target roles, work arrangement preferences, timeline, and what he is looking for in his next role." />
     <meta name="twitter:image" content="https://bradclampitt.github.io/assets/images/profile/bradley-clampitt-headshot.jpg" />
-    <title>References - Bradley R. Clampitt</title>
+    <title>Open to Opportunities - Bradley R. Clampitt</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
     <script src="assets/js/sql-wasm.js"></script>
@@ -33,9 +33,20 @@
 <body class="flex h-screen bg-gray-100" x-data="{
     sidebarOpen: false,
     siteSettings: {},
+    cmsBlocks: {},
     loadingSettings: true,
+    loadingBlocks: true,
+    sections: [
+        { blockId: 'opportunities-target-roles', icon: 'fas fa-user-tie', title: 'Target Roles & Seniority' },
+        { blockId: 'opportunities-industries', icon: 'fas fa-building', title: 'Industries & Company Size' },
+        { blockId: 'opportunities-work-arrangement', icon: 'fas fa-laptop', title: 'Work Arrangement' },
+        { blockId: 'opportunities-compensation', icon: 'fas fa-dollar-sign', title: 'Compensation' },
+        { blockId: 'opportunities-timeline', icon: 'fas fa-calendar-alt', title: 'Timeline & Availability' },
+        { blockId: 'opportunities-not-interested', icon: 'fas fa-ban', title: 'Not Interested In' }
+    ],
     async init() {
         await this.loadSiteSettings();
+        await this.loadCMSBlocks();
     },
     async loadSiteSettings() {
         try {
@@ -64,6 +75,38 @@
             console.error('Error loading site settings:', error);
         } finally {
             this.loadingSettings = false;
+        }
+    },
+    async loadCMSBlocks() {
+        try {
+            if (window.isStaticSite && window.isStaticSite()) {
+                const db = await window.getIndexDb();
+                const stmt = db.prepare('SELECT block_id, title, content, content_format, description, image, image_position, image_description, gallery_images FROM cms_blocks WHERE is_active = 1 ORDER BY sort_order, title');
+                const blocks = {};
+                while (stmt.step()) {
+                    const row = stmt.getAsObject();
+                    let gallery = [];
+                    if (row.gallery_images) { try { gallery = JSON.parse(row.gallery_images); if (!Array.isArray(gallery)) gallery = []; } catch (e) {} }
+                    blocks[row.block_id] = { block_id: row.block_id, title: row.title, content: row.content, content_format: row.content_format || 'html', description: row.description || '', image: row.image || '', image_position: row.image_position || 'right', image_description: row.image_description || '', gallery_images: gallery };
+                }
+                stmt.free();
+                this.cmsBlocks = blocks;
+            } else {
+                const host = window.location.hostname || '';
+                const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+                const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
+                const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+                const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/cms/blocks' : '/api/cms/blocks';
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.cmsBlocks = data.blocks || {};
+                }
+            }
+        } catch (error) {
+            console.error('Error loading CMS blocks:', error);
+        } finally {
+            this.loadingBlocks = false;
         }
     }
 }">
@@ -214,98 +257,64 @@
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto">
                 <div class="p-4 lg:p-8">
-                    <div class="max-w-6xl mx-auto">
                         <!-- Page Title -->
                         <div class="text-center mb-8 lg:mb-12">
-                            <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-sans font-bold text-gray-900 mb-4">References</h1>
+                            <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-sans font-bold text-gray-900 mb-4">Open to Opportunities</h1>
                             <p class="text-sm lg:text-lg text-gray-600 max-w-3xl mx-auto">
-                                What colleagues, clients, and partners have said about working with me
+                                What I am looking for in my next full-time role - preferences, timeline, and fit
                             </p>
                         </div>
 
-                    <!-- References Grid -->
-                    <div x-data="{
-                        references: [],
-                        loading: true,
-                        async fetchReferences() {
-                            try {
-                                if (window.isStaticSite && window.isStaticSite()) {
-                                    const db = await window.getIndexDb();
-                                    const stmt = db.prepare('SELECT id, person_name, company, connection_type, reference_text, title FROM ref_entries ORDER BY created_at DESC, id DESC');
-                                    const refs = [];
-                                    while (stmt.step()) {
-                                        const r = stmt.getAsObject();
-                                        let connectionTypes = [];
-                                        if (r.connection_type) { try { connectionTypes = JSON.parse(r.connection_type); } catch (e) {} }
-                                        const initials = (r.person_name || '').split(/\s+/).slice(0, 2).map(function(n) { return n[0] ? n[0].toUpperCase() : ''; }).join('');
-                                        refs.push({ id: r.id, name: r.person_name, title: r.title || '', company: r.company || '', relationship: connectionTypes.join(', '), quote: r.reference_text, avatar: 'https://placehold.co/60x60/6366f1/fff?text=' + initials });
-                                    }
-                                    stmt.free();
-                                    this.references = refs;
-                                } else {
-                                    const host = window.location.hostname || '';
-                                    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-                                    const isDevDomain = host.includes('projectmanager.test') || host.includes('.local') || host === 'githubv2.projectmanager.test';
-                                    const isPrivateNetwork = /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-                                    const apiUrl = (isLocalHost || isDevDomain || isPrivateNetwork) ? 'http://127.0.0.1:8000/api/references' : '/api/references';
-                                    const response = await fetch(apiUrl);
-                                    if (!response.ok) throw new Error('HTTP error! status: ' + response.status);
-                                    const data = await response.json();
-                                    this.references = data.references || [];
-                                }
-                                this.loading = false;
-                            } catch (error) {
-                                console.error('Error fetching references:', error);
-                                this.loading = false;
-                            }
-                        },
-                        init() {
-                            this.fetchReferences();
-                        }
-                    }">
-                        <!-- Loading State -->
-                        <template x-if="loading">
+                        <template x-if="loadingBlocks">
                             <div class="text-center py-12">
                                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                <p class="mt-4 text-gray-600">Loading references...</p>
+                                <p class="mt-4 text-gray-600">Loading preferences...</p>
                             </div>
                         </template>
 
-                        <!-- Empty State -->
-                        <template x-if="!loading && references.length === 0">
-                            <div class="text-center py-12">
-                                <p class="text-gray-600">No references available at this time.</p>
-                            </div>
-                        </template>
-
-                        <!-- References Grid -->
-                        <template x-if="!loading && references.length > 0">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
-                                <template x-for="reference in references" :key="reference.id">
-                                    <div class="bg-white rounded-lg shadow-md p-4 lg:p-6 hover:shadow-lg transition-shadow">
-                                        <!-- Quote -->
-                                        <div class="mb-4 lg:mb-6">
-                                            <svg class="w-4 h-4 text-gray-400 mb-3" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z"/>
-                                            </svg>
-                                            <p class="text-gray-700 italic leading-relaxed text-sm lg:text-base whitespace-pre-line" x-text="reference.quote"></p>
+                        <template x-if="!loadingBlocks">
+                            <div>
+                                <!-- Intro -->
+                                <template x-if="cmsBlocks['opportunities-intro']">
+                                    <div class="bg-white rounded-lg shadow-xl border border-blue-200 border-l-4 border-l-blue-600 p-6 lg:p-8 mb-8">
+                                        <div class="flex items-center mb-4">
+                                            <i class="fas fa-door-open text-blue-600 text-2xl mr-3" aria-hidden="true"></i>
+                                            <h2 class="text-2xl font-bold text-gray-900">Overview</h2>
                                         </div>
-
-                                        <!-- Reference Info -->
-                                        <div class="flex items-center">
-                                            <img :src="reference.avatar" :alt="reference.name" class="w-10 h-10 lg:w-12 lg:h-12 rounded-full mr-3 lg:mr-4">
-                                            <div>
-                                                <h4 class="font-semibold text-gray-900 text-sm lg:text-base" x-text="reference.name"></h4>
-                                                <p class="text-xs lg:text-sm text-gray-600" x-text="reference.title"></p>
-                                                <p class="text-xs lg:text-sm text-gray-500" x-text="reference.company"></p>
-                                                <p class="text-xs text-gray-400 mt-1" x-text="reference.relationship"></p>
-                                            </div>
-                                        </div>
+                                        <div class="prose max-w-none text-gray-700" x-html="cmsBlocks['opportunities-intro'].content"></div>
                                     </div>
                                 </template>
+
+                                <!-- Section cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-8">
+                                    <template x-for="section in sections" :key="section.blockId">
+                                        <div class="bg-white rounded-lg shadow-lg p-6 lg:p-8 hover:shadow-xl transition-shadow" x-show="cmsBlocks[section.blockId]">
+                                            <div class="flex items-center mb-4">
+                                                <i :class="section.icon + ' text-blue-600 text-xl mr-3'" aria-hidden="true"></i>
+                                                <h2 class="text-xl font-bold text-gray-900" x-text="section.title"></h2>
+                                            </div>
+                                            <div class="prose max-w-none text-gray-700 text-sm lg:text-base" x-html="cmsBlocks[section.blockId] ? cmsBlocks[section.blockId].content : ''"></div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- CTA -->
+                                <div class="bg-gray-800 rounded-lg shadow-lg p-6 lg:p-8 text-center text-white">
+                                    <h2 class="text-xl lg:text-2xl font-bold mb-3">Have a role that might be a fit?</h2>
+                                    <p class="text-gray-300 mb-6 max-w-2xl mx-auto">Reach out via email or LinkedIn. I am happy to discuss permanent, full-time opportunities that align with these preferences.</p>
+                                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                                        <a href="contact.html" class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-envelope mr-2" aria-hidden="true"></i>
+                                            Contact Me
+                                        </a>
+                                        <a href="resume.html" class="inline-flex items-center justify-center px-6 py-3 bg-gray-700 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors">
+                                            <i class="fas fa-file-alt mr-2" aria-hidden="true"></i>
+                                            View Resume
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </template>
-                    </div>
 
                     <!-- Back to Home -->
                     <div class="text-center mt-8 lg:mt-12">

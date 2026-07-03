@@ -5,6 +5,12 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto">
+    {% if request.query_params.get('error') %}
+    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        {{ request.query_params.get('error') }}
+    </div>
+    {% endif %}
+
     <form method="POST" action="/admin/experience/soft-skills/save" class="space-y-6">
         {% if skill %}
         <input type="hidden" name="skill_id" value="{{ skill.id }}">

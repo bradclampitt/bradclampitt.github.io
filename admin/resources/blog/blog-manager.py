@@ -87,7 +87,7 @@ class BlogManager:
         processed = self.process_headers(processed)
         processed = self.process_images(processed)
 
-        # 4) ✂️ Drop pre-Markdown emphasis/link regexes — let Markdown do it.
+        # 4) Drop pre-Markdown emphasis/link regexes - let Markdown do it.
         # processed = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', processed)
         # processed = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', processed)
         # processed = re.sub(r'^---$', r'<hr class="my-4 border-gray-300 hr-spaced">', processed, flags=re.MULTILINE)

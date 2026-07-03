@@ -83,7 +83,8 @@ INSERT OR IGNORE INTO doc_tabs (code, label, sort) VALUES
 ('tutorials',      'Tutorials',     4),
 ('troubleshooting', 'Troubleshooting', 5),
 ('architecture',   'Architecture',  6),
-('others',         'Others',        7);
+('others',         'Others',        7),
+('dev-docs',       'Dev Docs',      8);
 
 CREATE TABLE IF NOT EXISTS documents (
   id              INTEGER PRIMARY KEY,
@@ -642,6 +643,20 @@ CREATE INDEX IF NOT EXISTS idx_experience_job_experience_soft_skills_job ON expe
 CREATE INDEX IF NOT EXISTS idx_experience_job_experience_soft_skills_skill ON experience_job_experience_soft_skills(soft_skill_id);
 CREATE INDEX IF NOT EXISTS idx_experience_education_timeline_date ON experience_education(timeline_date DESC);
 
+CREATE TABLE IF NOT EXISTS experience_certifications (
+  id              INTEGER PRIMARY KEY,
+  name            TEXT NOT NULL,
+  issuer          TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'completed',
+  issued_date     TEXT,
+  notes           TEXT,
+  sort_order      INTEGER DEFAULT 0,
+  created_at      TEXT DEFAULT (datetime('now')),
+  updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_experience_certifications_sort ON experience_certifications(sort_order);
+
 -- ============================================================================
 -- CMS SECTION
 -- ============================================================================
@@ -690,14 +705,14 @@ CREATE TABLE IF NOT EXISTS cms_contact_info (
 
 INSERT OR IGNORE INTO cms_site_settings (setting_key, setting_value, setting_type, description) VALUES
 ('site_name', 'Bradley R. Clampitt', 'text', 'Full name displayed in header'),
-('site_titles', 'Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect', 'text', 'Professional titles displayed in header'),
-('site_description', 'Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.', 'text', 'Short bio/description displayed in header');
+('site_titles', 'Digital Solutions Architect & Tech Leader | Magento & eCommerce Architecture | AWS & Cloud | AI-Augmented Development', 'text', 'Professional titles displayed in header'),
+('site_description', 'Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately.', 'text', 'Short bio/description displayed in header');
 
 INSERT OR IGNORE INTO cms_contact_info (field_name, label, value, field_type, icon, is_public, sort_order) VALUES
 ('email', 'Email', 'bradclampitt@gmail.com', 'email', 'fas fa-envelope', 1, 1),
 ('github', 'GitHub', 'https://github.com/bradclampitt', 'url', 'fab fa-github', 1, 2),
 ('linkedin', 'LinkedIn', 'https://linkedin.com/in/bclampitt', 'url', 'fab fa-linkedin', 1, 3),
-('phone', 'Phone', '+1234567890', 'phone', 'fas fa-phone', 1, 4),
+('whatsapp', 'WhatsApp', 'https://wa.me/', 'url', 'fab fa-whatsapp', 0, 4),
 ('location', 'Location', 'United States', 'text', 'fas fa-map-marker-alt', 1, 5);
 
 CREATE INDEX IF NOT EXISTS idx_cms_blocks_block_id ON cms_blocks(block_id);

@@ -20,6 +20,7 @@ dist/
 venv/
 venv3/
 admin/venv/
+admin/.venv/
 __pycache__/
 *.py[cod]
 
@@ -50,3 +51,6 @@ _archived/
 .specstory/*
 admin/document_save_debug.txt
 admin/admin.pid
+
+# Local SpecStory history/tool metadata
+.specstory/

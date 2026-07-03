@@ -2,8 +2,37 @@
 Database connection management for unified database.
 """
 import sqlite3
-from pathlib import Path
+from typing import Any
+
 from admin.config import DATABASE_PATH, SCHEMA_PATH
+
+
+def row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
+    """Convert a sqlite Row to a dict, decoding byte values as UTF-8 text."""
+    data: dict[str, Any] = {}
+    for key in row.keys():
+        value = row[key]
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        data[key] = value
+    return data
+
+
+def _repair_cms_block_text_content(conn: sqlite3.Connection) -> None:
+    """Fix cms_blocks.content rows stored as BLOB instead of TEXT."""
+    rows = conn.execute(
+        "SELECT id, content FROM cms_blocks WHERE typeof(content) = 'blob'"
+    ).fetchall()
+    if not rows:
+        return
+
+    for row_id, content in rows:
+        if isinstance(content, bytes):
+            conn.execute(
+                "UPDATE cms_blocks SET content = ? WHERE id = ?",
+                (content.decode("utf-8"), row_id),
+            )
+    conn.commit()
 
 
 def get_conn() -> sqlite3.Connection:
@@ -43,7 +72,8 @@ def ensure_database() -> None:
                 if 'featured' not in columns:
                     cursor.execute("ALTER TABLE documents ADD COLUMN featured INTEGER DEFAULT 0")
                     conn.commit()
-        except Exception as e:
+                _repair_cms_block_text_content(conn)
+        except Exception:
             # If table doesn't exist or other error, schema will be applied on next startup
             pass
 

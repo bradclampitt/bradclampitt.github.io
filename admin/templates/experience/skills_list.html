@@ -15,6 +15,12 @@
             </div>
         </div>
 
+        {% if request.query_params.get('error') %}
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {{ request.query_params.get('error') }}
+        </div>
+        {% endif %}
+
         <!-- Filters and Sorting -->
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end border-b border-slate-200 pb-4">
             <!-- Search Input -->

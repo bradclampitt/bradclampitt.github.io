@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bradley R. Clampitt - Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect</title>
+    <!-- SEO / Social sharing -->
+    <meta name="description" content="Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately." />
+    <meta name="author" content="Bradley R. Clampitt" />
+    <link rel="canonical" href="https://bradclampitt.github.io/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bradley R. Clampitt" />
+    <meta property="og:title" content="Bradley R. Clampitt - Digital Solutions Architect & Tech Leader" />
+    <meta property="og:description" content="Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately." />
+    <meta property="og:url" content="https://bradclampitt.github.io/" />
+    <meta property="og:image" content="https://bradclampitt.github.io/assets/images/profile/bradley-clampitt-headshot.jpg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Bradley R. Clampitt - Digital Solutions Architect & Tech Leader" />
+    <meta name="twitter:description" content="Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately." />
+    <meta name="twitter:image" content="https://bradclampitt.github.io/assets/images/profile/bradley-clampitt-headshot.jpg" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Bradley R. Clampitt",
+      "jobTitle": "Digital Solutions Architect",
+      "description": "Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately.",
+      "url": "https://bradclampitt.github.io/",
+      "image": "https://bradclampitt.github.io/assets/images/profile/bradley-clampitt-headshot.jpg",
+      "email": "bradclampitt@gmail.com",
+      "sameAs": [
+        "https://github.com/bradclampitt",
+        "https://linkedin.com/in/bclampitt"
+      ]
+    }
+    </script>
+    <title>Bradley R. Clampitt - Digital Solutions Architect & Tech Leader | Magento & eCommerce Architecture | AWS & Cloud | AI-Augmented Development</title>
     <!-- Tailwind CSS -->
     <link href="assets/css/tailwind-built.css" rel="stylesheet" />
     <!-- sql.js for static site (GitHub Pages) - load CMS/skills/references from unified.sqlite -->
@@ -77,6 +107,13 @@
     getContactValue(fieldName) {
         const field = this.contactFields.find(f => f.field_name === fieldName);
         return field ? field.value : '';
+    },
+    isHeaderSocialField(field) {
+        return ['github', 'linkedin', 'email', 'whatsapp'].includes(field.field_name);
+    },
+    getSocialHref(field) {
+        if (field.field_type === 'email') return 'mailto:' + field.value;
+        return field.value;
     },
     async loadSiteSettings() {
         try {
@@ -195,8 +232,8 @@
         		<div class="lg:hidden flex flex-col">
         		<div class="flex-1">
           				<h1 class="text-2xl font-bold mb-2 pl-10" x-text="siteSettings.site_name || 'Bradley R. Clampitt'"></h1>
-          				<h2 class="text-base mb-4" x-text="siteSettings.site_titles || 'Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect'"></h2>
-          				<p class="text-gray-300 mb-6 text-sm" x-text="siteSettings.site_description || 'Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.'"></p>
+          				<h2 class="text-base mb-4" x-text="siteSettings.site_titles || 'Digital Solutions Architect & Tech Leader | Magento & eCommerce Architecture | AWS & Cloud | AI-Augmented Development'"></h2>
+          				<p class="text-gray-300 mb-6 text-sm" x-text="siteSettings.site_description || 'Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately.'"></p>
                     	<div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
                         	<a href="portfolio.html" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,9 +252,10 @@
                     	<!-- Social Links -->
                     	<div class="flex flex-wrap justify-center space-x-4 mt-6">
                         	<template x-for="field in contactFields" :key="'mobile-social-' + field.field_name">
-                            	<template x-if="field.field_type === 'url' || field.field_type === 'email' || field.field_type === 'phone'">
-                                	<a :href="field.field_type === 'email' ? 'mailto:' + field.value : (field.field_type === 'phone' ? 'tel:' + field.value : field.value)"
-                                   :target="field.field_type === 'url' ? '_blank' : ''"
+                            	<template x-if="isHeaderSocialField(field)">
+                                	<a :href="getSocialHref(field)"
+                                   :target="field.field_type === 'url' || field.field_name === 'whatsapp' ? '_blank' : ''"
+                                   :rel="field.field_name === 'whatsapp' ? 'noopener noreferrer' : null"
                                    class="text-gray-300 hover:text-white">
                                     	<template x-if="field.field_name === 'github'">
                                         	<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -234,10 +272,8 @@
                                             	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                         	</svg>
                                     	</template>
-                                    	<template x-if="field.field_name === 'phone'">
-                                        	<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                        	</svg>
+                                    	<template x-if="field.field_name === 'whatsapp'">
+                                        	<i class="fab fa-whatsapp text-2xl" aria-hidden="true"></i>
                                     	</template>
                                 	</a>
                             	</template>
@@ -257,8 +293,8 @@
                     <!-- Left: Name, Title, Description, Buttons -->
                     <div class="flex flex-col justify-center flex-1 pr-8">
                         <h1 class="text-4xl font-bold mb-2" x-text="siteSettings.site_name || 'Bradley R. Clampitt'"></h1>
-                        <h2 class="text-xl mb-4" x-text="siteSettings.site_titles || 'Digital Solutions Architect & Tech Leader | Magento 2 Expert | Cloud & DevOps Strategist | eCommerce Scalability Architect'"></h2>
-                        <p class="text-gray-300 mb-6" x-text="siteSettings.site_description || 'Ecommerce specialist with expertise in Magento 2, Hyvä Theme, AlpineJS, and Tailwind CSS. Passionate about building efficient, scalable solutions.'"></p>
+                        <h2 class="text-xl mb-4" x-text="siteSettings.site_titles || 'Digital Solutions Architect & Tech Leader | Magento & eCommerce Architecture | AWS & Cloud | AI-Augmented Development'"></h2>
+                        <p class="text-gray-300 mb-6" x-text="siteSettings.site_description || 'Solutions Architect specializing in Magento Enterprise, AWS cloud infrastructure, and AI-augmented development. 21+ years of eCommerce leadership. Open to full-time salary roles - available immediately.'"></p>
                         <div class="flex space-x-4 mb-6">
                             <a href="portfolio.html" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 flex items-center justify-center text-base font-medium whitespace-nowrap h-12 leading-none">
                                 <svg class="w-5 h-5 mr-2 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,9 +321,10 @@
                 <!-- Desktop Social Links -->
                 <div class="hidden lg:flex space-x-4 mt-4 mb-2 justify-end items-center">
                     <template x-for="field in contactFields" :key="'desktop-social-' + field.field_name">
-                        <template x-if="field.field_type === 'url' || field.field_type === 'email' || field.field_type === 'phone'">
-                            <a :href="field.field_type === 'email' ? 'mailto:' + field.value : (field.field_type === 'phone' ? 'tel:' + field.value : field.value)" 
-                               :target="field.field_type === 'url' ? '_blank' : ''"
+                        <template x-if="isHeaderSocialField(field)">
+                            <a :href="getSocialHref(field)"
+                               :target="field.field_type === 'url' || field.field_name === 'whatsapp' ? '_blank' : ''"
+                               :rel="field.field_name === 'whatsapp' ? 'noopener noreferrer' : null"
                                class="text-gray-300 hover:text-white">
                                 <template x-if="field.field_name === 'github'">
                                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -304,10 +341,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                     </svg>
                                 </template>
-                                <template x-if="field.field_name === 'phone'">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                    </svg>
+                                <template x-if="field.field_name === 'whatsapp'">
+                                    <i class="fab fa-whatsapp text-2xl" aria-hidden="true"></i>
                                 </template>
                             </a>
                         </template>
@@ -350,6 +385,12 @@
 
                 <!-- About Me and Skills Content -->
                 <div class="p-4 lg:p-8" x-data="{ tab: 'about' }">
+                    <!-- Availability (CMS) -->
+                    <template x-if="!loadingBlocks && cmsBlocks['availability']">
+                        <div class="bg-white rounded-lg shadow-xl border border-blue-200 border-l-4 border-l-blue-600 p-4 lg:p-6 mb-8">
+                            <div class="prose max-w-none text-gray-700" x-html="cmsBlocks['availability'].content"></div>
+                        </div>
+                    </template>
                     <!-- About Me Section -->
                     <div class="bg-white rounded-lg shadow-xl border border-gray-100 p-4 lg:p-8 mb-8 transition-shadow hover:shadow-2xl">
                         <template x-if="loadingBlocks">
@@ -369,17 +410,15 @@
                                 <h2 class="text-2xl lg:text-3xl font-bold mb-6 text-center lg:text-left">About Me</h2>
                                 <div class="prose max-w-none text-gray-700 leading-relaxed">
                                     <p class="mb-4 text-sm lg:text-base">
-                                        I'm a Senior Magento Developer and full-stack IT professional with over two decades of experience across the technology and digital commerce space. I specialize in Magento-based eCommerce solutions, building scalable, performance-optimized platforms with reliable workflows and thoughtful user experiences.
-                                        <br><br>
-                                        My expertise includes custom Magento 2 module development, third-party integrations (including Mailchimp, ShipperHQ, and custom APIs), ERP synchronization, and the design of high-availability systems supporting 99.9% uptime. I work comfortably across both Hyvä and Luma themes, delivering modern, responsive frontends tailored to business and customer needs.
+                                        I'm a Digital Solutions Architect and full-stack technology leader with over 21 years of experience across eCommerce, infrastructure, and delivery. Currently consulting at Klizer, I architect and modernize Magento 2 and Magento Enterprise platforms on AWS, with growing Azure exposure. I specialize in performance, scalability, and reliable production operations.
                                     </p>
                                     <p class="mb-6 text-sm lg:text-base">
-                                        Beyond application development, I bring strong DevOps and infrastructure experience, including CI/CD automation, AWS (EC2, S3, CodeCommit), Proxmox, Bash scripting, and Git-based workflows. I'm also experienced with payment gateway integrations, server administration, and cross-functional collaboration to align technical execution with business goals.
-                                        <br><br>
-                                        Over the course of my career, I've worked as a developer, manager, architect, marketer, support technician, and even in hands-on electrical and logistics roles, giving me a uniquely holistic perspective on systems, problem-solving, and execution. I thrive in multidisciplinary environments and adapt quickly to evolving project demands.
+                                        My work spans solution architecture, custom module development, third-party integrations (Mailchimp, ShipperHQ, custom APIs), ERP synchronization, and high-availability systems supporting 99.9% uptime. I'm proficient in both Hyvä and Luma themes, and I bring strong DevOps experience including CI/CD automation, AWS (EC2, S3, CodeCommit), Proxmox, and Git-based workflows. Over my career I've served as a developer, manager, architect, and technical lead, giving me a holistic view of how systems, teams, and business goals align.
+                                    </p>
+                                    <p class="mb-6 text-sm lg:text-base">
+                                        I integrate AI-augmented development into daily delivery using Cursor, Claude, and Codex for research, architecture, and accelerated implementation, with rigorous human-in-the-loop review and testing before anything reaches production. I also experiment with local LLM tooling in my homelab to stay current with emerging workflows while maintaining quality and control.
                                     </p>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <!-- Continuous Learning & Associations -->
                                         <div>
                                             <h3 class="text-xl font-semibold mb-3">Continuous Learning & Associations</h3>
                                             <ul class="list-disc list-inside space-y-1">
@@ -388,15 +427,13 @@
                                                 <li>20+ Udemy courses in Magento, DevOps & web technologies</li>
                                             </ul>
                                         </div>
-
-                                        <!-- Core Competencies -->
                                         <div>
                                             <h3 class="text-xl font-semibold mb-3">Core Competencies</h3>
                                             <ul class="list-disc list-inside space-y-1">
-                                                <li>Strategic eCommerce Architecture & Leadershipt</li>
-                                                <li>Full-Stack Development & System Optimization</li>
-                                                <li>Cloud Infrastructure (AWS) & DevOps Automation</li>
-                                                <li>Project Management & Cross-functional Collaboration</li>
+                                                <li>Digital Solutions Architecture & eCommerce Leadership</li>
+                                                <li>Magento Open Source & Enterprise Platform Design</li>
+                                                <li>Cloud Infrastructure (AWS/Azure) & DevOps Automation</li>
+                                                <li>AI-Augmented Development & Cross-functional Delivery</li>
                                             </ul>
                                         </div>
                                     </div>

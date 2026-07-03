@@ -45,7 +45,7 @@ from admin.config import (
 )
 
 # Import unified database connection
-from admin.database.connection import get_conn
+from admin.database.connection import get_conn, row_to_dict
 
 # Import BlogManager for blog processing
 try:
@@ -371,6 +371,24 @@ def _optional_int(value: str | None) -> int | None:
         return int(value)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=f"Invalid integer: {value}") from exc
+
+
+def _form_error_redirect(path: str, message: str) -> RedirectResponse:
+    from urllib.parse import quote
+
+    return RedirectResponse(url=f"{path}?error={quote(message)}", status_code=303)
+
+
+def _experience_unique_name_redirect(
+    *,
+    base_path: str,
+    record_id: int | None,
+    name: str,
+) -> RedirectResponse:
+    message = f"A record named '{name.strip()}' already exists. Please use a different name."
+    if record_id is None:
+        return _form_error_redirect(f"{base_path}/new", message)
+    return _form_error_redirect(f"{base_path}/{record_id}", message)
 
 
 def _coerce_int(value: str | None, default: int = 0) -> int:
@@ -743,6 +761,15 @@ def experience_page() -> FileResponse:
     return FileResponse(experience_path, media_type="text/html")
 
 
+@app.get("/open-to-opportunities.html")
+def open_to_opportunities_page() -> FileResponse:
+    """Serve the Open to Opportunities page"""
+    page_path = ROOT / "open-to-opportunities.html"
+    if not page_path.exists():
+        raise HTTPException(status_code=404, detail="Open to Opportunities page not found")
+    return FileResponse(page_path, media_type="text/html")
+
+
 @app.get("/admin")
 def dashboard(request: Request) -> Any:
     with get_conn() as conn:
@@ -1011,12 +1038,19 @@ def dashboard(request: Request) -> Any:
     cms_blocks_active_count = 0
     cms_settings_count = 0
     cms_contact_count = 0
+    cms_block_edit_ids: dict[str, int] = {}
     try:
         with get_conn() as cms_conn:
             cms_blocks_count = cms_conn.execute("SELECT COUNT(*) FROM cms_blocks").fetchone()[0]
             cms_blocks_active_count = cms_conn.execute("SELECT COUNT(*) FROM cms_blocks WHERE is_active = 1").fetchone()[0]
             cms_settings_count = cms_conn.execute("SELECT COUNT(*) FROM cms_site_settings").fetchone()[0]
             cms_contact_count = cms_conn.execute("SELECT COUNT(*) FROM cms_contact_info").fetchone()[0]
+            for slug in ("about-me", "availability"):
+                row = cms_conn.execute(
+                    "SELECT id FROM cms_blocks WHERE block_id = ?", (slug,)
+                ).fetchone()
+                if row:
+                    cms_block_edit_ids[slug] = row["id"]
     except Exception:
         pass
 
@@ -1059,8 +1093,9 @@ def dashboard(request: Request) -> Any:
         "cms_blocks_active_count": cms_blocks_active_count,
         "cms_settings_count": cms_settings_count,
         "cms_contact_count": cms_contact_count,
+        "cms_block_edit_ids": cms_block_edit_ids,
     }
-    return templates.TemplateResponse("dashboard.html", context)
+    return templates.TemplateResponse(request, "dashboard.html", context)
 
 
 @app.get("/admin/clients")
@@ -1087,8 +1122,7 @@ def clients_list(request: Request) -> Any:
         }
         for row in clients
     ]
-    return templates.TemplateResponse(
-        "clients_list.html",
+    return templates.TemplateResponse(request, "clients_list.html",
         {
             "request": request,
             "clients": clients,
@@ -1143,8 +1177,7 @@ def feature_library_list(request: Request) -> Any:
         }
         for row in rows
     ]
-    return templates.TemplateResponse(
-        "feature_library.html",
+    return templates.TemplateResponse(request, "feature_library.html",
         {
             "request": request,
             "features": rows,
@@ -1232,8 +1265,7 @@ def client_edit_view(request: Request, client_id: int) -> Any:
         ).fetchone()
         if not client:
             raise HTTPException(status_code=404, detail="Client not found.")
-    return templates.TemplateResponse(
-        "client_edit.html",
+    return templates.TemplateResponse(request, "client_edit.html",
         {"request": request, "client": client},
     )
 
@@ -1292,8 +1324,7 @@ def project_types_list(request: Request) -> Any:
         {"id": row["id"], "code": row["code"], "label": row["label"]}
         for row in rows
     ]
-    return templates.TemplateResponse(
-        "project_types.html",
+    return templates.TemplateResponse(request, "project_types.html",
         {
             "request": request,
             "types": rows,
@@ -1379,8 +1410,7 @@ def tech_tags_list(request: Request) -> Any:
         }
         for row in rows
     ]
-    return templates.TemplateResponse(
-        "tech_tags.html",
+    return templates.TemplateResponse(request, "tech_tags.html",
         {"request": request, "tags": tags},
     )
 
@@ -1520,8 +1550,7 @@ def projects_list(request: Request) -> Any:
         {"id": row["id"], "code": row["code"], "label": row["label"]}
         for row in tab_rows
     ]
-    return templates.TemplateResponse(
-        "projects_list.html",
+    return templates.TemplateResponse(request, "projects_list.html",
         {
             "request": request,
             "projects": projects,
@@ -1652,7 +1681,7 @@ def project_new(request: Request) -> Any:
         "feature_library": feature_library,
         "mode": "new",
     }
-    return templates.TemplateResponse("project_edit.html", context)
+    return templates.TemplateResponse(request, "project_edit.html", context)
 
 
 @app.get("/admin/projects/{project_id}")
@@ -1718,7 +1747,7 @@ def project_edit(request: Request, project_id: int) -> Any:
         "feature_library": feature_library,
         "mode": "edit",
     }
-    return templates.TemplateResponse("project_edit.html", context)
+    return templates.TemplateResponse(request, "project_edit.html", context)
 
 
 def _parse_feature_forms(
@@ -2161,8 +2190,7 @@ def documents_list(request: Request) -> Any:
             documents = [dict(row) for row in documents_rows]
     except Exception:
         documents = []
-    return templates.TemplateResponse(
-        "documents_list.html",
+    return templates.TemplateResponse(request, "documents_list.html",
         {"request": request, "documents": documents},
     )
 
@@ -2248,8 +2276,7 @@ def doc_categories_list(request: Request) -> Any:
             ]
     except Exception:
         categories = []
-    return templates.TemplateResponse(
-        "doc_categories_list.html",
+    return templates.TemplateResponse(request, "doc_categories_list.html",
         {"request": request, "categories": categories},
     )
 
@@ -2452,8 +2479,7 @@ def doc_types_list(request: Request) -> Any:
             ]
     except Exception:
         types = []
-    return templates.TemplateResponse(
-        "doc_types_list.html",
+    return templates.TemplateResponse(request, "doc_types_list.html",
         {"request": request, "types": types},
     )
 
@@ -2469,8 +2495,7 @@ def document_new(request: Request) -> Any:
         categories = []
         types = []
         tabs = []
-    return templates.TemplateResponse(
-        "document_edit.html",
+    return templates.TemplateResponse(request, "document_edit.html",
         {
             "request": request,
             "document": None,
@@ -2522,8 +2547,7 @@ def document_edit(request: Request, doc_id: int) -> Any:
             "SELECT * FROM document_links WHERE document_id = ? ORDER BY sort", (doc_id,)
         ).fetchall()
     
-    return templates.TemplateResponse(
-        "document_edit.html",
+    return templates.TemplateResponse(request, "document_edit.html",
         {
             "request": request,
             "document": document,
@@ -3200,16 +3224,14 @@ def references_list(request: Request) -> Any:
             references.append(ref_dict)
     except Exception:
         references = []
-    return templates.TemplateResponse(
-        "references_list.html",
+    return templates.TemplateResponse(request, "references_list.html",
         {"request": request, "references": references},
     )
 
 
 @app.get("/admin/references/new")
 def reference_new(request: Request) -> Any:
-    return templates.TemplateResponse(
-        "reference_edit.html",
+    return templates.TemplateResponse(request, "reference_edit.html",
         {
             "request": request,
             "reference": None,
@@ -3234,8 +3256,7 @@ def reference_edit(request: Request, ref_id: int) -> Any:
         else:
             reference["connection_types"] = []
     
-    return templates.TemplateResponse(
-        "reference_edit.html",
+    return templates.TemplateResponse(request, "reference_edit.html",
         {
             "request": request,
             "reference": reference,
@@ -3310,15 +3331,14 @@ def cms_blocks_list(request: Request) -> Any:
                 SELECT * FROM cms_blocks 
                 ORDER BY sort_order, title
             """).fetchall()
-            blocks = [dict(row) for row in blocks_rows]
+            blocks = [row_to_dict(row) for row in blocks_rows]
     except Exception:
         blocks = []
     
     # Scan frontend for CMS block references
     frontend_usage = scan_frontend_for_cms_blocks()
     
-    return templates.TemplateResponse(
-        "cms/blocks_list.html",
+    return templates.TemplateResponse(request, "cms/blocks_list.html",
         {"request": request, "blocks": blocks, "frontend_usage": frontend_usage},
     )
 
@@ -3341,6 +3361,7 @@ def scan_frontend_for_cms_blocks() -> dict:
         ROOT / "side-projects.html",
         ROOT / "references.html",
         ROOT / "resume.html",
+        ROOT / "open-to-opportunities.html",
     ]
     
     import re
@@ -3378,15 +3399,14 @@ def cms_blocks_new(request: Request) -> Any:
                 FROM cms_blocks 
                 ORDER BY block_id
             """).fetchall()
-            all_blocks = [dict(row) for row in blocks_rows]
+            all_blocks = [row_to_dict(row) for row in blocks_rows]
     except Exception:
         all_blocks = []
     
     # Scan frontend for CMS block usage
     frontend_usage = scan_frontend_for_cms_blocks()
     
-    return templates.TemplateResponse(
-        "cms/blocks_edit.html",
+    return templates.TemplateResponse(request, "cms/blocks_edit.html",
         {"request": request, "block": None, "all_blocks": all_blocks, "frontend_usage": frontend_usage},
     )
 
@@ -3408,7 +3428,7 @@ def cms_blocks_edit(request: Request, block_id: int) -> Any:
                 FROM cms_blocks 
                 ORDER BY block_id
             """).fetchall()
-            all_blocks = [dict(row) for row in blocks_rows]
+            all_blocks = [row_to_dict(row) for row in blocks_rows]
         except Exception:
             all_blocks = []
     
@@ -3416,7 +3436,7 @@ def cms_blocks_edit(request: Request, block_id: int) -> Any:
     frontend_usage = scan_frontend_for_cms_blocks()
     
     # Convert block to dict and parse gallery_images JSON if present
-    block_dict = dict(block)
+    block_dict = row_to_dict(block)
     if block_dict.get("gallery_images"):
         try:
             block_dict["gallery_images"] = json.loads(block_dict["gallery_images"])
@@ -3425,8 +3445,7 @@ def cms_blocks_edit(request: Request, block_id: int) -> Any:
     else:
         block_dict["gallery_images"] = []
     
-    return templates.TemplateResponse(
-        "cms/blocks_edit.html",
+    return templates.TemplateResponse(request, "cms/blocks_edit.html",
         {"request": request, "block": block_dict, "all_blocks": all_blocks, "frontend_usage": frontend_usage},
     )
 
@@ -3544,8 +3563,7 @@ def cms_settings_list(request: Request) -> Any:
     # Scan frontend for CMS block references
     frontend_usage = scan_frontend_for_cms_blocks()
     
-    return templates.TemplateResponse(
-        "cms/settings_list.html",
+    return templates.TemplateResponse(request, "cms/settings_list.html",
         {"request": request, "settings": settings, "frontend_usage": frontend_usage},
     )
 
@@ -3641,8 +3659,7 @@ def cms_contact_list(request: Request) -> Any:
             contact_fields = [dict(row) for row in contact_rows]
     except Exception:
         contact_fields = []
-    return templates.TemplateResponse(
-        "cms/contact_list.html",
+    return templates.TemplateResponse(request, "cms/contact_list.html",
         {"request": request, "contact_fields": contact_fields},
     )
 
@@ -3899,8 +3916,7 @@ def tech_skill_categories_list(request: Request) -> Any:
         # Convert rows to dicts for JSON serialization
         categories = [dict(row) for row in categories_rows]
         
-        return templates.TemplateResponse(
-            "tech_skill_categories_list.html",
+        return templates.TemplateResponse(request, "tech_skill_categories_list.html",
             {
                 "request": request,
                 "categories": categories,
@@ -3936,8 +3952,7 @@ def tech_skill_category_new(request: Request) -> Any:
         max_order = conn.execute("SELECT COALESCE(MAX(display_order), 0) as max_order FROM tech_skill_categories").fetchone()
         next_order = (max_order["max_order"] or 0) + 1
     
-    return templates.TemplateResponse(
-        "tech_skill_category_edit.html",
+    return templates.TemplateResponse(request, "tech_skill_category_edit.html",
         {
             "request": request,
             "category": None,
@@ -3956,8 +3971,7 @@ def tech_skill_category_edit(request: Request, category_id: int) -> Any:
         
         category = dict(category_row)
     
-    return templates.TemplateResponse(
-        "tech_skill_category_edit.html",
+    return templates.TemplateResponse(request, "tech_skill_category_edit.html",
         {
             "request": request,
             "category": category,
@@ -4102,8 +4116,7 @@ def tech_skills_list(request: Request) -> Any:
         categories = []
         unique_levels = []
     
-    return templates.TemplateResponse(
-        "tech_skills_list.html",
+    return templates.TemplateResponse(request, "tech_skills_list.html",
         {
             "request": request,
             "skills": skills,
@@ -4124,8 +4137,7 @@ def tech_skill_new(request: Request) -> Any:
             ORDER BY display_order, name
         """).fetchall()
     
-    return templates.TemplateResponse(
-        "tech_skill_edit.html",
+    return templates.TemplateResponse(request, "tech_skill_edit.html",
         {
             "request": request,
             "skill": None,
@@ -4151,8 +4163,7 @@ def tech_skill_edit(request: Request, skill_id: int) -> Any:
             ORDER BY display_order, name
         """).fetchall()
     
-    return templates.TemplateResponse(
-        "tech_skill_edit.html",
+    return templates.TemplateResponse(request, "tech_skill_edit.html",
         {
             "request": request,
             "skill": skill,
@@ -4354,8 +4365,7 @@ def side_projects_list(request: Request) -> Any:
             projects = [dict(row) for row in projects_rows]
     except Exception:
         projects = []
-    return templates.TemplateResponse(
-        "side-projects/side_projects_list.html",
+    return templates.TemplateResponse(request, "side-projects/side_projects_list.html",
         {"request": request, "projects": projects},
     )
 
@@ -4377,8 +4387,7 @@ def side_project_categories_list(request: Request) -> Any:
             categories = [dict(row) for row in categories_rows]
     except Exception:
         categories = []
-    return templates.TemplateResponse(
-        "side-projects/side_project_categories_list.html",
+    return templates.TemplateResponse(request, "side-projects/side_project_categories_list.html",
         {"request": request, "categories": categories},
     )
 
@@ -4390,8 +4399,7 @@ def side_project_new(request: Request) -> Any:
             SELECT * FROM side_project_categories
             ORDER BY display_order, label
         """).fetchall()
-    return templates.TemplateResponse(
-        "side-projects/side_project_edit.html",
+    return templates.TemplateResponse(request, "side-projects/side_project_edit.html",
         {
             "request": request,
             "project": None,
@@ -4448,8 +4456,7 @@ def side_project_edit(request: Request, project_id: int) -> Any:
     technical_details = [dict(row) for row in technical_details_rows]
     images = [dict(row) for row in images_rows]
 
-    return templates.TemplateResponse(
-        "side-projects/side_project_edit.html",
+    return templates.TemplateResponse(request, "side-projects/side_project_edit.html",
         {
             "request": request,
             "project": project,
@@ -4874,8 +4881,7 @@ def side_project_category_edit(request: Request, category_id: int) -> Any:
         ).fetchone()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
-    return templates.TemplateResponse(
-        "side-projects/side_project_category_edit.html",
+    return templates.TemplateResponse(request, "side-projects/side_project_category_edit.html",
         {"request": request, "category": category},
     )
 
@@ -5012,8 +5018,7 @@ def magento_modules_list(request: Request) -> Any:
             modules = [dict(row) for row in modules_rows]
     except Exception:
         modules = []
-    return templates.TemplateResponse(
-        "magento/magento_modules_list.html",
+    return templates.TemplateResponse(request, "magento/magento_modules_list.html",
         {"request": request, "modules": modules},
     )
 
@@ -5035,8 +5040,7 @@ def magento_module_categories_list(request: Request) -> Any:
             categories = [dict(row) for row in categories_rows]
     except Exception:
         categories = []
-    return templates.TemplateResponse(
-        "magento/magento_module_categories_list.html",
+    return templates.TemplateResponse(request, "magento/magento_module_categories_list.html",
         {"request": request, "categories": categories},
     )
 
@@ -5048,8 +5052,7 @@ def magento_module_new(request: Request) -> Any:
             SELECT * FROM magento_module_categories
             ORDER BY display_order, label
         """).fetchall()
-    return templates.TemplateResponse(
-        "magento/magento_module_edit.html",
+    return templates.TemplateResponse(request, "magento/magento_module_edit.html",
         {
             "request": request,
             "module": None,
@@ -5106,8 +5109,7 @@ def magento_module_edit(request: Request, module_id: int) -> Any:
     technical_details = [dict(row) for row in technical_details_rows]
     images = [dict(row) for row in images_rows]
 
-    return templates.TemplateResponse(
-        "magento/magento_module_edit.html",
+    return templates.TemplateResponse(request, "magento/magento_module_edit.html",
         {
             "request": request,
             "module": module,
@@ -5459,8 +5461,7 @@ def magento_module_image_add_existing(
 
 @app.get("/admin/magento/categories/new")
 def magento_module_category_new_form(request: Request) -> Any:
-    return templates.TemplateResponse(
-        "magento/magento_module_category_edit.html",
+    return templates.TemplateResponse(request, "magento/magento_module_category_edit.html",
         {"request": request, "category": None},
     )
 
@@ -5560,8 +5561,7 @@ def magento_module_category_edit(request: Request, category_id: int) -> Any:
         ).fetchone()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
-    return templates.TemplateResponse(
-        "magento/magento_module_category_edit.html",
+    return templates.TemplateResponse(request, "magento/magento_module_category_edit.html",
         {"request": request, "category": category},
     )
 
@@ -5714,8 +5714,7 @@ def photography_list(request: Request) -> Any:
             photos = [dict(row) for row in photos_rows]
     except Exception:
         photos = []
-    return templates.TemplateResponse(
-        "photography/photography_list.html",
+    return templates.TemplateResponse(request, "photography/photography_list.html",
         {"request": request, "photos": photos},
     )
 
@@ -5727,8 +5726,7 @@ def photography_new(request: Request) -> Any:
             SELECT * FROM photography_categories
             ORDER BY display_order, label
         """).fetchall()
-    return templates.TemplateResponse(
-        "photography/photography_edit.html",
+    return templates.TemplateResponse(request, "photography/photography_edit.html",
         {
             "request": request,
             "photo": None,
@@ -5754,16 +5752,14 @@ def photography_categories_list(request: Request) -> Any:
             categories = [dict(row) for row in categories_rows]
     except Exception:
         categories = []
-    return templates.TemplateResponse(
-        "photography/photography_categories_list.html",
+    return templates.TemplateResponse(request, "photography/photography_categories_list.html",
         {"request": request, "categories": categories},
     )
 
 
 @app.get("/admin/photography/categories/new")
 def photography_category_new(request: Request) -> Any:
-    return templates.TemplateResponse(
-        "photography/photography_category_edit.html",
+    return templates.TemplateResponse(request, "photography/photography_category_edit.html",
         {"request": request, "category": None},
     )
 
@@ -5776,8 +5772,7 @@ def photography_category_edit(request: Request, category_id: int) -> Any:
         ).fetchone()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
-    return templates.TemplateResponse(
-        "photography/photography_category_edit.html",
+    return templates.TemplateResponse(request, "photography/photography_category_edit.html",
         {"request": request, "category": category},
     )
 
@@ -5871,8 +5866,7 @@ def photography_edit(request: Request, photo_id: int) -> Any:
             SELECT * FROM photography_categories
             ORDER BY display_order, label
         """).fetchall()
-    return templates.TemplateResponse(
-        "photography/photography_edit.html",
+    return templates.TemplateResponse(request, "photography/photography_edit.html",
         {
             "request": request,
             "photo": photo,
@@ -6353,8 +6347,7 @@ def experience_list(request: Request) -> Any:
     except Exception:
         companies = []
 
-    return templates.TemplateResponse(
-        "experience/experience_list.html",
+    return templates.TemplateResponse(request, "experience/experience_list.html",
         {"request": request, "companies": companies},
     )
 
@@ -6368,8 +6361,7 @@ def experience_new(request: Request) -> Any:
         tools = conn.execute("SELECT * FROM experience_tools ORDER BY name").fetchall()
         soft_skills = conn.execute("SELECT * FROM experience_soft_skills ORDER BY name").fetchall()
 
-    return templates.TemplateResponse(
-        "experience/experience_edit.html",
+    return templates.TemplateResponse(request, "experience/experience_edit.html",
         {
             "request": request,
             "job": None,
@@ -6635,8 +6627,7 @@ def experience_companies_list(request: Request) -> Any:
     except Exception:
         companies = []
 
-    return templates.TemplateResponse(
-        "experience/companies_list.html",
+    return templates.TemplateResponse(request, "experience/companies_list.html",
         {"request": request, "companies": companies, "companies_payload": companies},
     )
 
@@ -6661,8 +6652,7 @@ async def experience_companies_reorder(request: Request) -> JSONResponse:
 @app.get("/admin/experience/companies/new")
 def experience_company_new(request: Request) -> Any:
     """New company form"""
-    return templates.TemplateResponse(
-        "experience/company_edit.html",
+    return templates.TemplateResponse(request, "experience/company_edit.html",
         {"request": request, "company": None},
     )
 
@@ -6677,8 +6667,7 @@ def experience_company_edit(request: Request, company_id: int) -> Any:
         if not company:
             raise HTTPException(status_code=404, detail="Company not found")
 
-    return templates.TemplateResponse(
-        "experience/company_edit.html",
+    return templates.TemplateResponse(request, "experience/company_edit.html",
         {"request": request, "company": company},
     )
 
@@ -6770,8 +6759,7 @@ def experience_skills_list(request: Request) -> Any:
     except Exception:
         skills = []
 
-    return templates.TemplateResponse(
-        "experience/skills_list.html",
+    return templates.TemplateResponse(request, "experience/skills_list.html",
         {"request": request, "skills": skills, "skills_payload": skills},
     )
 
@@ -6779,8 +6767,7 @@ def experience_skills_list(request: Request) -> Any:
 @app.get("/admin/experience/skills/new")
 def experience_skill_new(request: Request) -> Any:
     """New skill form"""
-    return templates.TemplateResponse(
-        "experience/skill_edit.html",
+    return templates.TemplateResponse(request, "experience/skill_edit.html",
         {"request": request, "skill": None},
     )
 
@@ -6795,8 +6782,7 @@ def experience_skill_edit(request: Request, skill_id: int) -> Any:
         if not skill:
             raise HTTPException(status_code=404, detail="Skill not found")
 
-    return templates.TemplateResponse(
-        "experience/skill_edit.html",
+    return templates.TemplateResponse(request, "experience/skill_edit.html",
         {"request": request, "skill": skill},
     )
 
@@ -6814,38 +6800,45 @@ def experience_skill_save(
     """Save skill"""
     skill_pk = _optional_int(skill_id)
 
-    with get_conn() as conn:
-        cur = conn.cursor()
-        if skill_pk is None:
-            cur.execute("""
-                INSERT INTO experience_skills_sets (name, icon, description, category, color)
-                VALUES (?, ?, ?, ?, ?)
-            """, (
-                name.strip(),
-                icon.strip() if icon else None,
-                description.strip() if description else None,
-                category.strip() if category else None,
-                color.strip() if color else None,
-            ))
-        else:
-            cur.execute("""
-                UPDATE experience_skills_sets SET
-                    name = ?,
-                    icon = ?,
-                    description = ?,
-                    category = ?,
-                    color = ?,
-                    updated_at = datetime('now')
-                WHERE id = ?
-            """, (
-                name.strip(),
-                icon.strip() if icon else None,
-                description.strip() if description else None,
-                category.strip() if category else None,
-                color.strip() if color else None,
-                skill_pk,
-            ))
-        conn.commit()
+    try:
+        with get_conn() as conn:
+            cur = conn.cursor()
+            if skill_pk is None:
+                cur.execute("""
+                    INSERT INTO experience_skills_sets (name, icon, description, category, color)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    name.strip(),
+                    icon.strip() if icon else None,
+                    description.strip() if description else None,
+                    category.strip() if category else None,
+                    color.strip() if color else None,
+                ))
+            else:
+                cur.execute("""
+                    UPDATE experience_skills_sets SET
+                        name = ?,
+                        icon = ?,
+                        description = ?,
+                        category = ?,
+                        color = ?,
+                        updated_at = datetime('now')
+                    WHERE id = ?
+                """, (
+                    name.strip(),
+                    icon.strip() if icon else None,
+                    description.strip() if description else None,
+                    category.strip() if category else None,
+                    color.strip() if color else None,
+                    skill_pk,
+                ))
+            conn.commit()
+    except sqlite3.IntegrityError:
+        return _experience_unique_name_redirect(
+            base_path="/admin/experience/skills",
+            record_id=skill_pk,
+            name=name,
+        )
 
     return RedirectResponse(url="/admin/experience/skills", status_code=303)
 
@@ -6860,8 +6853,7 @@ def experience_tools_list(request: Request) -> Any:
     except Exception:
         tools = []
 
-    return templates.TemplateResponse(
-        "experience/tools_list.html",
+    return templates.TemplateResponse(request, "experience/tools_list.html",
         {"request": request, "tools": tools, "tools_payload": tools},
     )
 
@@ -6869,8 +6861,7 @@ def experience_tools_list(request: Request) -> Any:
 @app.get("/admin/experience/tools/new")
 def experience_tool_new(request: Request) -> Any:
     """New tool form"""
-    return templates.TemplateResponse(
-        "experience/tool_edit.html",
+    return templates.TemplateResponse(request, "experience/tool_edit.html",
         {"request": request, "tool": None},
     )
 
@@ -6885,8 +6876,7 @@ def experience_tool_edit(request: Request, tool_id: int) -> Any:
         if not tool:
             raise HTTPException(status_code=404, detail="Tool not found")
 
-    return templates.TemplateResponse(
-        "experience/tool_edit.html",
+    return templates.TemplateResponse(request, "experience/tool_edit.html",
         {"request": request, "tool": tool},
     )
 
@@ -6901,29 +6891,36 @@ def experience_tool_save(
     """Save tool"""
     tool_pk = _optional_int(tool_id)
 
-    with get_conn() as conn:
-        cur = conn.cursor()
-        if tool_pk is None:
-            cur.execute("""
-                INSERT INTO experience_tools (name, icon)
-                VALUES (?, ?)
-            """, (
-                name.strip(),
-                icon.strip() if icon else None,
-            ))
-        else:
-            cur.execute("""
-                UPDATE experience_tools SET
-                    name = ?,
-                    icon = ?,
-                    updated_at = datetime('now')
-                WHERE id = ?
-            """, (
-                name.strip(),
-                icon.strip() if icon else None,
-                tool_pk,
-            ))
-        conn.commit()
+    try:
+        with get_conn() as conn:
+            cur = conn.cursor()
+            if tool_pk is None:
+                cur.execute("""
+                    INSERT INTO experience_tools (name, icon)
+                    VALUES (?, ?)
+                """, (
+                    name.strip(),
+                    icon.strip() if icon else None,
+                ))
+            else:
+                cur.execute("""
+                    UPDATE experience_tools SET
+                        name = ?,
+                        icon = ?,
+                        updated_at = datetime('now')
+                    WHERE id = ?
+                """, (
+                    name.strip(),
+                    icon.strip() if icon else None,
+                    tool_pk,
+                ))
+            conn.commit()
+    except sqlite3.IntegrityError:
+        return _experience_unique_name_redirect(
+            base_path="/admin/experience/tools",
+            record_id=tool_pk,
+            name=name,
+        )
 
     return RedirectResponse(url="/admin/experience/tools", status_code=303)
 
@@ -6938,8 +6935,7 @@ def experience_soft_skills_list(request: Request) -> Any:
     except Exception:
         skills = []
 
-    return templates.TemplateResponse(
-        "experience/soft_skills_list.html",
+    return templates.TemplateResponse(request, "experience/soft_skills_list.html",
         {"request": request, "skills": skills, "skills_payload": skills},
     )
 
@@ -6947,8 +6943,7 @@ def experience_soft_skills_list(request: Request) -> Any:
 @app.get("/admin/experience/soft-skills/new")
 def experience_soft_skill_new(request: Request) -> Any:
     """New soft skill form"""
-    return templates.TemplateResponse(
-        "experience/soft_skill_edit.html",
+    return templates.TemplateResponse(request, "experience/soft_skill_edit.html",
         {"request": request, "skill": None},
     )
 
@@ -6963,8 +6958,7 @@ def experience_soft_skill_edit(request: Request, skill_id: int) -> Any:
         if not skill:
             raise HTTPException(status_code=404, detail="Soft skill not found")
 
-    return templates.TemplateResponse(
-        "experience/soft_skill_edit.html",
+    return templates.TemplateResponse(request, "experience/soft_skill_edit.html",
         {"request": request, "skill": skill},
     )
 
@@ -6979,29 +6973,36 @@ def experience_soft_skill_save(
     """Save soft skill"""
     skill_pk = _optional_int(skill_id)
 
-    with get_conn() as conn:
-        cur = conn.cursor()
-        if skill_pk is None:
-            cur.execute("""
-                INSERT INTO experience_soft_skills (name, icon)
-                VALUES (?, ?)
-            """, (
-                name.strip(),
-                icon.strip() if icon else None,
-            ))
-        else:
-            cur.execute("""
-                UPDATE experience_soft_skills SET
-                    name = ?,
-                    icon = ?,
-                    updated_at = datetime('now')
-                WHERE id = ?
-            """, (
-                name.strip(),
-                icon.strip() if icon else None,
-                skill_pk,
-            ))
-        conn.commit()
+    try:
+        with get_conn() as conn:
+            cur = conn.cursor()
+            if skill_pk is None:
+                cur.execute("""
+                    INSERT INTO experience_soft_skills (name, icon)
+                    VALUES (?, ?)
+                """, (
+                    name.strip(),
+                    icon.strip() if icon else None,
+                ))
+            else:
+                cur.execute("""
+                    UPDATE experience_soft_skills SET
+                        name = ?,
+                        icon = ?,
+                        updated_at = datetime('now')
+                    WHERE id = ?
+                """, (
+                    name.strip(),
+                    icon.strip() if icon else None,
+                    skill_pk,
+                ))
+            conn.commit()
+    except sqlite3.IntegrityError:
+        return _experience_unique_name_redirect(
+            base_path="/admin/experience/soft-skills",
+            record_id=skill_pk,
+            name=name,
+        )
 
     return RedirectResponse(url="/admin/experience/soft-skills", status_code=303)
 
@@ -7025,9 +7026,9 @@ def experience_soft_skill_delete(
         """, (skill_pk,)).fetchone()
 
         if usage_count["count"] > 0:
-            return RedirectResponse(
-                url="/admin/experience/soft-skills?error=Cannot delete soft skill that is assigned to job experiences",
-                status_code=303
+            return _form_error_redirect(
+                "/admin/experience/soft-skills",
+                "Cannot delete soft skill that is assigned to job experiences",
             )
 
         conn.execute("DELETE FROM experience_soft_skills WHERE id = ?", (skill_pk,))
@@ -7049,8 +7050,7 @@ def experience_education_list(request: Request) -> Any:
     except Exception:
         education = []
 
-    return templates.TemplateResponse(
-        "experience/education_list.html",
+    return templates.TemplateResponse(request, "experience/education_list.html",
         {"request": request, "education": education},
     )
 
@@ -7058,8 +7058,7 @@ def experience_education_list(request: Request) -> Any:
 @app.get("/admin/experience/education/new")
 def experience_education_new(request: Request) -> Any:
     """New education form"""
-    return templates.TemplateResponse(
-        "experience/education_edit.html",
+    return templates.TemplateResponse(request, "experience/education_edit.html",
         {"request": request, "edu": None},
     )
 
@@ -7074,8 +7073,7 @@ def experience_education_edit(request: Request, edu_id: int) -> Any:
         if not edu:
             raise HTTPException(status_code=404, detail="Education entry not found")
 
-    return templates.TemplateResponse(
-        "experience/education_edit.html",
+    return templates.TemplateResponse(request, "experience/education_edit.html",
         {"request": request, "edu": edu},
     )
 
@@ -7236,8 +7234,7 @@ def experience_edit(request: Request, job_id: int) -> Any:
         # Convert projects Row objects to dicts
         projects_list = [dict(row) for row in projects] if projects else []
 
-    return templates.TemplateResponse(
-        "experience/experience_edit.html",
+    return templates.TemplateResponse(request, "experience/experience_edit.html",
         {
             "request": request,
             "job": job_dict,
@@ -7363,6 +7360,16 @@ def api_experience() -> JSONResponse:
             except sqlite3.OperationalError:
                 education_list = []
 
+            # Get certifications
+            try:
+                certification_rows = conn.execute("""
+                    SELECT * FROM experience_certifications
+                    ORDER BY sort_order, issued_date DESC, name
+                """).fetchall()
+                certifications_list = [dict(row) for row in certification_rows]
+            except sqlite3.OperationalError:
+                certifications_list = []
+
             # Group jobs by company
             companies_dict = {}
             for company in companies:
@@ -7404,7 +7411,8 @@ def api_experience() -> JSONResponse:
 
             return JSONResponse(content={
                 "companies": companies_list,
-                "education": education_list
+                "education": education_list,
+                "certifications": certifications_list
             })
     except Exception as e:
         import traceback
@@ -7427,7 +7435,7 @@ def api_cms_blocks() -> JSONResponse:
             """).fetchall()
             blocks = {}
             for row in blocks_rows:
-                row_dict = dict(row)  # Convert Row to dict for easier access
+                row_dict = row_to_dict(row)
 
                 # Parse gallery_images JSON if present
                 gallery_images = []
@@ -7655,8 +7663,7 @@ def blog_list(request: Request) -> Any:
         posts = []
         categories = []
 
-    return templates.TemplateResponse(
-        "blog/blog_list.html",
+    return templates.TemplateResponse(request, "blog/blog_list.html",
         {"request": request, "posts": posts, "categories": categories},
     )
 
@@ -7724,8 +7731,7 @@ def blog_new(request: Request) -> Any:
         """).fetchall()
         categories = [dict(row) for row in categories_rows]
 
-    return templates.TemplateResponse(
-        "blog/blog_edit.html",
+    return templates.TemplateResponse(request, "blog/blog_edit.html",
         {"request": request, "post": None, "categories": categories},
     )
 
@@ -7747,8 +7753,7 @@ def blog_categories_list(request: Request) -> Any:
     except Exception as e:
         categories = []
 
-    return templates.TemplateResponse(
-        "blog/blog_categories_list.html",
+    return templates.TemplateResponse(request, "blog/blog_categories_list.html",
         {"request": request, "categories": categories},
     )
 
@@ -7885,8 +7890,7 @@ def blog_edit(request: Request, post_id: int) -> Any:
         else:
             post_dict["tags"] = []
 
-    return templates.TemplateResponse(
-        "blog/blog_edit.html",
+    return templates.TemplateResponse(request, "blog/blog_edit.html",
         {"request": request, "post": post_dict, "categories": categories},
     )
 
